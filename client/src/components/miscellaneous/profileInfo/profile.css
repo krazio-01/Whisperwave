@@ -1,0 +1,110 @@
+.userOrGroupInfo {
+    height: 100%;
+    background: #292929;
+    overflow-y: scroll;
+}
+
+.userOrGroupInfo::-webkit-scrollbar {
+    width: 7px;
+    border-radius: 10px;
+}
+
+.userOrGroupInfo::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+}
+
+.userOrGroupInfo::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
+
+.userOrGroupInfo::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+.infoTop {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 7.5rem;
+    align-items: center;
+}
+
+.infoTop > img {
+    margin: 0 2rem;
+}
+
+.infoTop > span {
+    margin: 0 1rem;
+    font-size: 1.7rem;
+    color: #fff;
+}
+
+.editIcon {
+    position: absolute;
+    right: 1rem;
+    cursor: pointer;
+    width: 27px;
+    height: 27px;
+}
+
+.infoProfilePic {
+    width: 24rem;
+    height: 24rem;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 2rem auto;
+}
+
+.infoProfilePic>img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profileDetails {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.profileDetails > span{
+    font-size: 1.8rem;
+    color: #fff;
+}
+
+.userList {
+    width: 100%;
+    font-size: 1.5rem;
+    color: #fff;
+    margin: 3rem 0;
+}
+
+@media screen and (max-width: 768px) {
+    .infoTop > span {
+        font-size: 1.5rem;
+    }
+
+    .profileDetails > span{
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .userOrGroupInfo::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .editIcon {
+        width: 26px;
+        height: 26px;
+    }
+    
+    .infoProfilePic {
+        width: 18rem;
+        height: 18rem;
+        margin: 1.5rem auto;
+    }
+}

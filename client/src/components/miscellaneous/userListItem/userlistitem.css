@@ -1,0 +1,43 @@
+.fetchedUser {
+    position: relative;
+    margin: 1rem 0;
+    width: 100%;
+    padding: 10px 7px;
+    border-radius: 7px;
+}
+
+.fetchedUser:hover {
+    background-color: #303030;
+    cursor: pointer;
+}
+
+.fetchedUserProfilePic {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.fetchedUserUsername {
+    position: absolute;
+    margin-left: 6rem;
+    font-size: 14px;
+}
+
+.crossIcon{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px;
+    border-radius: 50%;
+    transition: all 150ms ease-in-out;
+}
+
+.crossIcon:hover{
+    background-color: #555;
+}
+
+.removeUserIcon {
+    width: 18px;
+    height: 18px;
+}

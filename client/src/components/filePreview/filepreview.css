@@ -1,0 +1,91 @@
+.previewImageContainer {
+    width: 48rem;
+    height: 32rem;
+}
+
+.previewImage {
+    width: 100%;
+    max-height: 27.5rem;
+    object-fit: contain;
+}
+
+.previewClose {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    filter: invert(100%);
+    z-index: 1;
+}
+
+.previewInput {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.previewInput>input {
+    width: 100%;
+    padding: 1rem;
+    margin: 3px 0;
+    border-top: 5px solid red;
+    background: transparent;
+    font-size: 14px;
+    color: #fff;
+    border: none;
+    outline: none;
+}
+
+.previewSendBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 5rem;
+    height: 3.5rem;
+    border-radius: 18px;
+    background-color: #292929;
+    border: none;
+    cursor: pointer;
+    transition: 250ms;
+}
+
+.previewSendBtn>img {
+    width: 2rem;
+    height: 2rem;
+}
+
+.previewSendBtn:hover {
+    background-color: #8c7ae6;
+}
+
+@media screen and (max-width: 1024px) {
+    .previewImageContainer {
+        width: 38rem;
+        height: 22rem;
+    }
+
+    .previewImage {
+        max-height: 17.5rem;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .previewImageContainer {
+        width: 33rem;
+        height: 23rem;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .previewImageContainer {
+        width: 27rem;
+        height: 17rem;
+    }
+
+    .previewImage {
+        max-height: 12.5rem;
+    }
+}
