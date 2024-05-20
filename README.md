@@ -30,7 +30,7 @@ Whisperwave is a feature-rich chatting application built using the MERN stack (M
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/Whisperwave.git
+   git clone https://github.com/krazio-01/Whisperwave.git
    cd Whisperwave
 
 2. **Install dependencies**
@@ -44,7 +44,6 @@ Whisperwave is a feature-rich chatting application built using the MERN stack (M
    set up environment variables using ".env copy" file by renaming it to ".env" and passing correct values
 
 4. **Start the application**
-    # Open Two terminals
    1. Terminal for Backend
       ```bash
       cd server
