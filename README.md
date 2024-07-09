@@ -2,6 +2,10 @@
 
 Whisperwave is a feature-rich chatting application built using the MERN stack (MongoDB, Express.js, React, and Node.js) and WebSockets through socket.io for real-time communication. This application allows users to connect with friends, family, and colleagues, providing a seamless chatting experience with various advanced features.
 
+## Live Demo 🚀
+
+Check out the live demo of Whisperwave [here](https://https://whisperwave.onrender.com/).
+
 ## Features
 
 - **Real-time Communication**: Instant messaging with real-time updates using WebSockets.
@@ -19,12 +23,6 @@ Whisperwave is a feature-rich chatting application built using the MERN stack (M
 - **Real-time Communication**: socket.io
 - **Authentication**: JWT, bcrypt
 - **Styling**: CSS
-
-## Screenshots
-
-![Login Screen](./assets/screenshots/login.png)
-![Chat Screen](./assets/screenshots/chat.png)
-![Group Chat Screen](./assets/screenshots/group_chat.png)
 
 ## Installation
 
