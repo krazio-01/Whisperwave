@@ -4,7 +4,7 @@ Whisperwave is a feature-rich chatting application built using the MERN stack (M
 
 ## Live Demo 🚀
 
-Check out the live demo of Whisperwave [here](https://https://whisperwave.onrender.com/).
+Check out the live demo of Whisperwave [here](https://whisperwave.onrender.com/).
 
 ## Features
 
