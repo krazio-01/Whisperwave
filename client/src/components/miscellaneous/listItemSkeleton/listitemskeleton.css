@@ -1,0 +1,24 @@
+.list-skeleton {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    border-radius: 22px;
+}
+
+.proskel{
+    margin: 1rem 0;
+}
+
+.profileSekelton {
+    margin-right: 1rem;
+}
+
+.usskel {
+    margin: 1rem 0;
+    border-radius: 7px;
+    height: 45px;
+}
+
+.usernameSkeleton {
+    flex: 1;
+}

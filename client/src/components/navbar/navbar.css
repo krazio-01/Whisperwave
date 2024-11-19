@@ -1,0 +1,313 @@
+/* main navbar css */
+.main-nav {
+    height: 6rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2.5rem;
+    background-color: #171717;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
+}
+
+/* logo css */
+.logo {
+    display: flex;
+    justify-self: start;
+    align-items: center;
+}
+
+.logo img {
+    width: 4.5rem;
+    cursor: pointer;
+}
+
+.logo #whisper {
+    font-size: 2rem;
+    padding: 7px;
+    color: #fff;
+    cursor: pointer;
+}
+
+/* limks css */
+.menu-links {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 3rem;
+    align-items: center;
+    list-style: none;
+    text-align: center;
+    justify-content: end;
+}
+
+.menu-links li {
+    font-size: 1.8rem;
+    padding: 1rem 5rem;
+}
+
+.menu-links li a {
+    position: relative;
+    text-decoration: none;
+    text-transform: capitalize;
+    color: #fff;
+}
+
+.menu-links li a::before {
+    content: '';
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 2.4px;
+    background: red;
+
+    transition: all 300ms ease-in-out;
+}
+
+.menu-links li a::after {
+    content: '';
+    position: absolute;
+
+    bottom: 0;
+    right: 0;
+    width: 0%;
+    height: 2px;
+    background: red;
+
+    transition: all 300ms ease-in-out;
+}
+
+.menu-links li a:hover::before,
+.menu-links li a:hover::after {
+    width: 100%;
+}
+
+.menu-links li a:hover {
+    background-color: rgb(32, 31, 31);
+    color: white;
+}
+
+/* menu css */
+.hamburger {
+    display: none;
+}
+
+.hamburger img {
+    width: 3.5rem;
+    margin-right: 14px;
+}
+
+/* button css */
+.btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    box-sizing: border-box;
+    font-family: Neucha, sans-serif;
+    color: #fff;
+    box-shadow: rgba(0, 0, 0, .2) 15px 28px 25px -18px;
+    background: linear-gradient(to left, #aa00ff, #db00ff);
+    font-size: 1.5rem;
+    padding: .7rem 1rem;
+    width: 12rem;
+    height: 3.7rem;
+    border-radius: 15px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    cursor: pointer;
+    transition: all 270ms ease-in-out;
+}
+
+.btn button img {
+    margin-right: 1rem;
+    width: 22px;
+    height: 22px;
+}
+
+.btn button:hover {
+    box-shadow: rgba(0, 0, 0, .3) 2px 8px 8px -5px;
+    transform: translate3d(0, 2px, 0);
+}
+
+.btn button:focus {
+    box-shadow: rgba(0, 0, 0, .3) 2px 8px 4px -6px;
+}
+
+/* responsive css style */
+@media (max-width: 1024px) {
+    .menu-links li {
+        padding: 0 5rem;
+    }
+
+    .logo,
+    .menu-links,
+    .btn {
+        font-size: 1.4rem;
+        height: 4rem;
+        padding-top: 12px;
+    }
+
+    .menu-links a {
+        font-size: 1.4rem;
+    }
+
+    .logo img {
+        width: 3.7rem;
+    }
+
+    .logo label {
+        font-size: 1.6rem;
+    }
+
+    .btn button {
+        width: 10rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .menu-links li {
+        padding: 0 3rem;
+    }
+
+    .logo,
+    .menu-links,
+    .btn {
+        font-size: 1.4rem;
+        height: 4rem;
+        padding-top: 12px;
+    }
+
+    .menu-links a {
+        font-size: 1.4rem;
+    }
+
+    .logo img {
+        width: 3.7rem;
+    }
+
+    .logo label {
+        font-size: 1.6rem;
+    }
+
+    .btn button {
+        font-size: 1.3rem;
+        padding: .7rem 1rem;
+        width: 10rem;
+        height: 3.2rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .main-nav {
+        padding: 0 1rem;
+    }
+
+    .menu-links {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        position: absolute;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+        border-radius: 12px;
+        width: 100%;
+        height: auto;
+        top: 5rem;
+        left: -110%;
+        align-items: stretch;
+        padding: 1rem;
+        z-index: 99;
+        transition: 350ms ease-in-out;
+    }
+
+    .menu-links.active {
+        left: 0%;
+    }
+
+    .menu-links li {
+        font-size: 1.4rem;
+        padding: 1rem 0;
+        width: 100%;
+    }
+
+    .logo,
+    .btn {
+        font-size: 1.4rem;
+        height: 4rem;
+        padding-top: 12px;
+    }
+
+    .menu-links a {
+        font-size: 1.4rem;
+    }
+
+    .logo img {
+        width: 3.7rem;
+    }
+
+    .logo label {
+        font-size: 1.6rem;
+    }
+
+    .hamburger {
+        display: block;
+    }
+
+    .btn button {
+        font-size: 1.3rem;
+        padding: .7rem 1rem;
+        width: 10rem;
+        height: 3.2rem;
+    }
+}
+
+@media (max-width: 375px) {
+    .logo img {
+        width: 3.5rem;
+    }
+
+    .logo #whisper {
+        font-size: 1.8rem;
+        margin-right: 22px;
+    }
+
+    .menu-links li {
+        font-size: 1.4rem;
+        padding: 1rem 0;
+        width: 100%;
+    }
+
+    .logo,
+    .btn {
+        font-size: 1.4rem;
+        height: 4rem;
+    }
+
+    .menu-links a {
+        font-size: 1.4rem;
+    }
+
+    .logo img {
+        width: 3rem;
+    }
+
+    .btn button {
+        font-size: 1.2rem;
+        width: 8rem;
+        height: 3rem;
+    }
+
+    .btn button img {
+        margin-right: .7rem;
+        width: 20px;
+        height: 20px;
+    }
+}

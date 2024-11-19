@@ -1,0 +1,32 @@
+.more {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 8px;
+    width: 100%;
+    border-radius: 7px;
+    transition: all 150ms ease-in-out;
+    cursor: pointer;
+}
+
+.more:hover {
+    background-color: #555;
+}
+
+.more img {
+    width: 18px;
+    height: 18px;
+    margin-right: 12px;
+}
+
+.more span {
+    font-size: 12px;
+    color: #fff;
+    font-weight: 500;
+}
+
+.more #delete{
+    font-size: 12px;
+    color: #DC1C1C;
+    font-weight: 500;
+}

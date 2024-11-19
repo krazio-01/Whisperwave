@@ -1,0 +1,66 @@
+.userChat {
+    display: flex;
+    align-items: center;
+    padding: 10px 7px;
+    border-radius: 12px;
+    width: 100%;
+    cursor: pointer;
+}
+
+.userChat:hover {
+    background-color: #303030;
+}
+
+.selectedChat {
+    background-color: #2d3436;
+}
+
+.selectedChat:hover {
+    background-color: #2d3436;
+}
+
+.conversationImg {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    margin-right: 14px;
+    object-fit: cover;
+}
+
+.chatDetails {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.userChatName {
+    font-size: 14px;
+    margin: 7px 0;
+    color: #fff;
+}
+
+.lastMessage {
+    padding: 2px 0;
+    font-size: 12px;
+    white-space: nowrap;
+    height: 18px;
+    color: #fff;
+}
+
+.newMessageBadge {
+    text-align: center;
+    padding: 2px 0;
+    width: 22px;
+    height: 17px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    color: #fff;
+    margin: 0 2rem;
+    background: #2d3436;
+}
+
+@media (max-width: 1024px) {
+    .lastMessage {
+        height: 16px;
+    }
+}

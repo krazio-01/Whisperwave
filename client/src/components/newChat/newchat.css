@@ -1,0 +1,123 @@
+.newChatTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 5rem;
+    padding: 4rem .5rem 4rem .5rem;
+    margin-bottom: 12px;
+    border-bottom: 1px solid black;
+}
+
+.backButtonMessage {
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.searchUserForMessage {
+    display: flex;
+    align-items: center;
+    width: 80%;
+    height: 42px;
+    border-radius: 2rem;
+    margin-right: 10px;
+    background-color: #303030;
+    cursor: text;
+}
+
+.searchUserForMessage>img {
+    width: 18px;
+    height: 18px;
+    margin: 1.5rem;
+}
+
+.chatMenuSearch,
+.loading-chatMenuSearch {
+    width: 100%;
+    height: 100%;
+    padding-left: 1rem;
+    font-size: 17px;
+    border-radius: 2rem;
+    color: #fff;
+    background-color: #303030;
+    border: none;
+    outline: none;
+}
+
+.loading-chatMenuSearch {
+    width: 75%;
+}
+
+.result {
+    display: flex;
+    align-items: center;
+    margin: 0 1rem;
+    height: 5rem;
+    padding: 7px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14px;
+}
+
+.fetchedUser {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 2rem;
+}
+
+.result:hover & .noUserFound {
+    background-color: #303030;
+    cursor: pointer;
+}
+
+.addUserBtn {
+    left: 0;
+    font-size: 1.3rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    color: #fff;
+    padding: 0.7rem 1rem;
+    border-radius: 7px;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    transition: all 200ms;
+}
+
+.addUserBtn:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 1024px) {
+    .backButtonMessage {
+        width: 24px;
+        height: 24px;
+    }
+
+    .searchUserForMessage>img {
+        width: 16px;
+        height: 16px;
+        margin: 1rem;
+    }
+
+    .chatMenuSearch,
+    .loading-chatMenuSearch {
+        font-size: 14px;
+    }
+
+    .result {
+        height: auto;
+        padding: 1rem;
+        font-size: 12px;
+    }
+
+    .fetchedUser {
+        padding: 0 1rem;
+    }
+
+    .addUserBtn {
+        font-size: 1rem;
+        padding: 0.5rem 0.8rem;
+    }
+}

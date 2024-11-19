@@ -1,0 +1,141 @@
+.newGroupChat {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 0 7px;
+    overflow-y: hidden;
+}
+
+.newGroupChatTop {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    padding: 14px 0;
+    border-bottom: 1px solid black;
+}
+
+.Group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 40%;
+    margin: 12px 0;
+    color: #fff;
+}
+
+.backButtonGroup {
+    width: 28px;
+    height: 28px;
+    margin: 0 12px;
+    cursor: pointer;
+}
+
+.Group>span {
+    font-size: 18px;
+    cursor: default;
+}
+
+.searchUserForGroup {
+    width: 100%;
+    height: 42px;
+    border-radius: 2rem;
+    background-color: #303030;
+    cursor: text;
+}
+
+.searchUserForGroup>img {
+    width: 18px;
+    height: 18px;
+    margin: 1.5rem;
+}
+
+.selectedUsers {
+    display: flex;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.searchUserForGroup .chatGroupSearch {
+    width: 100%;
+    height: 100%;
+    padding: 0 2rem;
+    font-size: 17px;
+    border-radius: 2rem;
+    color: #fff;
+    background-color: #303030;
+    border: none;
+    outline: none;
+}
+
+.resultGroup {
+    width: 100%;
+    height: 100%;
+    color: #fff;
+    font-size: 14px;
+    overflow-y: scroll;
+}
+
+.resultGroup::-webkit-scrollbar {
+    width: 7px;
+    border-radius: 10px;
+}
+
+.resultGroup::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+}
+
+.resultGroup::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
+
+.resultGroup::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+.donSelection {
+    position: absolute;
+    right: 3rem;
+    bottom: 3rem;
+    z-index: 1;
+}
+
+.donSelectioBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    outline: none;
+    border: none;
+    background: linear-gradient(45deg, #a29bfe, #ff4d4d);
+    cursor: pointer;
+}
+
+.doneHeader {
+    display: flex;
+    align-items: center;
+    margin: 3rem 0;
+}
+
+.selectImage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 17rem;
+    height: 17rem;
+    margin: 0 6rem;
+    border-radius: 50%;
+    border: 2px solid red;
+    overflow: hidden;
+}
+
+.selectImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
