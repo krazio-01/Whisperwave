@@ -45,7 +45,7 @@ Check out the live demo of Whisperwave [here](https://whisperwave.onrender.com/)
    1. Terminal for Backend
       ```bash
       cd server
-      nodemon index.js
+      npx nodemon index.js
     2. Terminal for frontend
        ```bash
        cd client
