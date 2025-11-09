@@ -115,19 +115,22 @@ const verifyEmail = async (req, res) => {
     try {
         const token = req.params.token;
         if (!token)
-            return res.status(400).render('../utils/templates/emailVerification.ejs', { message: "Invalid link" });
+            return res.status(400).render('emailVerification', { message: "Invalid link" });
 
         const user = await User.findOne({ emailToken: token });
         if (!user)
-            return res.status(404).render('../utils/templates/emailVerification.ejs', { message: "Your account is already verified" });
+            return res.status(404).render('emailVerification', { message: "Your account is already verified" });
 
         user.emailToken = null;
         user.isVerified = true;
         await user.save();
-        res.status(200).render('../utils/templates/emailVerification.ejs', { message: "Email successfully verified, you can close this window now" });
-    }
-    catch (error) {
-        res.status(500).send(error);
+
+        res.status(200).render('emailVerification', {
+            message: "Email successfully verified, you can close this window now"
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal Server Error");
     }
 };
 
