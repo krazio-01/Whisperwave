@@ -19,7 +19,12 @@ const ChatHome = () => {
     }, [setUser]);
 
     useEffect(() => {
-        const socketInstance = io(`${process.env.REACT_APP_SERVER_URL}`);
+        const SERVER_URL =
+            window.location.origin.includes("https")
+                ? window.location.origin
+                : process.env.REACT_APP_SERVER_URL;
+
+        const socketInstance = io(SERVER_URL);
         socketInstance.emit('setup', user?._id);
 
         setSocket(socketInstance);
