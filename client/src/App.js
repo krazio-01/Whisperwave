@@ -1,5 +1,4 @@
 import './App.css';
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from './components/navbar/Navbar';
@@ -11,8 +10,11 @@ import Register from './pages/register/Register';
 import Login from './pages/login/Login';
 import ChatHome from './pages/home/ChatHome';
 
-axios.defaults.baseURL = `${process.env.REACT_APP_SERVER_URL}/api`;
- 
+let baseURL = '/api';
+if (process.env.REACT_APP_SERVER_URL && !window.location.href.startsWith('https'))
+  baseURL = `${process.env.REACT_APP_SERVER_URL}/api`;
+axios.defaults.baseURL = baseURL;
+
 const AppRoute = ({ children }) => (
   <>
     <Navbar />
