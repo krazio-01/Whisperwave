@@ -10,10 +10,7 @@ import Register from './pages/register/Register';
 import Login from './pages/login/Login';
 import ChatHome from './pages/home/ChatHome';
 
-let baseURL = '/api';
-if (process.env.REACT_APP_SERVER_URL && !window.location.href.startsWith('https'))
-  baseURL = `${process.env.REACT_APP_SERVER_URL}/api`;
-axios.defaults.baseURL = baseURL;
+axios.defaults.baseURL = `${process.env.REACT_APP_SERVER_URL || window.location.origin}/api`;
 
 const AppRoute = ({ children }) => (
   <>
