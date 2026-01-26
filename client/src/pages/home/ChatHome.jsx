@@ -1,10 +1,10 @@
-import './chathome.css';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ChatMenu from '../../components/chatmenu/ChatMenu';
 import ChatBox from '../../components/chatbox/ChatBox';
 import ConfirmModal from '../../components/confimModal/ConfirmModal';
 import { ChatState } from '../../context/ChatProvider';
 import { io } from 'socket.io-client';
+import './chathome.css';
 
 const ChatHome = () => {
     const { user, currentChat, setUser } = ChatState();
@@ -55,7 +55,6 @@ const ChatHome = () => {
                         <ConfirmModal
                             setShowConfirmModal={setShowConfirmModal}
                             setFetchAgain={setFetchAgain}
-                            fetchAgain={fetchAgain}
                         />
                     </div>
                 </div>

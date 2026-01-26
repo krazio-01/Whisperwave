@@ -1,76 +1,122 @@
+import { useState, useCallback, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { CircularProgress } from '@mui/material';
+import { debounce } from 'lodash';
+import 'react-loading-skeleton/dist/skeleton.css';
+import 'react-toastify/dist/ReactToastify.css';
 import './newgroup.css';
-import React, { useState } from 'react';
+import UserListItem from '../miscellaneous/userListItem/UserListItem';
+import UserBadgeItem from '../miscellaneous/userBadgeItem/UserBadgeItem';
+import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton';
+import { ChatState } from '../../context/ChatProvider';
 import backBtnIcon from '../../Assets/images/backBtn.png';
 import doneIcon from '../../Assets/images/next.png';
 import GroupPicture from '../../Assets/images/uploadPicture.png';
-import { ChatState } from '../../context/ChatProvider';
-import UserListItem from '../miscellaneous/userListItem/UserListItem';
-import UserBadgeItem from '../miscellaneous/userBadgeItem/UserBadgeItem';
-import axios from 'axios';
-import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { CircularProgress } from '@mui/material';
 
 const NewGroup = ({ setCurrentUI }) => {
     const [searchLoading, setSearchLoading] = useState(false);
     const [createGroupLoading, setCeateGroupLoading] = useState(false);
+    const [step, setStep] = useState(1);
+
+    const [query, setQuery] = useState('');
     const [searchResult, setSearchResult] = useState([]);
     const [groupChatName, setGroupChatName] = useState('');
     const [selectedUsers, setSelectedUsers] = useState([]);
-    const [doneSelection, setdoneSelection] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
 
     const { user, chats, setChats } = ChatState();
 
-    const handleGroup = (userToAdd) => {
-        if (selectedUsers.includes(userToAdd)) {
+    const performSearch = async (searchTerm) => {
+        if (!searchTerm.trim()) {
+            setSearchResult([]);
+            setSearchLoading(false);
+            return;
+        }
+
+        try {
+            setSearchLoading(true);
+            const config = {
+                headers: { Authorization: `Bearer ${user.authToken}` },
+            };
+            const { data } = await axios.get(`/users?search=${searchTerm}`, config);
+            setSearchResult(data);
+        } catch (error) {
+            console.error("Search failed", error);
+            toast.error("Failed to load search results");
+        } finally {
+            setSearchLoading(false);
+        }
+    };
+
+    const debouncedSearch = useCallback(
+        debounce((nextValue) => performSearch(nextValue), 400),
+        [user.authToken]
+    );
+
+    const handleSearchChange = (e) => {
+        const val = e.target.value;
+        setQuery(val);
+        debouncedSearch(val);
+    };
+
+    useEffect(() => {
+        return () => {
+            debouncedSearch.cancel();
+        };
+    }, [debouncedSearch]);
+
+    useEffect(() => {
+        return () => {
+            if (selectedImage) URL.revokeObjectURL(selectedImage);
+        };
+    }, [selectedImage]);
+
+    const handleGroup = useCallback((userToAdd) => {
+        if (selectedUsers.some((u) => u._id === userToAdd._id)) {
             toast.warning('User already added');
             return;
         }
+        setSelectedUsers((prev) => [...prev, userToAdd]);
+    }, [selectedUsers]);
 
-        setSelectedUsers([...selectedUsers, userToAdd]);
-    };
+    const handleDelete = useCallback((delUser) => {
+        setSelectedUsers((prev) => prev.filter((sel) => sel._id !== delUser._id));
+    }, []);
 
-    const handleDelete = (delUser) => {
-        setSelectedUsers(selectedUsers.filter((sel) => sel._id !== delUser._id));
-    };
-
-    const handleSearch = async (query) => {
-        if (!query)
-            return;
-
-        try {
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${user.authToken}`,
-                },
-            };
-
-            setSearchLoading(true);
-            const { data } = await axios.get(`/users?search=${query}`, config);
-            setSearchResult(data);
-            setSearchLoading(false);
+    const handleFileChange = useCallback((e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+            if (allowedTypes.includes(file.type)) {
+                setSelectedFile(file);
+                setSelectedImage(URL.createObjectURL(file));
+            } else {
+                toast.error("Please select a valid image (JPEG/PNG)!");
+                e.target.value = null;
+            }
         }
-        catch (error) {
-            console.log(error);
-            setSearchLoading(false);
-        }
-    };
+    }, []);
 
-    const handleSubmit = async () => {
-        if (!groupChatName || !selectedUsers) {
+    const handleSubmit = useCallback(async () => {
+        if (!groupChatName.trim()) {
             toast.error("Please Enter Group name");
             return;
         }
+        if (selectedUsers.length < 2) {
+            toast.error("A group must have at least 2 users");
+            return;
+        }
 
         try {
+            setCeateGroupLoading(true);
             const formData = new FormData();
             formData.append('name', groupChatName);
             formData.append('members', JSON.stringify(selectedUsers.map((u) => u._id)));
-            formData.append('groupProfilePic', selectedFile);
+            if (selectedFile) {
+                formData.append('groupProfilePic', selectedFile);
+            }
 
             const config = {
                 headers: {
@@ -79,103 +125,105 @@ const NewGroup = ({ setCurrentUI }) => {
                 },
             };
 
-            setCeateGroupLoading(true);
             const { data } = await axios.post(`/chat/group`, formData, config);
             setChats([data, ...chats]);
             setCurrentUI("chat");
             toast.success("New Group Chat Created!");
+        } catch (error) {
+            toast.error(error?.response?.data || "Failed to Create the Chat!");
+        } finally {
             setCeateGroupLoading(false);
         }
-        catch (error) {
-            console.log(error);
-            toast.error("Failed to Create the Chat!");
-        }
+    }, [groupChatName, selectedUsers, selectedFile, user.authToken, chats, setChats, setCurrentUI]);
+
+    const handleNextStep = () => {
+        if (step === 1) setStep(2);
+        else handleSubmit();
     };
 
-    const handleButtonInput = (e) => {
-        if (!doneSelection)
-            setdoneSelection(!doneSelection);
-        else
-            handleSubmit();
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-            if (allowedTypes.includes(file.type)) {
-                setSelectedFile(file);
-                setSelectedImage(URL.createObjectURL(file));
-            }
-            else {
-                toast.error("Please select an image!");
-                e.target.value = null;
-            }
-        }
-    };
-
-    return (
-        <div className='newGroupChat'>
-            {!doneSelection ? <>
-                <div className="newGroupChatTop">
-                    <div className='Group'>
-                        <img className='backButtonGroup' src={backBtnIcon} alt='Back' onClick={() => { setCurrentUI("chat") }}></img>
-                        <span>Add Members</span>
-                    </div>
-
-                    <div className="searchUserForGroup">
-                        <input
-                            onChange={(e) => handleSearch(e.target.value)}
-                            placeholder='Add people...'
-                            className='chatGroupSearch'
-                        />
-                    </div>
-                    <div className="selectedUsers">
-                        {selectedUsers.map((u) => (
-                            <UserBadgeItem
-                                key={u._id}
-                                user={u}
-                                handleFunction={() => handleDelete(u)}
-                            />
-                        ))}
-                    </div>
+    const renderMemberSelection = () => (
+        <>
+            <div className="newGroupChatTop">
+                <div className='Group'>
+                    <img className='backButtonGroup' src={backBtnIcon} alt='Back' onClick={() => setCurrentUI("chat")} />
+                    <span>Add Members</span>
                 </div>
 
-                <div className="resultGroup">
-                    <div className="output">
-                        {searchLoading ? <ListItemSkeleton count={searchResult.length ? searchResult.length : 1}/> : (searchResult?.slice(0, 4).map((user) => (
+                <div className="searchUserForGroup">
+                    <input
+                        onChange={handleSearchChange}
+                        placeholder='Add people...'
+                        className='chatGroupSearch'
+                        value={query}
+                    />
+                </div>
+                <div className="selectedUsers">
+                    {selectedUsers.map((u) => (
+                        <UserBadgeItem
+                            key={u._id}
+                            user={u}
+                            handleFunction={() => handleDelete(u)}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            <div className="resultGroup">
+                <div className="output">
+                    {searchLoading ? (
+                        <ListItemSkeleton count={3} />
+                    ) : (
+                        searchResult?.slice(0, 4).map((user) => (
                             <UserListItem
                                 key={user._id}
                                 user={user}
                                 handleFunction={() => handleGroup(user)}
                             />
-                        )))}
-                    </div>
+                        ))
+                    )}
                 </div>
-            </> : <div className='createGroupChat'>
+            </div>
+        </>
+    );
 
-                <div className="doneHeader">
-                    <img className='backButtonGroup' src={backBtnIcon} alt='Back' onClick={() => { setdoneSelection(!doneSelection) }}></img>
+    const renderGroupFinalization = () => (
+        <div className='createGroupChat'>
+            <div className="doneHeader">
+                <img className='backButtonGroup' src={backBtnIcon} alt='Back' onClick={() => setStep(1)} />
 
-                    <div className="selectImage">
-                        <input style={{ display: 'none' }} type='file' id='groupPictureId' onChange={handleFileChange} />
-                        <label htmlFor='groupPictureId'>
-                            {selectedImage ? <img src={selectedImage} alt='' /> : <img src={GroupPicture} alt='' />}
-                        </label>
-                    </div>
+                <div className="selectImage">
+                    <input style={{ display: 'none' }} type='file' id='groupPictureId' onChange={handleFileChange} />
+                    <label htmlFor='groupPictureId'>
+                        <img src={selectedImage || GroupPicture} alt='Group Icon' />
+                    </label>
                 </div>
+            </div>
 
-                <div className="searchUserForGroup">
-                    <input className='chatGroupSearch' placeholder='Group Name' onChange={(e) => setGroupChatName(e.target.value)} />
-                </div>
-            </div>}
+            <div className="searchUserForGroup">
+                <input
+                    className='chatGroupSearch'
+                    placeholder='Group Name'
+                    value={groupChatName}
+                    onChange={(e) => setGroupChatName(e.target.value)}
+                />
+            </div>
+        </div>
+    );
+
+    return (
+        <div className='newGroupChat'>
+            {step === 1 ? renderMemberSelection() : renderGroupFinalization()}
+
             <div className="donSelection">
-                <button className='donSelectioBtn' onClick={handleButtonInput}>
-                    {createGroupLoading ? <CircularProgress size={28} color="secondary" /> : <img src={doneIcon} alt='' />}
+                <button className='donSelectioBtn' onClick={handleNextStep} disabled={createGroupLoading}>
+                    {createGroupLoading ?
+                        <CircularProgress size={28} color="secondary" /> :
+                        <img src={doneIcon} alt='Next' />
+                    }
                 </button>
             </div>
         </div>
-    )
+    );
 };
 
-export default NewGroup
+export default NewGroup;
