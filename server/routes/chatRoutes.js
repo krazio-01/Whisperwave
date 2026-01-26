@@ -7,7 +7,8 @@ const {
     createGroupChat,
     renameGroup,
     removeFromGroup,
-    addToGroup } = require("../controllers/chatControllers");
+    addToGroup,
+    leaveGroup } = require("../controllers/chatControllers");
 const multer = require('multer');
 
 const storage = multer.memoryStorage();
@@ -20,7 +21,7 @@ router.route("/newChat").post(protect, newChat);
 router.route("/fetchChats").get(protect, fetchChats);
 
 // delete the chat between two users
-router.route("/deleteChat").post(protect, deleteChat);
+router.route("/deleteChat").delete(protect, deleteChat);
 
 // creating a group chat
 router.route("/group").post(protect, upload.single('groupProfilePic'), createGroupChat);
@@ -30,6 +31,9 @@ router.route("/rename").put(protect, renameGroup);
 
 // removing someone from group
 router.route("/remove").put(protect, removeFromGroup);
+
+// leave the group
+router.route("/leave").put(protect, leaveGroup);
 
 // adding someone to group
 router.route("/add").put(protect, addToGroup);

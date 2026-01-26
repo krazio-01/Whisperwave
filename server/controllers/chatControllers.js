@@ -127,7 +127,7 @@ const createGroupChat = async (req, res) => {
     var users = JSON.parse(req.body.members);
 
     if (users.length < 2)
-        return res.status(400).send("More than 2 users are required to form a group chat");
+        return res.status(400).send("A group must have at least 3 members");
 
     // add the currently logged in user also
     users.push(req.userId);
@@ -192,20 +192,26 @@ const removeFromGroup = async (req, res) => {
 
     try {
         const chat = await Chat.findOne({ _id: chatId });
-        const otherMembers = chat.members.filter(member => member.toString() !== req.userId);
 
-        if (otherMembers.length === 1)
-            return res.status(404).send("Group chat cannote be less than 2 members");
+        if (!chat) return res.status(404).send("Chat Not Found");
 
-        // check if the requester is admin
+        const requesterId = req.userId;
+
+        const isAdmin = chat.groupAdmin.toString() === requesterId.toString();
+        const isSelf = userId === requesterId.toString();
+        if (!isAdmin && !isSelf)
+            return res.status(403).send("Only admins can remove other members");
+
+        const remainingMembers = chat.members.filter(member => member.toString() !== userId);
+
+        if (remainingMembers.length < 2)
+            return res.status(400).send("Group needs 2+ members. Delete the chat instead.");
+
         const removed = await Chat.findByIdAndUpdate(
             chatId,
-            {
-                $pull: { members: userId },
-            },
-            {
-                new: true,
-            }
+            { $pull: { members: userId }, },
+            { new: true, }
+
         )
             .populate("members", "-password")
             .populate("groupAdmin", "-password");
@@ -213,9 +219,45 @@ const removeFromGroup = async (req, res) => {
         if (!removed)
             res.status(404).send("Chat Not Found");
         else
-            res.json(removed);
+            res.json({ message: "User removed successfully", success: true });
     }
     catch (error) {
+        res.status(400).send(error.message);
+    }
+};
+
+const leaveGroup = async (req, res) => {
+    const { chatId, userId } = req.body;
+
+    if (req.userId !== userId)
+        return res.status(403).send("You cannot force another user to leave via this route.");
+
+    try {
+        const chat = await Chat.findOne({ _id: chatId });
+
+        if (!chat) return res.status(404).send("Chat Not Found");
+
+        const isMember = chat.members.some(member => member.toString() === userId.toString());
+        if (!isMember)
+            return res.status(400).send("User is not a member of this group");
+
+        if (chat.members.length === 1) return deleteChat(req, res);
+
+        const updatedChat = await Chat.findByIdAndUpdate(
+            chatId,
+            { $pull: { members: userId }, },
+            { new: true, }
+        )
+            .populate("members", "-password")
+            .populate("groupAdmin", "-password");
+
+        if (chat.groupAdmin.toString() === userId) {
+            updatedChat.groupAdmin = updatedChat.members[0]._id;
+            await updatedChat.save();
+        }
+
+        res.json(updatedChat);
+    } catch (error) {
         res.status(400).send(error.message);
     }
 };
@@ -247,4 +289,4 @@ const addToGroup = async (req, res) => {
     }
 };
 
-module.exports = { newChat, fetchChats, deleteChat, createGroupChat, renameGroup, removeFromGroup, addToGroup };
+module.exports = { newChat, fetchChats, deleteChat, createGroupChat, renameGroup, removeFromGroup, addToGroup, leaveGroup };
