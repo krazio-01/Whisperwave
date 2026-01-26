@@ -1,15 +1,15 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import axios from 'axios';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import { CircularProgress } from '@mui/material';
 import Message from '../message/Message';
 import MoreOption from '../moreOption/MoreOption';
 import ProfileInfo from '../miscellaneous/profileInfo/Profile';
 import FilePreview from '../filePreview/FilePreview';
 import { ChatState } from '../../context/ChatProvider';
 import { getProfilePic, getCurrentChatName } from '../../utils/chatUtils';
-import { CircularProgress } from '@mui/material';
 import './chatbox.css';
 import sendIcon from '../../Assets/images/send.png';
 import emojiPicker from '../../Assets/images/emojiPicker.png';
@@ -17,8 +17,6 @@ import fileSelection from '../../Assets/images/fileSelection.png';
 import previewClose from '../../Assets/images/previewClose.png';
 import BackIcon from '../../Assets/images/back.png';
 import dotsIcon from '../../Assets/images/dots.png';
-
-let selectedChatCompare;
 
 const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => {
     const { setNewMessageCount, currentChat, setCurrentChat, user } = ChatState();
@@ -30,69 +28,61 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const threeDotsRef = useRef(null);
     const imagePreviewRef = useRef(null);
 
+    const currentChatRef = useRef(currentChat);
+    const isTabFocusedRef = useRef(!document.hidden);
+
     const [textareaHeight, setTextareaHeight] = useState('4.5rem');
     const [messages, setMessages] = useState([]);
     const [fetchMessagesLoading, setFetchMessagesLoading] = useState(false);
     const [msgSendLoading, setMsgSendLoading] = useState(false);
     const [newMessages, setNewMessages] = useState('');
     const [isPickerVisible, setIsPickerVisible] = useState(false);
-    const [isUserOnline, setIsUserOnline] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
+
     const [showProfileInfo, setShowProfileInfo] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [showMoreOption, setShowMoreOption] = useState(false);
 
+    const chatUserProfilePic = useMemo(() => getProfilePic(user, currentChat), [user, currentChat]);
+    const userProfilePic = useMemo(() => getProfilePic(user, null), [user]);
+    const currentChatName = useMemo(() => getCurrentChatName(user, currentChat), [user, currentChat]);
+
+    const isUserOnline = useMemo(() => {
+        if (!currentChat || currentChat.isGroupChat) return false;
+        const otherMember = currentChat.members.find(m => m._id !== user._id);
+        return otherMember ? onlineUsers.includes(otherMember._id) : false;
+    }, [onlineUsers, currentChat, user._id]);
+
+    useEffect(() => {
+        currentChatRef.current = currentChat;
+    }, [currentChat]);
+
     const handleInput = useCallback(() => {
         const textarea = inputRef.current;
         if (!textarea) return;
-        textarea.style.height = '4.5rem';
 
-        const scrollHeight = textarea.scrollHeight;
-        const clientHeight = textarea.clientHeight;
+        textarea.style.height = '4.5rem';
+        const { scrollHeight, clientHeight } = textarea;
 
         if (scrollHeight > clientHeight) {
-            textarea.style.height = `${scrollHeight}px`;
-            setTextareaHeight(`${scrollHeight}px`);
+            const newHeight = `${scrollHeight}px`;
+            textarea.style.height = newHeight;
+            setTextareaHeight(newHeight);
         } else {
             setTextareaHeight(`${clientHeight}px`);
         }
     }, []);
 
-    // Memoized handleSubmit function
+    useEffect(() => {
+        handleInput();
+    }, [newMessages, handleInput]);
+
     const handleSubmit = useCallback(async (e) => {
         if (e) e.preventDefault();
+        if (!newMessages.trim() || !currentChat) return;
 
-        if (newMessages.trim().length > 0) {
-            const message = {
-                text: newMessages,
-                chatId: currentChat._id,
-            };
-
-            setMsgSendLoading(true);
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${user.authToken}`,
-                },
-            };
-
-            try {
-                const { data } = await axios.post('/messages', message, config);
-                setMessages((prevMessages) => [...prevMessages, data]);
-                socket.emit('sendMessage', data);
-                setNewMessages('');
-                setMsgSendLoading(false);
-            } catch (err) {
-                console.error(err.message);
-            }
-        }
-    }, [newMessages, currentChat, user.authToken, socket]);
-
-    // Memoized fetchMessages function
-    const fetchMessages = useCallback(async () => {
-        if (!currentChat) return;
-
+        setMsgSendLoading(true);
         try {
             const config = {
                 headers: {
@@ -101,30 +91,64 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                 },
             };
 
-            setFetchMessagesLoading(true);
+            const messagePayload = {
+                text: newMessages,
+                chatId: currentChat._id,
+            };
+
+            const { data } = await axios.post('/messages', messagePayload, config);
+
+            setMessages((prev) => [...prev, data]);
+            socket.emit('sendMessage', data);
+            setNewMessages('');
+            setTextareaHeight('4.5rem');
+        } catch (err) {
+            console.error("Error sending message:", err.message);
+        } finally {
+            setMsgSendLoading(false);
+        }
+    }, [newMessages, currentChat, user.authToken, socket]);
+
+    const fetchMessages = useCallback(async () => {
+        if (!currentChat) return;
+
+        setFetchMessagesLoading(true);
+        try {
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${user.authToken}`,
+                },
+            };
             const { data } = await axios.get(`/messages/${currentChat._id}`, config);
             setMessages(data);
-            setFetchMessagesLoading(false);
-        } catch (error) {
-            console.log(error.message);
-        }
-    }, [currentChat, user.authToken]);
 
-    // Memoized handleEmojiPick function
+            socket.emit("joinChat", currentChat._id);
+            setNewMessageCount((prev) => ({ ...prev, [currentChat._id]: 0 }));
+
+        } catch (error) {
+            console.error("Error fetching messages:", error.message);
+        } finally {
+            setFetchMessagesLoading(false);
+        }
+    }, [currentChat, user.authToken, socket, setNewMessageCount]);
+
     const handleEmojiPick = useCallback((e) => {
         const ref = inputRef.current;
-        ref.focus();
-        const start = newMessages.substring(0, ref.selectionStart);
-        const end = newMessages.substring(ref.selectionStart);
-        const text = start + e.native + end;
-        setNewMessages(text);
-    }, [newMessages]);
+        if (ref) ref.focus();
 
-    // Memoized handleFileChange function
+        setNewMessages(prev => {
+            if (!ref) return prev + e.native;
+            const start = prev.substring(0, ref.selectionStart);
+            const end = prev.substring(ref.selectionStart);
+            return start + e.native + end;
+        });
+    }, []);
+
     const handleFileChange = useCallback((e) => {
-        const file = e.target.files[0];
-        setSelectedFile(file);
-        setShowPreview(true);
+        if (e.target.files && e.target.files[0]) {
+            setSelectedFile(e.target.files[0]);
+            setShowPreview(true);
+        }
     }, []);
 
     const handleKeyDown = (e) => {
@@ -134,226 +158,221 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         }
     };
 
-    // for resetting the height of textArea to normal
-    useEffect(() => {
-        handleInput();
-    }, [newMessages, handleInput]);
-
-    useEffect(() => {
-        socket.on('onlineUsers', (users) => {
-            setOnlineUsers(users);
-        });
-
-        return () => {
-            socket.disconnect();
-        }
-    }, [socket]);
-
-    useEffect(() => {
-        setIsUserOnline(onlineUsers.includes(currentChat?.members.find(m => m._id !== user._id)?._id));
-        // eslint-disable-next-line
-    }, [onlineUsers, currentChat]);
-
+    // --- Effects ---
     useEffect(() => {
         fetchMessages();
-        socket.emit("joinChat", currentChat?._id);
-        selectedChatCompare = currentChat;
-
-        setNewMessageCount((prevCounts) => ({
-            ...prevCounts,
-            [currentChat?._id]: 0,
-        }));
-        // eslint-disable-next-line
-    }, [currentChat]);
+    }, [fetchMessages]);
 
     useEffect(() => {
-        let isTabFocused = true;
+        scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, [messages]);
 
-        socket.on("messageRecieved", (newMessageRecieved) => {
-            if (!selectedChatCompare || selectedChatCompare._id !== newMessageRecieved.chat._id) {
-                setNewMessageCount((prevCounts) => ({
-                    ...prevCounts,
-                    [newMessageRecieved.chat._id]: (prevCounts[newMessageRecieved.chat._id] || 0) + 1,
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleOnlineUsers = (users) => setOnlineUsers(users);
+        socket?.on('onlineUsers', handleOnlineUsers);
+
+        const handleMessageReceived = (newMessageReceived) => {
+            const activeChat = currentChatRef.current;
+
+            if (!activeChat || activeChat._id !== newMessageReceived.chat._id) {
+                setNewMessageCount((prev) => ({
+                    ...prev,
+                    [newMessageReceived.chat._id]: (prev[newMessageReceived.chat._id] || 0) + 1,
                 }));
-            }
-            else {
-                setMessages((prevMessages) => {
-                    if (prevMessages.find((message) => message._id === newMessageRecieved._id)) return prevMessages;
-                    return [...prevMessages, newMessageRecieved];
+            } else {
+                setMessages((prev) => {
+                    if (prev.some((m) => m._id === newMessageReceived._id)) return prev;
+                    return [...prev, newMessageReceived];
                 });
             }
 
-            // Only show the notification if the page is not focused
-            if (!isTabFocused) {
-                if (Notification.permission === "granted") {
-                    new Notification(newMessageRecieved.sender.username, {
-                        body: newMessageRecieved.text
+            if (!isTabFocusedRef.current) {
+                const notify = () => {
+                    new Notification(newMessageReceived.sender.username, {
+                        body: newMessageReceived.text
                     });
-                }
+                };
 
-                else if (Notification.permission !== "denied") {
-                    Notification.requestPermission().then((permission) => {
-                        if (permission === "granted") {
-                            new Notification(newMessageRecieved.sender.username, {
-                                body: newMessageRecieved.text
-                            });
-                        }
+                if (Notification.permission === "granted")
+                    notify();
+                else if (Notification.permission !== "denied")
+                    Notification.requestPermission().then(perm => {
+                        if (perm === "granted") notify();
                     });
-                }
             }
-        });
+        };
 
-        // Function to handle visibility change
+        socket?.on("messageRecieved", handleMessageReceived);
+
+        return () => {
+            socket.off('onlineUsers', handleOnlineUsers);
+            socket.off("messageRecieved", handleMessageReceived);
+        };
+    }, [socket, setNewMessageCount]);
+
+    useEffect(() => {
         const handleVisibilityChange = () => {
-            isTabFocused = !document.hidden;
+            const isVisible = !document.hidden;
+            isTabFocusedRef.current = isVisible;
 
-            // If the tab becomes visible, mark all new messages as read
-            if (!document.hidden) {
-                setNewMessageCount((prevCounts) => ({
-                    ...prevCounts,
-                    [currentChat?._id]: 0,
+            if (isVisible && currentChatRef.current) {
+                setNewMessageCount((prev) => ({
+                    ...prev,
+                    [currentChatRef.current._id]: 0,
                 }));
             }
         };
 
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-
         const handleBeforeUnload = () => {
-            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            if (navigator.serviceWorker?.controller)
                 navigator.serviceWorker.controller.postMessage({ type: "CLEAR_NOTIFICATIONS" });
-            }
         };
 
+        document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("beforeunload", handleBeforeUnload);
 
         return () => {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("beforeunload", handleBeforeUnload);
         };
-        // eslint-disable-next-line
-    }, [socket]);
+    }, [setNewMessageCount]);
 
-    useEffect(() => {
-        scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, [messages]);
+    const renderHeader = () => (
+        <div className="chatBoxTop">
+            <div className='closeConversation'>
+                <img src={BackIcon} alt='Back' onClick={() => setCurrentChat(null)} />
+            </div>
+            <img className='userImg' src={chatUserProfilePic} alt='User' />
+            <div className="userDetails" onClick={() => setShowProfileInfo(!showProfileInfo)}>
+                <span className='userName'>{currentChatName}</span>
+                <div className="status">
+                    {currentChat.isGroupChat ? (
+                        <div className='numberOfMembers'>{currentChat.members.length} Members</div>
+                    ) : (
+                        <div className='statusForPrivasteChats'>
+                            <div className="color" style={{ backgroundColor: isUserOnline ? '#2ecc71' : '#e74c3c' }}></div>
+                            <span className="userStatus">{isUserOnline ? 'Online' : 'Offline'}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
 
-    const chatUserProfilePic = getProfilePic(user, currentChat);
-    const userProfilePic = getProfilePic(user, null);
-    const currentChatName = getCurrentChatName(user, currentChat);
+            <div className="threeDotsContainer">
+                <div className="threeDots" onClick={() => setShowMoreOption(!showMoreOption)}>
+                    <img src={dotsIcon} alt='Dots' />
+                </div>
+                <CSSTransition in={showMoreOption} timeout={250} classNames='moreOptions' unmountOnExit nodeRef={threeDotsRef}>
+                    <div className="moreOptionDropdown" ref={threeDotsRef}>
+                        <MoreOption
+                            fetchAgain={fetchAgain}
+                            setShowConfirmModal={setShowConfirmModal}
+                            setShowMoreOption={setShowMoreOption}
+                            setShowProfileInfo={setShowProfileInfo}
+                            showProfileInfo={showProfileInfo}
+                        />
+                    </div>
+                </CSSTransition>
+            </div>
+        </div>
+    );
+
+    const renderMessages = () => (
+        <div className="messageWrapper">
+            <div className="userMessages">
+                <div className="messages">
+                    {fetchMessagesLoading ? (
+                        <div className='messageLoading'>
+                            <CircularProgress color="primary" />
+                        </div>
+                    ) : (
+                        messages.map((message) => (
+                            <div key={message._id || message.createdAt} ref={scrollRef}>
+                                <Message
+                                    message={message}
+                                    own={message.sender._id === user._id}
+                                    userProfilepic={userProfilePic}
+                                    chatUserProfilePic={chatUserProfilePic}
+                                />
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
+    const renderInputArea = () => (
+        <div className="chatBoxBottom">
+            <div className="chatBoxbottomWrapper">
+                <div className="input">
+                    <img className='emoji' src={emojiPicker} alt='Emoji Picker' onClick={() => setIsPickerVisible(!isPickerVisible)} />
+                    <CSSTransition in={isPickerVisible} timeout={200} classNames='emojiPicker' unmountOnExit nodeRef={pickerRef}>
+                        <div className="emojiPicker" ref={pickerRef}>
+                            <Picker
+                                data={data}
+                                previewPosition='none'
+                                emojiSize={20}
+                                style={{ height: "20px" }}
+                                onEmojiSelect={handleEmojiPick}
+                            />
+                        </div>
+                    </CSSTransition>
+
+                    <textarea
+                        className='chatMessageInput'
+                        placeholder='Message'
+                        onKeyDown={handleKeyDown}
+                        ref={inputRef}
+                        onInput={handleInput}
+                        onChange={(e) => setNewMessages(e.target.value)}
+                        value={newMessages}
+                        style={{ '--textarea-height': textareaHeight }}
+                    />
+
+                    <div>
+                        <input className='file-select' style={{ display: 'none' }} type="file" id="file" onChange={handleFileChange} />
+                        <label htmlFor="file">
+                            <img className='file' src={fileSelection} alt='File Selection' />
+                        </label>
+                        <CSSTransition in={showPreview} timeout={250} classNames='imaageTransition' unmountOnExit nodeRef={imagePreviewRef}>
+                            <div className="imagePreview" ref={imagePreviewRef}>
+                                <FilePreview
+                                    previewClose={previewClose}
+                                    selectedFile={selectedFile}
+                                    setSelectedFile={setSelectedFile}
+                                    setShowPreview={setShowPreview}
+                                    socket={socket}
+                                    sendIcon={sendIcon}
+                                    setMessages={setMessages}
+                                />
+                            </div>
+                        </CSSTransition>
+                    </div>
+                </div>
+
+                <button className='chatSendBtn' onClick={handleSubmit} disabled={msgSendLoading}>
+                    {msgSendLoading ? <CircularProgress size={28} color="primary" /> : <img src={sendIcon} alt='Send' />}
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <div className="main">
             <div className={`chatBoxWrapper ${showProfileInfo ? 'active' : ''}`}>
                 {currentChat ? (
                     <>
-                        <div className="chatBoxTop">
-                            <div className='closeConversation'>
-                                <img src={BackIcon} alt='Back' onClick={() => setCurrentChat(null)} />
-                            </div>
-                            <img className='userImg' src={chatUserProfilePic} alt='User'></img>
-                            <div className="userDetails" onClick={() => setShowProfileInfo(!showProfileInfo)}>
-                                <span className='userName'>{currentChatName}</span>
-                                <div className="status">
-                                    {currentChat.isGroupChat ? <div className='numberOfMembers'>{currentChat.members.length} Members</div> : <>
-                                        <div className='statusForPrivasteChats'>
-                                            <div className="color" style={{ backgroundColor: isUserOnline ? '#2ecc71' : '#e74c3c' }}></div>
-                                            <span className="userStatus">{isUserOnline ? 'Online' : 'Offline'}</span>
-                                        </div>
-                                    </>}
-                                </div>
-                            </div>
-
-                            <div className="threeDotsContainer">
-                                <div className="threeDots" onClick={() => setShowMoreOption(!showMoreOption)}>
-                                    <img src={dotsIcon} alt='Dots' />
-                                </div>
-                                <CSSTransition in={showMoreOption} timeout={250} classNames='moreOptions' unmountOnExit nodeRef={threeDotsRef}>
-                                    <div className="moreOptionDropdown" ref={threeDotsRef}>
-                                        <MoreOption
-                                            fetchAgain={fetchAgain}
-                                            setShowConfirmModal={setShowConfirmModal}
-                                            setShowMoreOption={setShowMoreOption}
-                                            setShowProfileInfo={setShowProfileInfo}
-                                            showProfileInfo={showProfileInfo}
-                                        />
-                                    </div>
-                                </CSSTransition>
-                            </div>
-                        </div>
-
-                        <div className="messageWrapper">
-                            <div className="userMessages">
-                                <div className="messages">
-                                    {fetchMessagesLoading ?
-                                        <div className='messageLoading'>
-                                            <CircularProgress color="primary" />
-                                        </div> :
-                                        (<>
-                                            {messages.map((message) => (
-                                                <div key={message.createdAt} ref={scrollRef}>
-                                                    <Message
-                                                        key={message._id}
-                                                        message={message}
-                                                        own={message.sender._id === user._id}
-                                                        userProfilepic={userProfilePic}
-                                                        chatUserProfilePic={chatUserProfilePic}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </>)}
-                                </div>
-                            </div>
-
-                            <div className="chatBoxBottom">
-                                <div className="chatBoxbottomWrapper">
-                                    <div className="input">
-                                        <img className='emoji' src={emojiPicker} alt='Emoji Picker' onClick={() => setIsPickerVisible(!isPickerVisible)} />
-                                        <CSSTransition in={isPickerVisible} timeout={200} classNames='emojiPicker' unmountOnExit nodeRef={pickerRef} >
-                                            <div className="emojiPicker" ref={pickerRef}>
-                                                <Picker
-                                                    data={data}
-                                                    previewPosition='none'
-                                                    emojiSize={20} style={{ height: "20px" }}
-                                                    onEmojiSelect={handleEmojiPick}
-                                                />
-                                            </div>
-                                        </CSSTransition>
-
-                                        <textarea className='chatMessageInput' placeholder='Message' onKeyDown={handleKeyDown} ref={inputRef} onInput={handleInput} onChange={(e) => { setNewMessages(e.target.value) }} value={newMessages} style={{ '--textarea-height': textareaHeight }} />
-
-                                        <div>
-                                            <input className='file-select' style={{ display: 'none' }} type="file" id="file" onChange={handleFileChange} />
-                                            <label htmlFor="file">
-                                                <img className='file' src={fileSelection} alt='File Selection' />
-                                            </label>
-                                            <CSSTransition in={showPreview} timeout={250} classNames='imaageTransition' unmountOnExit nodeRef={imagePreviewRef}>
-                                                <div className="imagePreview" ref={imagePreviewRef}>
-                                                    <FilePreview
-                                                        previewClose={previewClose}
-                                                        selectedFile={selectedFile}
-                                                        setSelectedFile={setSelectedFile}
-                                                        setShowPreview={setShowPreview}
-                                                        socket={socket}
-                                                        sendIcon={sendIcon}
-                                                        setMessages={setMessages}
-                                                    />
-                                                </div>
-                                            </CSSTransition>
-
-                                        </div>
-                                    </div>
-
-                                    <button className='chatSendBtn' onClick={handleSubmit} disabled={msgSendLoading}>
-                                        {msgSendLoading ? <CircularProgress size={28} color="primary" /> : <img src={sendIcon} alt='Send' />}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        {renderHeader()}
+                        {renderMessages()}
+                        {renderInputArea()}
                     </>
                 ) : (
                     <span className='noConversationText'>Open a conversation to start chat.</span>
                 )}
             </div>
+
             <CSSTransition in={showProfileInfo} timeout={350} classNames='profileInfo' unmountOnExit nodeRef={profileRef}>
                 <div ref={profileRef} className='profileTranisitionDiv'>
                     <ProfileInfo
