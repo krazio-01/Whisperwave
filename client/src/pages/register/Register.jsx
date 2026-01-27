@@ -1,11 +1,11 @@
-import './register.css';
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import avatar from '../../Assets/images/addAvatar.png';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CircularProgress } from '@mui/material';
+import './register.css';
 
 const Register = () => {
     const username = useRef();
@@ -43,10 +43,8 @@ const Register = () => {
             toast.success('A verification email send to your registered email', { autoClose: false });
             setLoading(false);
             navigate('/login');
-        }
-        catch (err) {
-            if (err.response && err.response.data && err.response.data.Error)
-                toast.error(err.response.data.Error);
+        } catch (err) {
+            if (err.response && err.response.data && err.response.data.Error) toast.error(err.response.data.Error);
             setLoading(false);
         }
     };
@@ -54,13 +52,12 @@ const Register = () => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
             if (allowedTypes.includes(file.type)) {
                 setFile(file);
                 setSelectedImage(URL.createObjectURL(file));
-            }
-            else {
-                toast.error("Please select an image!");
+            } else {
+                toast.error('Please select an image!');
                 e.target.value = null;
             }
         }
@@ -69,7 +66,6 @@ const Register = () => {
     return (
         <div className="containerRegister">
             <div className="register-div">
-
                 <div className="regCircle rOne"></div>
                 <div className="regCircle rTwo"></div>
                 <div className="regCircle rThree"></div>
@@ -81,23 +77,43 @@ const Register = () => {
                             <label>WhisperWave</label>
                         </Link>
                     </div>
-                    <span className="title">Register</span>
+                    <span className="title">Create Account</span>
 
-                    <form onSubmit={handleSubmit} className='registerForm'>
-
-                        <div className="uploadAvatar">
-                            <input style={{ display: 'none' }} type="file" id="file" onChange={handleFileChange} accept='image/*' />
+                    <form onSubmit={handleSubmit} className="registerForm">
+                        <div className="uploadAvatar" data-tooltip="Upload Profile Photo">
+                            <input
+                                style={{ display: 'none' }}
+                                type="file"
+                                id="file"
+                                onChange={handleFileChange}
+                                accept="image/*"
+                            />
                             <label className="avatar" htmlFor="file">
-                                {selectedImage ? <img src={selectedImage} style={{ objectFit: 'cover' }} alt='' /> : <img src={avatar} alt='' />}
+                                {selectedImage ? (
+                                    <img src={selectedImage} style={{ objectFit: 'cover' }} alt="" />
+                                ) : (
+                                    <img src={avatar} alt="" />
+                                )}
                             </label>
                         </div>
 
-                        <input className='registerInput' type="text" ref={username} placeholder="Username" />
-                        <input className='registerInput' type="email" ref={email} placeholder="Email" />
-                        <input className='registerInput' type="password" ref={password} minLength="1" placeholder="Password" />
-                        <input className='registerInput' type="password" ref={confirmPass} placeholder="Confirm Password" />
+                        <input className="registerInput" type="text" ref={username} placeholder="Username" />
+                        <input className="registerInput" type="email" ref={email} placeholder="Email" />
+                        <input
+                            className="registerInput"
+                            type="password"
+                            ref={password}
+                            minLength="1"
+                            placeholder="Password"
+                        />
+                        <input
+                            className="registerInput"
+                            type="password"
+                            ref={confirmPass}
+                            placeholder="Confirm Password"
+                        />
 
-                        <button disabled={loading} type="submit" className='customRegBtn regBtn'>
+                        <button disabled={loading} type="submit" className="customRegBtn regBtn">
                             {loading ? <CircularProgress size={28} color="inherit" /> : <span>Register</span>}
                         </button>
                     </form>
@@ -106,7 +122,6 @@ const Register = () => {
                         Already have an account? &nbsp; <Link to="/login">Sign In</Link>
                     </p>
                 </div>
-
             </div>
         </div>
     );
