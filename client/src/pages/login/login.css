@@ -5,7 +5,7 @@
     justify-content: center;
     height: 100svh;
     width: 100%;
-    background: #81ecec;
+    background: linear-gradient(to bottom right, #e0c3fc, #8ec5fc);
 }
 
 .login-div {
@@ -23,9 +23,7 @@
     width: 100px;
     height: 100px;
     border-radius: 100%;
-    background: linear-gradient(314.12deg,
-            rgba(0, 121, 145, 0.33) -38.18%,
-            #1cb5e0 70.18%);
+    background: linear-gradient(314.12deg, rgba(76, 29, 149, 0.33) -38.18%, #8b5cf6 70.18%);
 }
 
 .lOne {
@@ -59,9 +57,12 @@
     justify-content: center;
     width: 42rem;
     padding: 3rem 1rem;
-    background: radial-gradient(81.72% 81.72% at 15.75% 12.31%,
-            rgba(255, 255, 255, 0.49) 0%,
-            rgba(255, 255, 255, 0.07) 100%);
+    background: radial-gradient(
+        81.72% 81.72% at 15.75% 12.31%,
+        rgba(255, 255, 255, 0.49) 0%,
+        rgba(255, 255, 255, 0.07) 100%
+    );
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-sizing: border-box;
     backdrop-filter: blur(12px);
@@ -101,13 +102,13 @@
     padding: 12px;
     border: none;
     background: transparent;
-    border-bottom: 1px solid rgba(0, 0, 0, .3);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
     margin-bottom: 10px;
     outline: none;
 }
 
 .loginBox .loginInput::placeholder {
-    color: rgba(0, 0, 0, .5);
+    color: rgba(0, 0, 0, 0.5);
 }
 
 .loginBox .loginInput[type='file'] {
@@ -125,9 +126,10 @@
     font-weight: 500;
     background: transparent;
     display: inline-block;
-    box-shadow: inset 2px 2px 2px 0px rgba(255, 255, 255, .5),
-        7px 7px 20px 0px rgba(0, 0, 0, .1),
-        4px 4px 5px 0px rgba(0, 0, 0, .1);
+    box-shadow:
+        inset 2px 2px 2px 0px rgba(255, 255, 255, 0.5),
+        7px 7px 20px 0px rgba(0, 0, 0, 0.1),
+        4px 4px 5px 0px rgba(0, 0, 0, 0.1);
     cursor: pointer;
     outline: none;
     transition: all 0.3s ease;
@@ -137,8 +139,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgb(0, 172, 238);
-    background: linear-gradient(0deg, rgba(0, 172, 238, 1) 0%, rgba(2, 126, 251, 1) 100%);
+    background: linear-gradient(0deg, #7c3aed 0%, #a78bfa 100%);
     width: 100%;
     height: 40px;
     line-height: 42px;
@@ -156,10 +157,10 @@
 .loginBtn:before,
 .loginBtn:after {
     position: absolute;
-    content: "";
+    content: '';
     right: 0;
     top: 0;
-    background: rgba(2, 126, 251, 1);
+    background: #7c3aed;
     transition: all 0.3s ease;
 }
 
@@ -187,16 +188,16 @@
 }
 
 .loginBtn span:hover {
-    color: rgba(2, 126, 251, 1);
+    color: #7c3aed;
 }
 
 .loginBtn span:before,
 .loginBtn span:after {
     position: absolute;
-    content: "";
+    content: '';
     left: 0;
     bottom: 0;
-    background: rgba(2, 126, 251, 1);
+    background: #7c3aed;
     transition: all 0.3s ease;
 }
 
@@ -248,7 +249,7 @@
         z-index: 500;
         top: 350px;
     }
-    
+
     .lTwo {
         left: 0;
         top: 22rem;
