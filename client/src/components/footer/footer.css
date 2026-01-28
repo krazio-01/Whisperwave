@@ -47,13 +47,13 @@
     color: #fff;
 }
 
-.socials a i {
+.socials a svg {
     font-size: 3rem;
-    transition: color .4s ease;
+    transition: color 0.4s ease;
 }
 
-.socials a:hover i {
-    color: aqua;
+.socials a:hover svg {
+    color: rgb(255 255 255 / 0.5);
 }
 
 .footer-bottom {
@@ -85,9 +85,9 @@
         font-size: 1.5rem;
     }
 
-    .socials li a img{
+    .socials li a img {
         font-size: 2rem;
-        transition: color .4s ease;
+        transition: color 0.4s ease;
     }
 
     .socials a:hover i {
@@ -111,9 +111,9 @@
         font-size: 1rem;
     }
 
-    .socials li a img{
+    .socials li a img {
         font-size: 2rem;
-        transition: color .4s ease;
+        transition: color 0.4s ease;
     }
 
     .socials a:hover i {
