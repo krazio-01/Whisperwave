@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import './newchat.css';
+import { useState } from 'react';
 import backBtn from '../../Assets/images/backBtn.png';
-import search from "../../Assets/images/search.png";
+import { FaSearch } from "react-icons/fa";
 import axios from 'axios';
 import { ChatState } from '../../context/ChatProvider';
 import { CircularProgress } from '@mui/material';
 import { toast } from 'react-toastify';
+import './newchat.css';
 
 const NewChat = ({ setCurrentUI, handleAddConversation }) => {
     const [searchLoading, setSearchLoading] = useState(false);
@@ -87,7 +87,7 @@ const NewChat = ({ setCurrentUI, handleAddConversation }) => {
                 <img className='backButtonMessage' src={backBtn} alt='Back' onClick={() => { setCurrentUI("chat") }}></img>
 
                 <div className="searchUserForMessage">
-                    <img src={search} alt='Search'></img>
+                    <FaSearch />
                     <input
                         onChange={(e) => setUsername(e.target.value)}
                         placeholder='Enter username to search'
