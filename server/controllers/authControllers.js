@@ -86,12 +86,13 @@ const loginUser = async (req, res) => {
         if (!validPassword)
             return res.status(400).json({ Error: "Invalid credentials!" });
 
+        if (!user.isVerified && user.emailToken !== null)
+            return res.status(400).json({ Error: "Please verify your account first to login" });
+
         res.status(200).json({
             _id: user._id,
             username: user.username,
             email: user.email,
-            isVerified: user.isVerified,
-            emailToken: user.emailToken,
             isAdmin: user.isAdmin,
             profilePicture: user.profilePicture,
             authToken: generateAuthToken(user._id),

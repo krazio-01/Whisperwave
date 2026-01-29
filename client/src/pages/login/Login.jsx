@@ -26,12 +26,6 @@ const Login = () => {
             });
 
             if (response.status === 200) {
-                if (response.data.isVerified === false && response.data.emailToken !== null) {
-                    toast.error('Please verify your account first to login');
-                    setLoading(false);
-                    return;
-                }
-
                 localStorage.setItem('user', JSON.stringify(response.data));
                 toast.success('Login successful!');
                 navigate('/home');
