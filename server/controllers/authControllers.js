@@ -49,17 +49,8 @@ const registerUser = async (req, res) => {
     try {
         const user = await newUser.save();
 
-        if (user) {
-            res.status(200).json({
-                _id: user._id,
-                username: user.username,
-                email: user.email,
-                profilePicture: user.profilePicture,
-                authToken: generateAuthToken(user._id),
-            });
-        }
-        else
-            res.status(400).json({ Error: 'Something went wrong' });
+        if (user) res.status(200).json({ success: true });
+        else res.status(400).json({ Error: 'Something went wrong', success: false });
 
         const to = user.email;
         let subject = null, text = null, html = null;
