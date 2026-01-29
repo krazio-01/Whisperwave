@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { CSSTransition } from 'react-transition-group';
 import NewChat from '../newChat/NewChat';
@@ -12,8 +12,9 @@ import './chatmenu.css';
 import profile from '../../Assets/images/profile.png';
 import logout from '../../Assets/images/logout.png';
 import pen from '../../Assets/images/pen.png';
-import group from '../../Assets/images/group.png';
-import search from "../../Assets/images/search.png";
+import { FaSearch } from "react-icons/fa";
+import { IoPersonAddSharp } from "react-icons/io5";
+import { FaUserGroup } from "react-icons/fa6";
 
 const ChatMenu = ({ socket, fetchAgain }) => {
     const { newMessageCount, setNewMessageCount, setCurrentChat, user, chats, setChats } = ChatState();
@@ -97,7 +98,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                 <>
                     <div className="menu-topbar">
                         <div className="profile">
-                            <img className="profilepic" src={getProfilePic(user, null)} alt="" onClick={() => { setIsDropdownOpen(!isDropdownOpen) }}/>
+                            <img className="profilepic" src={getProfilePic(user, null)} alt="" onClick={() => { setIsDropdownOpen(!isDropdownOpen) }} />
 
                             <CSSTransition in={isDropdownOpen} timeout={250} classNames="dropdown" unmountOnExit nodeRef={dropdownRef}>
                                 <div className="dropdown-menu" ref={dropdownRef}>
@@ -115,7 +116,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                         </div>
 
                         <div className="menu-searchBar">
-                            <img src={search} alt='Search'></img>
+                            <FaSearch />
                             <input placeholder='Search' className='chatMenuSearch' value={searchQuery} onChange={handleSearchInputChange}></input>
                         </div>
                     </div>
@@ -142,11 +143,11 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                         <CSSTransition in={bubbleMenuContainer} timeout={250} classNames="menuContainer" unmountOnExit nodeRef={bubbleMenuRef}>
                             <div className="menuContainer" ref={bubbleMenuRef}>
                                 <button className='menu-item' onClick={() => handleUiChange("message")}>
-                                    <img className="dropdown-item-img" src={profile} alt="Profile" />
+                                    <IoPersonAddSharp />
                                     New Message
                                 </button>
                                 <button className='menu-item' onClick={() => handleUiChange("group")}>
-                                    <img className="dropdown-item-img" src={group} alt="Profile" />
+                                    <FaUserGroup />
                                     New Group
                                 </button>
                             </div>
