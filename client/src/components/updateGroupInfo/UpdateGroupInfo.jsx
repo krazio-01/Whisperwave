@@ -1,5 +1,4 @@
-import React, { useState } from 'react'
-import './updategroupinfo.css';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import UserListItem from '../miscellaneous/userListItem/UserListItem';
 import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton';
@@ -7,15 +6,25 @@ import backBtn from '../../Assets/images/backBtn.png';
 import { ChatState } from '../../context/ChatProvider';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './updategroupinfo.css';
 
 const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAgain, setFetchAgain, fetchMessages }) => {
 
     const { user, currentChat, setCurrentChat } = ChatState();
-    const [groupName, setGroupname] = useState(currentChat.chatName);
+
+    const [groupName, setGroupname] = useState(currentChat?.chatName || "");
+
     const [searchResult, setSearchResult] = useState([]);
     const [updateNameLoading, setUpdateNameLoading] = useState(false);
     const [removeUserLoading, setRemoveUserLoading] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
+
+    useEffect(() => {
+        if (currentChat)
+            setGroupname(currentChat.chatName);
+    }, [currentChat]);
+
+    if (!currentChat) return null;
 
     const handleUpdateName = async () => {
         if (!groupName) return;
@@ -45,17 +54,16 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
             });
             setUpdateNameLoading(false);
         }
-        setGroupname('');
     };
 
     const handleAddUser = async (member) => {
-        if (currentChat.members.find((u) => u._id === member._id))
+        if (currentChat?.members?.find((u) => u._id === member._id))
             return toast.warning('User already in group!', {
                 autoClose: 2000,
                 theme: 'dark',
             });
 
-        if (currentChat.groupAdmin._id !== user._id)
+        if (currentChat?.groupAdmin?._id !== user._id)
             return toast.error('Only admins can add someone!', {
                 autoClose: 2000,
                 theme: 'dark',
@@ -107,16 +115,21 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
                     Authorization: `Bearer ${user.authToken}`,
                 },
             };
-            const { data } = await axios.put(`/chat/remove`,
+
+            await axios.put(`/chat/remove`,
                 {
                     chatId: currentChat._id,
                     userId: member._id,
                 }, config
             );
 
-            member._id === user._id ? setCurrentChat('') : setCurrentChat(data);
+            const updatedMembers = currentChat.members.filter((m) => m._id !== member._id);
+            setCurrentChat({
+                ...currentChat,
+                members: updatedMembers,
+            });
+
             setFetchAgain(!fetchAgain);
-            fetchMessages();
             setRemoveUserLoading(false);
             toast.success(`${member.username} Removed!`, {
                 autoClose: 2000,
@@ -132,7 +145,6 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
             }
             setRemoveUserLoading(false);
         }
-        setGroupname('');
     };
 
     const handleSearch = async (query) => {
@@ -168,6 +180,7 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
                 <span>Rename Group</span>
                 <div className="updateIt">
                     <input
+                        value={groupName} // Controlled input
                         onChange={(e) => setGroupname(e.target.value)}
                         placeholder='Update Name...'
                         className='chatGroupSearch'
@@ -176,7 +189,7 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
                 </div>
             </div>
 
-            {currentChat.groupAdmin._id === user._id ? <>
+            {currentChat?.groupAdmin?._id === user._id ? <>
                 <div className="AddUser">
                     <span>Add Users</span>
                     <input
@@ -196,11 +209,11 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
 
                 <div className='RemoveUser'>
                     <span>Remove Users</span>
-                    {currentChat.members.map((user) => (
-                        user._id !== currentChat.groupAdmin._id &&
+                    {currentChat?.members?.map((member) => (
+                        member._id !== currentChat?.groupAdmin?._id &&
                         <UserListItem
-                            key={user._id}
-                            user={user}
+                            key={member._id}
+                            user={member}
                             showUpdateGroupInfo={showUpdateGroupInfo}
                             handleRemoveUser={handleRemoveUser}
                             removeUserLoading={removeUserLoading}

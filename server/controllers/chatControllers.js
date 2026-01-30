@@ -38,29 +38,44 @@ const fetchChats = async (req, res) => {
     try {
         const userId = req.userId;
 
-        // Fetch all the chats for the user
         const chats = await Chat.find({ members: userId })
-            .populate("members", "-password")
-            .populate("groupAdmin", "-password")
+            .populate("members", "-password -emailToken -__v -createdAt -updatedAt")
+            .populate("groupAdmin", "username _id")
             .populate("lastMessage")
             .sort({ updatedAt: -1 });
 
         const populatedChats = await User.populate(chats, {
             path: "lastMessage.sender",
-            select: "username email profilePicture",
+            select: "username profilePicture",
         });
 
-        // Fetch the unseen message counts for the user's chats
-        const unseenMessageCounts = {};
-        for (const chat of populatedChats) {
-            const chatId = chat._id.toString();
-            const count = chat.unseenMessageCounts.get(userId.toString()) || 0;
-            unseenMessageCounts[chatId] = count;
-        }
+        const secureChats = populatedChats.map(chat => {
+            const chatObj = chat.toObject();
 
-        res.json({ chats: populatedChats, unseenMessageCounts });
+            chatObj.members = chatObj.members.map(member => ({
+                _id: member._id,
+                username: member.username,
+                profilePicture: member.profilePicture,
+            }));
+
+            const count = chat.unseenMessageCounts ? (chat.unseenMessageCounts.get(userId.toString()) || 0) : 0;
+
+            return {
+                _id: chatObj._id,
+                chatName: chatObj.chatName,
+                isGroupChat: chatObj.isGroupChat,
+                groupProfilePic: chatObj.groupProfilePic,
+                members: chatObj.members,
+                groupAdmin: chatObj.groupAdmin,
+                lastMessage: chatObj.lastMessage,
+                unseenCount: count
+            };
+        });
+
+        res.status(200).json(secureChats);
     }
     catch (error) {
+        console.error(error);
         res.status(400).send(error.message);
     }
 };
@@ -211,10 +226,7 @@ const removeFromGroup = async (req, res) => {
             chatId,
             { $pull: { members: userId }, },
             { new: true, }
-
         )
-            .populate("members", "-password")
-            .populate("groupAdmin", "-password");
 
         if (!removed)
             res.status(404).send("Chat Not Found");

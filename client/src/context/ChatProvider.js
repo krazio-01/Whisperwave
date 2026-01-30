@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const ChatContext = createContext();
@@ -10,8 +10,6 @@ const ChatProvider = ({ children }) => {
     const [user, setUser] = useState();
     // state for chats
     const [chats, setChats] = useState([]);
-    // state for storing a count for new messages
-    const [newMessageCount, setNewMessageCount] = useState({});
 
     const navigate = useNavigate();
 
@@ -20,10 +18,8 @@ const ChatProvider = ({ children }) => {
         const user = JSON.parse(localStorage.getItem("user"));
         setUser(user);
 
-        if (user)
-            navigate("/home");
-        else
-            navigate("/");
+        if (user) navigate("/home");
+        else navigate("/");
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -36,8 +32,6 @@ const ChatProvider = ({ children }) => {
                 setUser,
                 chats,
                 setChats,
-                newMessageCount,
-                setNewMessageCount,
             }}
         >
             {children}

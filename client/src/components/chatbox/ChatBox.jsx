@@ -19,7 +19,7 @@ import BackIcon from '../../Assets/images/back.png';
 import dotsIcon from '../../Assets/images/dots.png';
 
 const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => {
-    const { setNewMessageCount, currentChat, setCurrentChat, user } = ChatState();
+    const { currentChat, setCurrentChat, user } = ChatState();
 
     const inputRef = useRef(null);
     const scrollRef = useRef();
@@ -29,7 +29,6 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const imagePreviewRef = useRef(null);
 
     const currentChatRef = useRef(currentChat);
-    const isTabFocusedRef = useRef(!document.hidden);
 
     const [textareaHeight, setTextareaHeight] = useState('4.5rem');
     const [messages, setMessages] = useState([]);
@@ -49,14 +48,19 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const currentChatName = useMemo(() => getCurrentChatName(user, currentChat), [user, currentChat]);
 
     const isUserOnline = useMemo(() => {
-        if (!currentChat || currentChat.isGroupChat) return false;
-        const otherMember = currentChat.members.find(m => m._id !== user._id);
-        return otherMember ? onlineUsers.includes(otherMember._id) : false;
-    }, [onlineUsers, currentChat, user._id]);
+        if (!currentChat || currentChat?.isGroupChat) return false;
+        const otherMember = currentChat?.members?.find(m => m?._id !== user?._id);
+        return otherMember ? onlineUsers.includes(otherMember?._id) : false;
+    }, [onlineUsers, currentChat, user?._id]);
 
     useEffect(() => {
         currentChatRef.current = currentChat;
     }, [currentChat]);
+
+    useEffect(() => {
+        if (Notification.permission !== "granted" && Notification.permission !== "denied")
+            Notification.requestPermission();
+    }, []);
 
     const handleInput = useCallback(() => {
         const textarea = inputRef.current;
@@ -121,16 +125,13 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             };
             const { data } = await axios.get(`/messages/${currentChat._id}`, config);
             setMessages(data);
-
             socket.emit("joinChat", currentChat._id);
-            setNewMessageCount((prev) => ({ ...prev, [currentChat._id]: 0 }));
-
         } catch (error) {
             console.error("Error fetching messages:", error.message);
         } finally {
             setFetchMessagesLoading(false);
         }
-    }, [currentChat, user.authToken, socket, setNewMessageCount]);
+    }, [currentChat, user.authToken, socket]);
 
     const handleEmojiPick = useCallback((e) => {
         const ref = inputRef.current;
@@ -171,73 +172,35 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         if (!socket) return;
 
         const handleOnlineUsers = (users) => setOnlineUsers(users);
-        socket?.on('onlineUsers', handleOnlineUsers);
+        socket.on('onlineUsers', handleOnlineUsers);
 
         const handleMessageReceived = (newMessageReceived) => {
             const activeChat = currentChatRef.current;
 
-            if (!activeChat || activeChat._id !== newMessageReceived.chat._id) {
-                setNewMessageCount((prev) => ({
-                    ...prev,
-                    [newMessageReceived.chat._id]: (prev[newMessageReceived.chat._id] || 0) + 1,
-                }));
-            } else {
+            if (activeChat && activeChat._id === newMessageReceived.chat._id) {
                 setMessages((prev) => {
                     if (prev.some((m) => m._id === newMessageReceived._id)) return prev;
                     return [...prev, newMessageReceived];
                 });
             }
 
-            if (!isTabFocusedRef.current) {
-                const notify = () => {
+            if (!document.hasFocus() && Notification.permission === "granted") {
+                if (newMessageReceived.sender._id !== user._id) {
                     new Notification(newMessageReceived.sender.username, {
-                        body: newMessageReceived.text
+                        body: newMessageReceived.text || "Message Recieved",
+                        icon: getProfilePic(newMessageReceived.sender, null),
                     });
-                };
-
-                if (Notification.permission === "granted")
-                    notify();
-                else if (Notification.permission !== "denied")
-                    Notification.requestPermission().then(perm => {
-                        if (perm === "granted") notify();
-                    });
+                }
             }
         };
 
-        socket?.on("messageRecieved", handleMessageReceived);
+        socket.on("messageRecieved", handleMessageReceived);
 
         return () => {
             socket.off('onlineUsers', handleOnlineUsers);
             socket.off("messageRecieved", handleMessageReceived);
         };
-    }, [socket, setNewMessageCount]);
-
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            const isVisible = !document.hidden;
-            isTabFocusedRef.current = isVisible;
-
-            if (isVisible && currentChatRef.current) {
-                setNewMessageCount((prev) => ({
-                    ...prev,
-                    [currentChatRef.current._id]: 0,
-                }));
-            }
-        };
-
-        const handleBeforeUnload = () => {
-            if (navigator.serviceWorker?.controller)
-                navigator.serviceWorker.controller.postMessage({ type: "CLEAR_NOTIFICATIONS" });
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        window.addEventListener("beforeunload", handleBeforeUnload);
-
-        return () => {
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-        };
-    }, [setNewMessageCount]);
+    }, [socket, user._id]);
 
     const renderHeader = () => (
         <div className="chatBoxTop">

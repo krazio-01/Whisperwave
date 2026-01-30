@@ -4,7 +4,6 @@ import { CSSTransition } from 'react-transition-group';
 import NewChat from '../newChat/NewChat';
 import NewGroup from '../newGroupChat/NewGroup';
 import Conversation from '../conversations/Conversation';
-import ProfileInfo from '../miscellaneous/profileInfo/Profile';
 import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton';
 import { ChatState } from '../../context/ChatProvider';
 import { getProfilePic } from '../../utils/chatUtils';
@@ -17,7 +16,7 @@ import { IoPersonAddSharp } from "react-icons/io5";
 import { FaUserGroup } from "react-icons/fa6";
 
 const ChatMenu = ({ socket, fetchAgain }) => {
-    const { newMessageCount, setNewMessageCount, setCurrentChat, user, chats, setChats } = ChatState();
+    const { user, chats, setChats, currentChat, setCurrentChat } = ChatState();
 
     const dropdownRef = useRef(null);
     const bubbleMenuRef = useRef(null);
@@ -34,12 +33,14 @@ const ChatMenu = ({ socket, fetchAgain }) => {
         const { value } = event.target;
         setSearchQuery(value);
 
+        if (!loggedUser) return;
+
         const filteredUsers = chats.filter((chat) => {
             if (chat.isGroupChat)
                 return chat.chatName.toLowerCase().includes(value.toLowerCase());
             else {
                 const otherMember = chat.members.find((member) => member._id !== loggedUser._id);
-                return otherMember.username.toLowerCase().includes(value.toLowerCase());
+                return otherMember ? otherMember.username.toLowerCase().includes(value.toLowerCase()) : false;
             }
         });
         setFilteredUsers(filteredUsers);
@@ -47,7 +48,6 @@ const ChatMenu = ({ socket, fetchAgain }) => {
 
     const chatList = searchQuery.trim() === '' ? chats : filteredUsers;
 
-    // Logout logic
     const handleLogout = () => {
         setIsDropdownOpen(false);
         setCurrentUI("chat");
@@ -55,7 +55,6 @@ const ChatMenu = ({ socket, fetchAgain }) => {
         window.location.href = '/';
     };
 
-    // get the conversation data
     const fetchChats = async () => {
         try {
             setLoading(true);
@@ -65,8 +64,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                 },
             };
             const { data } = await axios.get("/chat/fetchChats", config);
-            setChats(data.chats);
-            setNewMessageCount(data.unseenMessageCounts);
+            setChats(data);
             setLoading(false);
         } catch (error) {
             console.error("Error fetching chats:", error);
@@ -80,8 +78,42 @@ const ChatMenu = ({ socket, fetchAgain }) => {
         // eslint-disable-next-line
     }, [fetchAgain]);
 
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleMessageReceived = (newMessageRecieved) => {
+            setChats((prevChats) => {
+                const chatIndex = prevChats.findIndex(
+                    (c) => c._id === newMessageRecieved.chat._id
+                );
+
+                if (chatIndex === -1) return prevChats;
+
+                const chatToUpdate = prevChats[chatIndex];
+                const isChatOpen = currentChat && currentChat._id === chatToUpdate._id;
+                const newCount = isChatOpen ? 0 : (chatToUpdate.unseenCount || 0) + 1;
+
+                const updatedChat = {
+                    ...chatToUpdate,
+                    lastMessage: newMessageRecieved,
+                    unseenCount: newCount,
+                    updatedAt: new Date().toISOString()
+                };
+
+                const otherChats = prevChats.filter((c) => c._id !== chatToUpdate._id);
+                return [updatedChat, ...otherChats];
+            });
+        };
+
+        socket.on("messageRecieved", handleMessageReceived);
+
+        return () => {
+            socket.off("messageRecieved", handleMessageReceived);
+        };
+    }, [socket, currentChat, setChats]);
+
     const handleAddConversation = (newChat) => {
-        setChats((prevChat) => [...prevChat, newChat]);
+        setChats((prevChat) => [newChat, ...prevChat]);
     };
 
     const handleUiChange = (uiName) => {
@@ -90,6 +122,13 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             setIsDropdownOpen(!isDropdownOpen);
         else
             setBubbleMenuContainer(!bubbleMenuContainer);
+    };
+
+    const handleChatClick = (chat) => {
+        setCurrentChat(chat);
+        setChats(prev => prev.map(c =>
+            c._id === chat._id ? { ...c, unseenCount: 0 } : c
+        ));
     };
 
     return (
@@ -123,14 +162,11 @@ const ChatMenu = ({ socket, fetchAgain }) => {
 
                     <div className="chats">
                         {chatList.map((chat) => (
-                            <div key={chat._id} onClick={() => setCurrentChat(chat)}>
+                            <div key={chat._id} onClick={() => handleChatClick(chat)}>
                                 {loading ? <ListItemSkeleton /> :
                                     <Conversation
-                                        socket={socket}
                                         loggedUser={loggedUser}
                                         chat={chat}
-                                        newMessageCount={newMessageCount[chat._id] || 0}
-                                        setNewMessageCount={setNewMessageCount}
                                     />}
                             </div>
                         ))}
@@ -144,11 +180,11 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                             <div className="menuContainer" ref={bubbleMenuRef}>
                                 <button className='menu-item' onClick={() => handleUiChange("message")}>
                                     <IoPersonAddSharp />
-                                    New Message
+                                    New Contact
                                 </button>
                                 <button className='menu-item' onClick={() => handleUiChange("group")}>
                                     <FaUserGroup />
-                                    New Group
+                                    Create New Group
                                 </button>
                             </div>
                         </CSSTransition>
