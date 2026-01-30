@@ -2,10 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { CircularProgress } from '@mui/material';
-import { debounce } from 'lodash';
 import 'react-loading-skeleton/dist/skeleton.css';
 import 'react-toastify/dist/ReactToastify.css';
-import './newgroup.css';
 import UserListItem from '../miscellaneous/userListItem/UserListItem';
 import UserBadgeItem from '../miscellaneous/userBadgeItem/UserBadgeItem';
 import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton';
@@ -13,14 +11,14 @@ import { ChatState } from '../../context/ChatProvider';
 import backBtnIcon from '../../Assets/images/backBtn.png';
 import doneIcon from '../../Assets/images/next.png';
 import GroupPicture from '../../Assets/images/uploadPicture.png';
+import './newgroup.css';
 
 const NewGroup = ({ setCurrentUI }) => {
-    const [searchLoading, setSearchLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(false);
     const [createGroupLoading, setCeateGroupLoading] = useState(false);
     const [step, setStep] = useState(1);
-
-    const [query, setQuery] = useState('');
-    const [searchResult, setSearchResult] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
+    const [associatedUsers, setAssociatedUsers] = useState([]);
     const [groupChatName, setGroupChatName] = useState('');
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -28,44 +26,31 @@ const NewGroup = ({ setCurrentUI }) => {
 
     const { user, chats, setChats } = ChatState();
 
-    const performSearch = async (searchTerm) => {
-        if (!searchTerm.trim()) {
-            setSearchResult([]);
-            setSearchLoading(false);
-            return;
-        }
-
-        try {
-            setSearchLoading(true);
-            const config = {
-                headers: { Authorization: `Bearer ${user.authToken}` },
-            };
-            const { data } = await axios.get(`/users?search=${searchTerm}`, config);
-            setSearchResult(data);
-        } catch (error) {
-            console.error("Search failed", error);
-            toast.error("Failed to load search results");
-        } finally {
-            setSearchLoading(false);
-        }
-    };
-
-    const debouncedSearch = useCallback(
-        debounce((nextValue) => performSearch(nextValue), 400),
-        [user.authToken]
-    );
-
-    const handleSearchChange = (e) => {
-        const val = e.target.value;
-        setQuery(val);
-        debouncedSearch(val);
-    };
-
     useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
+        const fetchAssociatedUsers = async () => {
+            if (!user) return;
+            setInitialLoading(true);
+
+            try {
+                const config = {
+                    headers: {
+                        Authorization: `Bearer ${user.authToken}`,
+                    },
+                };
+
+                const { data } = await axios.get("/users/associated", config);
+                setAssociatedUsers(data);
+                setFilteredUsers(data);
+            } catch (error) {
+                toast.error(error?.response?.data || "Failed to load");
+            } finally {
+                setInitialLoading(false);
+            }
         };
-    }, [debouncedSearch]);
+
+        fetchAssociatedUsers();
+
+    }, [user]);
 
     useEffect(() => {
         return () => {
@@ -136,6 +121,18 @@ const NewGroup = ({ setCurrentUI }) => {
         }
     }, [groupChatName, selectedUsers, selectedFile, user.authToken, chats, setChats, setCurrentUI]);
 
+    const handleSearchChange = (e) => {
+        const val = e.target.value;
+
+        if (!val) setFilteredUsers(associatedUsers);
+        else {
+            const matches = associatedUsers.filter((u) =>
+                u.username.toLowerCase().includes(val.toLowerCase())
+            );
+            setFilteredUsers(matches);
+        }
+    };
+
     const handleNextStep = () => {
         if (step === 1) setStep(2);
         else handleSubmit();
@@ -154,7 +151,6 @@ const NewGroup = ({ setCurrentUI }) => {
                         onChange={handleSearchChange}
                         placeholder='Add people...'
                         className='chatGroupSearch'
-                        value={query}
                     />
                 </div>
                 <div className="selectedUsers">
@@ -170,10 +166,10 @@ const NewGroup = ({ setCurrentUI }) => {
 
             <div className="resultGroup">
                 <div className="output">
-                    {searchLoading ? (
-                        <ListItemSkeleton count={3} />
+                    {initialLoading ? (
+                        <ListItemSkeleton count={8} />
                     ) : (
-                        searchResult?.slice(0, 4).map((user) => (
+                        filteredUsers?.map((user) => (
                             <UserListItem
                                 key={user._id}
                                 user={user}

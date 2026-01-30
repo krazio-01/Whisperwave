@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ChatState } from '../../../context/ChatProvider';
 import UpdateGroupInfo from '../../updateGroupInfo/UpdateGroupInfo';
 import { getProfilePic } from '../../../utils/chatUtils';
@@ -7,7 +7,7 @@ import backBtn from '../../../Assets/images/backBtn.png';
 import UserListItem from '../userListItem/UserListItem';
 import EditIcon from '../../../Assets/images/edit.png'
 
-const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchMessages, fetchAgain, setFetchAgain }) => {
+const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchAgain, setFetchAgain }) => {
 
     const { user, currentChat } = ChatState();
     const [showUpdateGroupInfo, setShowUpdateGroupInfo] = useState(false);
@@ -69,7 +69,6 @@ const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchMess
                     </> : <UpdateGroupInfo
                         showUpdateGroupInfo={showUpdateGroupInfo}
                         setShowUpdateGroupInfo={setShowUpdateGroupInfo}
-                        fetchMessages={fetchMessages}
                         fetchAgain={fetchAgain}
                         setFetchAgain={setFetchAgain}
                     />}

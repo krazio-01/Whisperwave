@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import './userlistitem.css';
+import { useState } from 'react';
 import RemoveIcon from '../../../Assets/images/closeMinimilistic.png';
 import { getProfilePic } from '../../../utils/chatUtils';
 import { CircularProgress } from '@mui/material';
+import './userlistitem.css';
 
 const UserListItem = ({ user, handleFunction, showUpdateGroupInfo, handleRemoveUser, groupAdmin }) => {
 
@@ -15,10 +15,11 @@ const UserListItem = ({ user, handleFunction, showUpdateGroupInfo, handleRemoveU
     };
 
     const isAdmin = user.username === groupAdmin;
+    const userProfilePic = getProfilePic(user, null);
 
     return (
         <div className="fetchedUser" onClick={handleFunction}>
-            <img className='fetchedUserProfilePic' src={getProfilePic(user, null)} alt='Profile' />
+            <img className='fetchedUserProfilePic' src={userProfilePic} alt='Profile' />
             <span className='fetchedUserUsername'>{user.username}</span>
 
             {isAdmin && <span className='isAdmin'>Admin</span>}

@@ -8,23 +8,50 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './updategroupinfo.css';
 
-const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAgain, setFetchAgain, fetchMessages }) => {
+const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAgain, setFetchAgain }) => {
 
     const { user, currentChat, setCurrentChat } = ChatState();
 
     const [groupName, setGroupname] = useState(currentChat?.chatName || "");
-
-    const [searchResult, setSearchResult] = useState([]);
+    const [associatedUsers, setAssociatedUsers] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
     const [updateNameLoading, setUpdateNameLoading] = useState(false);
     const [removeUserLoading, setRemoveUserLoading] = useState(false);
-    const [searchLoading, setSearchLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (currentChat)
             setGroupname(currentChat.chatName);
     }, [currentChat]);
 
+    useEffect(() => {
+        const fetchAssociatedUsers = async () => {
+            if (!user) return;
+            setLoading(true);
+
+            try {
+                const config = {
+                    headers: {
+                        Authorization: `Bearer ${user.authToken}`,
+                    },
+                };
+
+                const { data } = await axios.get("/users/associated", config);
+                setAssociatedUsers(data);
+                setFilteredUsers(data);
+            } catch (error) {
+                toast.error(error?.response?.data || "Failed to load");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAssociatedUsers();
+
+    }, [user]);
+
     if (!currentChat) return null;
+
 
     const handleUpdateName = async () => {
         if (!groupName) return;
@@ -70,7 +97,7 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
             });
 
         try {
-            setSearchLoading(true);
+            setLoading(true);
             const config = {
                 headers: {
                     Authorization: `Bearer ${user.authToken}`,
@@ -86,7 +113,7 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
 
             setCurrentChat(data);
             setFetchAgain(!fetchAgain);
-            setSearchLoading(false);
+            setLoading(false);
             toast.success(`${member.username} Added`, {
                 autoClose: 2000,
                 theme: 'dark',
@@ -97,7 +124,7 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
                 autoClose: 2000,
                 theme: 'dark',
             });
-            setSearchLoading(false);
+            setLoading(false);
         }
     };
 
@@ -147,24 +174,15 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
         }
     };
 
-    const handleSearch = async (query) => {
-        if (!query)
-            return;
+    const handleSearchChange = (e) => {
+        const val = e.target.value;
 
-        try {
-            setSearchLoading(true);
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${user.authToken}`,
-                },
-            };
-            const { data } = await axios.get(`/users?search=${query}`, config);
-            setSearchResult(data);
-            setSearchLoading(false);
-        }
-        catch (error) {
-            console.log(error);
-            setSearchLoading(false);
+        if (!val) setFilteredUsers(associatedUsers);
+        else {
+            const matches = associatedUsers.filter((u) =>
+                u.username.toLowerCase().includes(val.toLowerCase())
+            );
+            setFilteredUsers(matches);
         }
     };
 
@@ -193,12 +211,12 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
                 <div className="AddUser">
                     <span>Add Users</span>
                     <input
-                        onChange={(e) => handleSearch(e.target.value)}
+                        onChange={(e) => handleSearchChange(e)}
                         placeholder='Add Users...'
                         className='chatGroupSearch'
                     />
-                    {searchLoading ? <ListItemSkeleton count={searchResult.length ? searchResult.length : 1} /> :
-                        (searchResult?.slice(0, 4).map((user) => (
+                    {loading ? <ListItemSkeleton count={4} /> :
+                        (filteredUsers?.map((user) => (
                             <UserListItem
                                 key={user._id}
                                 user={user}

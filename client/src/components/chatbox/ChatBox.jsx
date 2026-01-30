@@ -340,7 +340,6 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                 <div ref={profileRef} className='profileTranisitionDiv'>
                     <ProfileInfo
                         setShowProfileInfo={setShowProfileInfo}
-                        fetchMessages={fetchMessages}
                         fetchAgain={fetchAgain}
                         setFetchAgain={setFetchAgain}
                     />

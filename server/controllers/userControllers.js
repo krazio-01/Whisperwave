@@ -17,40 +17,28 @@ const searchUser = async (req, res) => {
     }
 };
 
-// /api/users?search=farhat
-const allUsers = async (req, res) => {
+// fetch the users which are associated with loggedin user
+const fetchAllAssociatedUsers = async (req, res) => {
     try {
-        const keyword = req.query.search
-            ? {
-                $or: [
-                    { username: { $regex: req.query.search, $options: "i" } },
-                    { email: { $regex: req.query.search, $options: "i" } },
-                ],
-            }
-            : {};
+        const currentUserId = req.userId;
 
-        const userChats = await Chat.find({ members: { $elemMatch: { $eq: req.userId } } });
-        const userIDs = userChats.reduce((ids, chat) => {
-            if (!chat.isGroupChat && chat.members.length === 2) {
-                const otherMember = chat.members.find(memberId => memberId.toString() !== req.userId);
-                if (otherMember) ids.push(otherMember);
-            }
-            return ids;
+        const chats = await Chat.find({ members: currentUserId }).select("members");
+
+        const allMemberIds = chats.reduce((acc, chat) => {
+            return acc.concat(chat.members);
         }, []);
 
-        const users = await User.find({
-            $and: [
-                keyword,
-                { _id: { $ne: req.userId } },
-                { _id: { $in: userIDs } },
-            ],
-        });
+        const uniqueMemberIds = [...new Set(allMemberIds.map(id => id.toString()))]
+            .filter(id => id !== currentUserId);
 
-        res.send(users);
+        const associatedUsers = await User.find({ _id: { $in: uniqueMemberIds } })
+            .select("_id username profilePicture email");
+
+        res.status(200).json(associatedUsers);
     }
     catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(400).send(error.message);
     }
 };
 
-module.exports = { allUsers, searchUser };
+module.exports = { searchUser, fetchAllAssociatedUsers };
