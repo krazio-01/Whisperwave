@@ -12,25 +12,20 @@ const newChat = async (req, res) => {
         isGroupChat: false,
     });
 
-    if (isChatExist)
-        return res.status(400).send("You are already part of this chat");
+    if (isChatExist) return res.status(400).send('You are already part of this chat');
 
     const newChat = new Chat({
-        chatName: "chat",
+        chatName: 'chat',
         isGroupChat: false,
         members: [senderId, selectedReceiverId],
     });
 
     try {
         const savedChat = await newChat.save();
-        const FullChat = await Chat.findOne({ _id: savedChat._id }).populate(
-            "members",
-            "-password"
-        );
+        const FullChat = await Chat.findOne({ _id: savedChat._id }).populate('members', '-password');
         res.status(200).json(FullChat);
-    }
-    catch (err) {
-        res.status(500).send("Internal Server Error");
+    } catch (err) {
+        res.status(500).send('Internal Server Error');
     }
 };
 
@@ -39,26 +34,26 @@ const fetchChats = async (req, res) => {
         const userId = req.userId;
 
         const chats = await Chat.find({ members: userId })
-            .populate("members", "-password -emailToken -__v -createdAt -updatedAt")
-            .populate("groupAdmin", "username _id")
-            .populate("lastMessage")
+            .populate('members', '-password -emailToken -__v -createdAt -updatedAt')
+            .populate('groupAdmin', 'username _id')
+            .populate('lastMessage')
             .sort({ updatedAt: -1 });
 
         const populatedChats = await User.populate(chats, {
-            path: "lastMessage.sender",
-            select: "username profilePicture",
+            path: 'lastMessage.sender',
+            select: 'username profilePicture',
         });
 
-        const secureChats = populatedChats.map(chat => {
+        const secureChats = populatedChats.map((chat) => {
             const chatObj = chat.toObject();
 
-            chatObj.members = chatObj.members.map(member => ({
+            chatObj.members = chatObj.members.map((member) => ({
                 _id: member._id,
                 username: member.username,
                 profilePicture: member.profilePicture,
             }));
 
-            const count = chat.unseenMessageCounts ? (chat.unseenMessageCounts.get(userId.toString()) || 0) : 0;
+            const count = chat.unseenMessageCounts ? chat.unseenMessageCounts.get(userId.toString()) || 0 : 0;
 
             return {
                 _id: chatObj._id,
@@ -68,13 +63,12 @@ const fetchChats = async (req, res) => {
                 members: chatObj.members,
                 groupAdmin: chatObj.groupAdmin,
                 lastMessage: chatObj.lastMessage,
-                unseenCount: count
+                unseenCount: count,
             };
         });
 
         res.status(200).json(secureChats);
-    }
-    catch (error) {
+    } catch (error) {
         console.error(error);
         res.status(400).send(error.message);
     }
@@ -86,15 +80,14 @@ const deleteChat = async (req, res) => {
     try {
         const chat = await Chat.findOne({
             _id: chatId,
-            members: { $in: [req.userId] }
+            members: { $in: [req.userId] },
         });
 
-        if (!chat)
-            return res.status(404).json({ message: "Chat not found or you are not a member of this chat." });
+        if (!chat) return res.status(404).json({ message: 'Chat not found or you are not a member of this chat.' });
 
         if (chat.isGroupChat) {
             if (chat.groupAdmin.toString() === req.userId) {
-                const remainingMembers = chat.members.filter(member => member.toString() !== req.userId);
+                const remainingMembers = chat.members.filter((member) => member.toString() !== req.userId);
                 if (remainingMembers.length > 0) {
                     const newAdminIndex = Math.floor(Math.random() * remainingMembers.length);
                     const newAdminId = remainingMembers[newAdminIndex].toString();
@@ -103,56 +96,50 @@ const deleteChat = async (req, res) => {
                 }
             }
 
-            await Chat.findByIdAndUpdate(
-                chatId, { $pull: { members: req.userId } }
-            );
-        }
-        else {
-            const otherUserId = chat.members.find(member => member.toString() !== req.userId);
+            await Chat.findByIdAndUpdate(chatId, { $pull: { members: req.userId } });
+        } else {
+            const otherUserId = chat.members.find((member) => member.toString() !== req.userId);
             await Chat.deleteMany({
-                $or: [
-                    { members: [req.userId, otherUserId] },
-                    { members: [otherUserId, req.userId] }
-                ]
+                $or: [{ members: [req.userId, otherUserId] }, { members: [otherUserId, req.userId] }],
             });
         }
 
         // find and delete images in chat as well
         const messagesWithImages = await Message.find({ chat: chatId, image: { $exists: true, $ne: '' } });
-        const imageUrls = messagesWithImages.map(message => message.image);
+        const imageUrls = messagesWithImages.map((message) => message.image);
 
-        await Promise.all(imageUrls.map(async imageUrl => {
-            const Id = imageUrl.split('/').pop().split('.')[0];
-            const publicId = `whisperwave/messages/${Id}`;
-            await cloudinary.uploader.destroy(publicId);
-        }));
+        await Promise.all(
+            imageUrls.map(async (imageUrl) => {
+                const Id = imageUrl.split('/').pop().split('.')[0];
+                const publicId = `whisperwave/messages/${Id}`;
+                await cloudinary.uploader.destroy(publicId);
+            }),
+        );
 
         // delete messages from database
         await Message.deleteMany({ chat: chatId });
-        res.status(200).json({ message: "Chat and messages deleted successfully." });
+        res.status(200).json({ message: 'Chat and messages deleted successfully.' });
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error" });
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
 const createGroupChat = async (req, res) => {
-    if (!req.body.members || !req.body.name)
-        return res.status(400).send({ message: "Please Fill all the feilds" });
+    if (!req.body.members || !req.body.name) return res.status(400).send({ message: 'Please Fill all the feilds' });
 
     var users = JSON.parse(req.body.members);
 
-    if (users.length < 2)
-        return res.status(400).send("A group must have at least 3 members");
+    if (users.length < 2) return res.status(400).send('A group must have at least 3 members');
 
     // add the currently logged in user also
     users.push(req.userId);
 
     try {
         let imageUrl;
-        if (req.file)
-            imageUrl = await uploadImageToCloudinary(req.file, 'chats');
+        if (req.file) imageUrl = await uploadImageToCloudinary(req.file, 'chats');
         else
-            imageUrl = 'https://res.cloudinary.com/krazio/image/upload/v1691853992/whisperwave/chats/noGroupProfile_mxvoxd.png';
+            imageUrl =
+                'https://res.cloudinary.com/krazio/image/upload/v1691853992/whisperwave/chats/noGroupProfile_mxvoxd.png';
 
         const groupChat = new Chat({
             chatName: req.body.name,
@@ -165,12 +152,11 @@ const createGroupChat = async (req, res) => {
         await groupChat.save();
 
         const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
-            .populate("members", "-password")
-            .populate("groupAdmin", "-password");
+            .populate('members', '-password')
+            .populate('groupAdmin', '-password');
 
         res.status(200).json(fullGroupChat);
-    }
-    catch (error) {
+    } catch (error) {
         res.status(400).send(error.message);
     }
 };
@@ -186,20 +172,16 @@ const renameGroup = async (req, res) => {
             },
             {
                 new: true,
-            }
+            },
         )
-            .populate("members", "-password")
-            .populate("groupAdmin", "-password");
+            .populate('members', '-password')
+            .populate('groupAdmin', '-password');
 
-        if (!updatedChat)
-            res.status(404).send("Chat Not Found");
-        else
-            res.json(updatedChat);
-    }
-    catch (error) {
+        if (!updatedChat) res.status(404).send('Chat Not Found');
+        else res.json(updatedChat);
+    } catch (error) {
         res.status(400).send(error.message);
     }
-
 };
 
 const removeFromGroup = async (req, res) => {
@@ -208,32 +190,24 @@ const removeFromGroup = async (req, res) => {
     try {
         const chat = await Chat.findOne({ _id: chatId });
 
-        if (!chat) return res.status(404).send("Chat Not Found");
+        if (!chat) return res.status(404).send('Chat Not Found');
 
         const requesterId = req.userId;
 
         const isAdmin = chat.groupAdmin.toString() === requesterId.toString();
         const isSelf = userId === requesterId.toString();
-        if (!isAdmin && !isSelf)
-            return res.status(403).send("Only admins can remove other members");
+        if (!isAdmin && !isSelf) return res.status(403).send('Only admins can remove other members');
 
-        const remainingMembers = chat.members.filter(member => member.toString() !== userId);
+        const remainingMembers = chat.members.filter((member) => member.toString() !== userId);
 
         if (remainingMembers.length < 2)
-            return res.status(400).send("Group needs 2+ members. Delete the chat instead.");
+            return res.status(400).send('Group needs 2+ members. Delete the chat instead.');
 
-        const removed = await Chat.findByIdAndUpdate(
-            chatId,
-            { $pull: { members: userId }, },
-            { new: true, }
-        )
+        const removed = await Chat.findByIdAndUpdate(chatId, { $pull: { members: userId } }, { new: true });
 
-        if (!removed)
-            res.status(404).send("Chat Not Found");
-        else
-            res.json({ message: "User removed successfully", success: true });
-    }
-    catch (error) {
+        if (!removed) res.status(404).send('Chat Not Found');
+        else res.json({ message: 'User removed successfully', success: true });
+    } catch (error) {
         res.status(400).send(error.message);
     }
 };
@@ -241,27 +215,21 @@ const removeFromGroup = async (req, res) => {
 const leaveGroup = async (req, res) => {
     const { chatId, userId } = req.body;
 
-    if (req.userId !== userId)
-        return res.status(403).send("You cannot force another user to leave via this route.");
+    if (req.userId !== userId) return res.status(403).send('You cannot force another user to leave via this route.');
 
     try {
         const chat = await Chat.findOne({ _id: chatId });
 
-        if (!chat) return res.status(404).send("Chat Not Found");
+        if (!chat) return res.status(404).send('Chat Not Found');
 
-        const isMember = chat.members.some(member => member.toString() === userId.toString());
-        if (!isMember)
-            return res.status(400).send("User is not a member of this group");
+        const isMember = chat.members.some((member) => member.toString() === userId.toString());
+        if (!isMember) return res.status(400).send('User is not a member of this group');
 
         if (chat.members.length === 1) return deleteChat(req, res);
 
-        const updatedChat = await Chat.findByIdAndUpdate(
-            chatId,
-            { $pull: { members: userId }, },
-            { new: true, }
-        )
-            .populate("members", "-password")
-            .populate("groupAdmin", "-password");
+        const updatedChat = await Chat.findByIdAndUpdate(chatId, { $pull: { members: userId } }, { new: true })
+            .populate('members', '-password')
+            .populate('groupAdmin', '-password');
 
         if (chat.groupAdmin.toString() === userId) {
             updatedChat.groupAdmin = updatedChat.members[0]._id;
@@ -279,26 +247,22 @@ const addToGroup = async (req, res) => {
 
     try {
         // check if the requester is admin
-        const added = await Chat.findByIdAndUpdate(
-            chatId,
-            {
-                $push: { members: userId },
-            },
-            {
-                new: true,
-            }
-        )
-            .populate("members", "-password")
-            .populate("groupAdmin", "-password");
+        const added = await Chat.findByIdAndUpdate(chatId, { $push: { members: userId } }, { new: true });
 
-        if (!added)
-            res.status(404).send("Chat Not Found");
-        else
-            res.json(added);
-    }
-    catch (error) {
+        if (!added) res.status(404).send('Chat Not Found');
+        else res.json({ message: "User added successfully", success: true });
+    } catch (error) {
         res.status(400).send(error.message);
     }
 };
 
-module.exports = { newChat, fetchChats, deleteChat, createGroupChat, renameGroup, removeFromGroup, addToGroup, leaveGroup };
+module.exports = {
+    newChat,
+    fetchChats,
+    deleteChat,
+    createGroupChat,
+    renameGroup,
+    removeFromGroup,
+    addToGroup,
+    leaveGroup,
+};
