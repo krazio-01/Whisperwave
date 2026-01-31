@@ -8,20 +8,18 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './updategroupinfo.css';
 
-const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAgain, setFetchAgain }) => {
-
+const UpdateGroupInfo = ({ showAddOrRemoveConrols, setShowAddOrRemoveConrols, fetchAgain, setFetchAgain }) => {
     const { user, currentChat, setCurrentChat } = ChatState();
 
-    const [groupName, setGroupname] = useState(currentChat?.chatName || "");
+    const [groupName, setGroupname] = useState(currentChat?.chatName || '');
     const [associatedUsers, setAssociatedUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [updateNameLoading, setUpdateNameLoading] = useState(false);
-    const [removeUserLoading, setRemoveUserLoading] = useState(false);
+    const [chatMembers, setChatMembers] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (currentChat)
-            setGroupname(currentChat.chatName);
+        if (currentChat) setGroupname(currentChat.chatName);
     }, [currentChat]);
 
     useEffect(() => {
@@ -36,22 +34,36 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
                     },
                 };
 
-                const { data } = await axios.get("/users/associated", config);
+                const { data } = await axios.get('/users/associated', config);
+
+                const currentMemberIds = new Set(
+                    currentChat?.members?.map((m) => m._id) || []
+                );
+
+                data.sort((a, b) => {
+                    const isAMember = currentMemberIds.has(a._id);
+                    const isBMember = currentMemberIds.has(b._id);
+                    if (isAMember && !isBMember) return -1;
+                    if (!isAMember && isBMember) return 1;
+                });
+
                 setAssociatedUsers(data);
                 setFilteredUsers(data);
+                setChatMembers(() => {
+                    if (!currentChat || !currentChat.members) return [];
+                    return currentChat.members.filter((member) => member._id !== user._id);
+                });
             } catch (error) {
-                toast.error(error?.response?.data || "Failed to load");
+                toast.error(error?.response?.data || 'Failed to load');
             } finally {
                 setLoading(false);
             }
         };
 
         fetchAssociatedUsers();
-
     }, [user]);
 
     if (!currentChat) return null;
-
 
     const handleUpdateName = async () => {
         if (!groupName) return;
@@ -63,18 +75,19 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
                 },
             };
             setUpdateNameLoading(true);
-            const { data } = await axios.put(`/chat/rename`,
+            const { data } = await axios.put(
+                `/chat/rename`,
                 {
                     chatId: currentChat._id,
                     chatName: groupName,
-                }, config
+                },
+                config,
             );
 
             setCurrentChat(data);
             setFetchAgain(!fetchAgain);
             setUpdateNameLoading(false);
-        }
-        catch (error) {
+        } catch (error) {
             toast.error('Error Occured!', {
                 autoClose: 2000,
                 theme: 'dark',
@@ -97,34 +110,36 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
             });
 
         try {
-            setLoading(true);
             const config = {
                 headers: {
                     Authorization: `Bearer ${user.authToken}`,
                 },
             };
 
-            const { data } = await axios.put(`/chat/add`,
+            await axios.put(
+                `/chat/add`,
                 {
                     chatId: currentChat._id,
                     userId: member._id,
-                }, config
+                },
+                config,
             );
 
-            setCurrentChat(data);
+            setCurrentChat((prevChat) => ({
+                ...prevChat,
+                members: [...prevChat.members, member]
+            }));
+            setChatMembers((prev) => [...prev, member]);
             setFetchAgain(!fetchAgain);
-            setLoading(false);
             toast.success(`${member.username} Added`, {
                 autoClose: 2000,
                 theme: 'dark',
             });
-        }
-        catch (error) {
+        } catch (error) {
             toast.error('Error Occured!', {
                 autoClose: 2000,
                 theme: 'dark',
             });
-            setLoading(false);
         }
     };
 
@@ -136,18 +151,19 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
             });
 
         try {
-            setRemoveUserLoading(true);
             const config = {
                 headers: {
                     Authorization: `Bearer ${user.authToken}`,
                 },
             };
 
-            await axios.put(`/chat/remove`,
+            await axios.put(
+                `/chat/remove`,
                 {
                     chatId: currentChat._id,
                     userId: member._id,
-                }, config
+                },
+                config,
             );
 
             const updatedMembers = currentChat.members.filter((m) => m._id !== member._id);
@@ -155,22 +171,19 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
                 ...currentChat,
                 members: updatedMembers,
             });
-
+            setChatMembers((prev) => prev.filter((m) => m._id !== member._id));
             setFetchAgain(!fetchAgain);
-            setRemoveUserLoading(false);
             toast.success(`${member.username} Removed!`, {
                 autoClose: 2000,
                 theme: 'dark',
             });
-        }
-        catch (error) {
-            if (error.response && error.response.status === 404) {
+        } catch (error) {
+            if (error.response) {
                 toast.error(error.response.data, {
                     autoClose: 2000,
                     theme: 'dark',
                 });
             }
-            setRemoveUserLoading(false);
         }
     };
 
@@ -179,68 +192,71 @@ const UpdateGroupInfo = ({ showUpdateGroupInfo, setShowUpdateGroupInfo, fetchAga
 
         if (!val) setFilteredUsers(associatedUsers);
         else {
-            const matches = associatedUsers.filter((u) =>
-                u.username.toLowerCase().includes(val.toLowerCase())
-            );
+            const matches = associatedUsers.filter((u) => u.username.toLowerCase().includes(val.toLowerCase()));
             setFilteredUsers(matches);
         }
     };
 
     return (
-        <div className='updateGroupinfo'>
-
+        <div className="updateGroupinfo">
             <div className="updateInfoHeader">
-                <img src={backBtn} alt='Back' onClick={() => { setShowUpdateGroupInfo(!showUpdateGroupInfo) }} />
+                <img
+                    src={backBtn}
+                    alt="Back"
+                    onClick={() => {
+                        setShowAddOrRemoveConrols(!setShowAddOrRemoveConrols);
+                    }}
+                />
                 <label>Update Group Info</label>
             </div>
 
             <div className="updateGroupName">
-                <span>Rename Group</span>
+                <h2>Rename Group</h2>
                 <div className="updateIt">
                     <input
-                        value={groupName} // Controlled input
+                        value={groupName}
                         onChange={(e) => setGroupname(e.target.value)}
-                        placeholder='Update Name...'
-                        className='chatGroupSearch'
+                        placeholder="Update Name..."
+                        className="chatGroupSearch"
                     />
-                    <button onClick={handleUpdateName} disabled={updateNameLoading}>{updateNameLoading ? 'Updating...' : 'Update'}</button>
+                    <button onClick={handleUpdateName} disabled={updateNameLoading}>
+                        {updateNameLoading ? 'Updating...' : 'Update'}
+                    </button>
                 </div>
             </div>
 
-            {currentChat?.groupAdmin?._id === user._id ? <>
-                <div className="AddUser">
-                    <span>Add Users</span>
-                    <input
-                        onChange={(e) => handleSearchChange(e)}
-                        placeholder='Add Users...'
-                        className='chatGroupSearch'
-                    />
-                    {loading ? <ListItemSkeleton count={4} /> :
-                        (filteredUsers?.map((user) => (
-                            <UserListItem
-                                key={user._id}
-                                user={user}
-                                handleFunction={() => handleAddUser(user)}
-                            />
-                        )))}
-                </div>
-
-                <div className='RemoveUser'>
-                    <span>Remove Users</span>
-                    {currentChat?.members?.map((member) => (
-                        member._id !== currentChat?.groupAdmin?._id &&
-                        <UserListItem
-                            key={member._id}
-                            user={member}
-                            showUpdateGroupInfo={showUpdateGroupInfo}
-                            handleRemoveUser={handleRemoveUser}
-                            removeUserLoading={removeUserLoading}
+            {currentChat?.groupAdmin?._id === user._id ? (
+                <>
+                    <div className="manageUser">
+                        <h2>Manage Users</h2>
+                        <input
+                            onChange={(e) => handleSearchChange(e)}
+                            placeholder="Search User..."
+                            className="chatGroupSearch"
                         />
-                    ))}
-                </div>
-            </> : null}
+                        <ul className="users-list">
+                            {loading ? (
+                                <ListItemSkeleton count={5} />
+                            ) : (
+                                filteredUsers?.map((user) => (
+                                    <li>
+                                        <UserListItem
+                                            key={user._id}
+                                            user={user}
+                                            showAddOrRemoveConrols={showAddOrRemoveConrols}
+                                            handleRemoveUser={handleRemoveUser}
+                                            handleAddUser={handleAddUser}
+                                            isChatMember={chatMembers.some((member) => member._id === user._id)}
+                                        />
+                                    </li>
+                                ))
+                            )}
+                        </ul>
+                    </div>
+                </>
+            ) : null}
         </div>
-    )
-}
+    );
+};
 
-export default UpdateGroupInfo
+export default UpdateGroupInfo;

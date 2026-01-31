@@ -1,7 +1,6 @@
 .userOrGroupInfo {
     height: 100%;
     background: #292929;
-    overflow-y: scroll;
 }
 
 .userOrGroupInfo::-webkit-scrollbar {
