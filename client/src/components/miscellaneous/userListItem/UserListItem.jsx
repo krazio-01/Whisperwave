@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { getProfilePic } from '../../../utils/chatUtils';
 import { CircularProgress } from '@mui/material';
-import { IoRemove } from "react-icons/io5";
-import { MdPersonAddAlt1 } from "react-icons/md";
+import { IoRemove } from 'react-icons/io5';
+import { MdPersonAddAlt1 } from 'react-icons/md';
 import './userlistitem.css';
 
-const UserListItem = ({ user, handleAddUser, showAddOrRemoveConrols, handleRemoveUser, groupAdmin, isChatMember }) => {
+const UserListItem = ({
+    user,
+    handleAddUser,
+    showAddOrRemoveConrols,
+    handleRemoveUser,
+    groupAdmin,
+    isChatMember,
+    handleClick,
+}) => {
     const [addUserLoading, setAddUserLoading] = useState(false);
     const [removeUserLoading, setRemoveUserLoading] = useState(false);
 
@@ -25,7 +33,7 @@ const UserListItem = ({ user, handleAddUser, showAddOrRemoveConrols, handleRemov
     const userProfilePic = getProfilePic(user, null);
 
     return (
-        <div className="list-item-container">
+        <div className="list-item-container" onClick={handleClick}>
             <div className="info-wrapper">
                 <div className="meta-info">
                     <img className="user-profile" src={userProfilePic} alt="Profile" />
@@ -38,24 +46,16 @@ const UserListItem = ({ user, handleAddUser, showAddOrRemoveConrols, handleRemov
                 {isAdmin && <span className="isAdmin">Admin</span>}
 
                 {showAddOrRemoveConrols && (
-                    <div className='actions-container'>
+                    <div className="actions-container">
                         <div className="addIcon" onClick={handleAdd}>
-                            {addUserLoading ? (
-                                <CircularProgress size={20} color="inherit" />
-                            ) : (
-                                <MdPersonAddAlt1 />
-                            )}
+                            {addUserLoading ? <CircularProgress size={20} color="inherit" /> : <MdPersonAddAlt1 />}
                         </div>
 
-                        {
-                            isChatMember && <div className="removeIcon" onClick={handleRemove}>
-                                {removeUserLoading ? (
-                                    <CircularProgress size={20} color="inherit" />
-                                ) : (
-                                    <IoRemove />
-                                )}
+                        {isChatMember && (
+                            <div className="removeIcon" onClick={handleRemove}>
+                                {removeUserLoading ? <CircularProgress size={20} color="inherit" /> : <IoRemove />}
                             </div>
-                        }
+                        )}
                     </div>
                 )}
             </div>

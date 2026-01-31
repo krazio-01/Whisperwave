@@ -38,18 +38,17 @@ const NewGroup = ({ setCurrentUI }) => {
                     },
                 };
 
-                const { data } = await axios.get("/users/associated", config);
+                const { data } = await axios.get('/users/associated', config);
                 setAssociatedUsers(data);
                 setFilteredUsers(data);
             } catch (error) {
-                toast.error(error?.response?.data || "Failed to load");
+                toast.error(error?.response?.data || 'Failed to load');
             } finally {
                 setInitialLoading(false);
             }
         };
 
         fetchAssociatedUsers();
-
     }, [user]);
 
     useEffect(() => {
@@ -58,27 +57,30 @@ const NewGroup = ({ setCurrentUI }) => {
         };
     }, [selectedImage]);
 
-    const handleGroup = useCallback((userToAdd) => {
-        if (selectedUsers.some((u) => u._id === userToAdd._id)) {
-            toast.warning('User already added');
-            return;
-        }
-        setSelectedUsers((prev) => [...prev, userToAdd]);
-    }, [selectedUsers]);
+    const handleAddToGroup = useCallback(
+        (userToAdd) => {
+            if (selectedUsers.some((u) => u._id === userToAdd._id)) {
+                toast.warning('User already added');
+                return;
+            }
+            setSelectedUsers((prev) => [...prev, userToAdd]);
+        },
+        [selectedUsers],
+    );
 
-    const handleDelete = useCallback((delUser) => {
+    const handleRemoveFromGroup = useCallback((delUser) => {
         setSelectedUsers((prev) => prev.filter((sel) => sel._id !== delUser._id));
     }, []);
 
     const handleFileChange = useCallback((e) => {
         const file = e.target.files[0];
         if (file) {
-            const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
             if (allowedTypes.includes(file.type)) {
                 setSelectedFile(file);
                 setSelectedImage(URL.createObjectURL(file));
             } else {
-                toast.error("Please select a valid image (JPEG/PNG)!");
+                toast.error('Please select a valid image (JPEG/PNG)!');
                 e.target.value = null;
             }
         }
@@ -86,11 +88,11 @@ const NewGroup = ({ setCurrentUI }) => {
 
     const handleSubmit = useCallback(async () => {
         if (!groupChatName.trim()) {
-            toast.error("Please Enter Group name");
+            toast.error('Please Enter Group name');
             return;
         }
         if (selectedUsers.length < 2) {
-            toast.error("A group must have at least 2 users");
+            toast.error('A group must have at least 2 users');
             return;
         }
 
@@ -112,10 +114,10 @@ const NewGroup = ({ setCurrentUI }) => {
 
             const { data } = await axios.post(`/chat/group`, formData, config);
             setChats([data, ...chats]);
-            setCurrentUI("chat");
-            toast.success("New Group Chat Created!");
+            setCurrentUI('chat');
+            toast.success('New Group Chat Created!');
         } catch (error) {
-            toast.error(error?.response?.data || "Failed to Create the Chat!");
+            toast.error(error?.response?.data || 'Failed to Create the Chat!');
         } finally {
             setCeateGroupLoading(false);
         }
@@ -126,9 +128,7 @@ const NewGroup = ({ setCurrentUI }) => {
 
         if (!val) setFilteredUsers(associatedUsers);
         else {
-            const matches = associatedUsers.filter((u) =>
-                u.username.toLowerCase().includes(val.toLowerCase())
-            );
+            const matches = associatedUsers.filter((u) => u.username.toLowerCase().includes(val.toLowerCase()));
             setFilteredUsers(matches);
         }
     };
@@ -141,25 +141,22 @@ const NewGroup = ({ setCurrentUI }) => {
     const renderMemberSelection = () => (
         <>
             <div className="newGroupChatTop">
-                <div className='Group'>
-                    <img className='backButtonGroup' src={backBtnIcon} alt='Back' onClick={() => setCurrentUI("chat")} />
+                <div className="Group">
+                    <img
+                        className="backButtonGroup"
+                        src={backBtnIcon}
+                        alt="Back"
+                        onClick={() => setCurrentUI('chat')}
+                    />
                     <span>Add Members</span>
                 </div>
 
                 <div className="searchUserForGroup">
-                    <input
-                        onChange={handleSearchChange}
-                        placeholder='Add people...'
-                        className='chatGroupSearch'
-                    />
+                    <input onChange={handleSearchChange} placeholder="Add people..." className="chatGroupSearch" />
                 </div>
                 <div className="selectedUsers">
                     {selectedUsers.map((u) => (
-                        <UserBadgeItem
-                            key={u._id}
-                            user={u}
-                            handleFunction={() => handleDelete(u)}
-                        />
+                        <UserBadgeItem key={u._id} user={u} handleClick={() => handleRemoveFromGroup(u)} />
                     ))}
                 </div>
             </div>
@@ -170,11 +167,7 @@ const NewGroup = ({ setCurrentUI }) => {
                         <ListItemSkeleton count={8} />
                     ) : (
                         filteredUsers?.map((user) => (
-                            <UserListItem
-                                key={user._id}
-                                user={user}
-                                handleFunction={() => handleGroup(user)}
-                            />
+                            <UserListItem key={user._id} user={user} handleClick={() => handleAddToGroup(user)} />
                         ))
                     )}
                 </div>
@@ -183,22 +176,22 @@ const NewGroup = ({ setCurrentUI }) => {
     );
 
     const renderGroupFinalization = () => (
-        <div className='createGroupChat'>
+        <div className="createGroupChat">
             <div className="doneHeader">
-                <img className='backButtonGroup' src={backBtnIcon} alt='Back' onClick={() => setStep(1)} />
+                <img className="backButtonGroup" src={backBtnIcon} alt="Back" onClick={() => setStep(1)} />
 
                 <div className="selectImage">
-                    <input style={{ display: 'none' }} type='file' id='groupPictureId' onChange={handleFileChange} />
-                    <label htmlFor='groupPictureId'>
-                        <img src={selectedImage || GroupPicture} alt='Group Icon' />
+                    <input style={{ display: 'none' }} type="file" id="groupPictureId" onChange={handleFileChange} />
+                    <label htmlFor="groupPictureId">
+                        <img src={selectedImage || GroupPicture} alt="Group Icon" />
                     </label>
                 </div>
             </div>
 
             <div className="searchUserForGroup">
                 <input
-                    className='chatGroupSearch'
-                    placeholder='Group Name'
+                    className="chatGroupSearch"
+                    placeholder="Group Name"
                     value={groupChatName}
                     onChange={(e) => setGroupChatName(e.target.value)}
                 />
@@ -207,15 +200,16 @@ const NewGroup = ({ setCurrentUI }) => {
     );
 
     return (
-        <div className='newGroupChat'>
+        <div className="newGroupChat">
             {step === 1 ? renderMemberSelection() : renderGroupFinalization()}
 
             <div className="donSelection">
-                <button className='donSelectioBtn' onClick={handleNextStep} disabled={createGroupLoading}>
-                    {createGroupLoading ?
-                        <CircularProgress size={28} color="secondary" /> :
-                        <img src={doneIcon} alt='Next' />
-                    }
+                <button className="donSelectioBtn" onClick={handleNextStep} disabled={createGroupLoading}>
+                    {createGroupLoading ? (
+                        <CircularProgress size={28} color="secondary" />
+                    ) : (
+                        <img src={doneIcon} alt="Next" />
+                    )}
                 </button>
             </div>
         </div>
