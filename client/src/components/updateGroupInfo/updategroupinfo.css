@@ -35,8 +35,11 @@
 }
 
 .updateIt {
+    display: flex;
+    justify-content: space-between;
     width: 100%;
     margin: 1rem 0;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.5);
 
     > input {
         width: 72%;
@@ -45,7 +48,6 @@
         border: none;
         outline: none;
         background: transparent;
-        border-bottom: 2px solid rgba(0, 0, 0, 0.5);
     }
 
     > button {
@@ -53,7 +55,6 @@
         border: none;
         cursor: pointer;
         border-radius: 7px;
-        margin-left: 1.1rem;
         background: transparent;
         color: #fff;
         transition: all 150ms ease-in-out;
