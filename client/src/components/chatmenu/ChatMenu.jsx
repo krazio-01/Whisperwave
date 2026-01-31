@@ -11,9 +11,9 @@ import './chatmenu.css';
 import profile from '../../Assets/images/profile.png';
 import logout from '../../Assets/images/logout.png';
 import pen from '../../Assets/images/pen.png';
-import { FaSearch } from "react-icons/fa";
-import { IoPersonAddSharp } from "react-icons/io5";
-import { FaUserGroup } from "react-icons/fa6";
+import { FaSearch } from 'react-icons/fa';
+import { IoPersonAddSharp } from 'react-icons/io5';
+import { FaUserGroup } from 'react-icons/fa6';
 
 const ChatMenu = ({ socket, fetchAgain }) => {
     const { user, chats, setChats, currentChat, setCurrentChat } = ChatState();
@@ -25,7 +25,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [bubbleMenuContainer, setBubbleMenuContainer] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [currentUI, setCurrentUI] = useState("chat");
+    const [currentUI, setCurrentUI] = useState('chat');
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredUsers, setFilteredUsers] = useState([]);
 
@@ -36,8 +36,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
         if (!loggedUser) return;
 
         const filteredUsers = chats.filter((chat) => {
-            if (chat.isGroupChat)
-                return chat.chatName.toLowerCase().includes(value.toLowerCase());
+            if (chat.isGroupChat) return chat.chatName.toLowerCase().includes(value.toLowerCase());
             else {
                 const otherMember = chat.members.find((member) => member._id !== loggedUser._id);
                 return otherMember ? otherMember.username.toLowerCase().includes(value.toLowerCase()) : false;
@@ -50,7 +49,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
 
     const handleLogout = () => {
         setIsDropdownOpen(false);
-        setCurrentUI("chat");
+        setCurrentUI('chat');
         localStorage.removeItem('user');
         window.location.href = '/';
     };
@@ -63,17 +62,17 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                     Authorization: `Bearer ${user.authToken}`,
                 },
             };
-            const { data } = await axios.get("/chat/fetchChats", config);
+            const { data } = await axios.get('/chat/fetchChats', config);
             setChats(data);
-            setLoading(false);
         } catch (error) {
-            console.error("Error fetching chats:", error);
+            console.error('Error fetching chats:', error);
+        } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        setLoggedUser(JSON.parse(localStorage.getItem("user")));
+        setLoggedUser(JSON.parse(localStorage.getItem('user')));
         fetchChats();
         // eslint-disable-next-line
     }, [fetchAgain]);
@@ -83,9 +82,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
 
         const handleMessageReceived = (newMessageRecieved) => {
             setChats((prevChats) => {
-                const chatIndex = prevChats.findIndex(
-                    (c) => c._id === newMessageRecieved.chat._id
-                );
+                const chatIndex = prevChats.findIndex((c) => c._id === newMessageRecieved.chat._id);
 
                 if (chatIndex === -1) return prevChats;
 
@@ -97,7 +94,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                     ...chatToUpdate,
                     lastMessage: newMessageRecieved,
                     unseenCount: newCount,
-                    updatedAt: new Date().toISOString()
+                    updatedAt: new Date().toISOString(),
                 };
 
                 const otherChats = prevChats.filter((c) => c._id !== chatToUpdate._id);
@@ -105,10 +102,10 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             });
         };
 
-        socket.on("messageRecieved", handleMessageReceived);
+        socket.on('messageRecieved', handleMessageReceived);
 
         return () => {
-            socket.off("messageRecieved", handleMessageReceived);
+            socket.off('messageRecieved', handleMessageReceived);
         };
     }, [socket, currentChat, setChats]);
 
@@ -118,35 +115,44 @@ const ChatMenu = ({ socket, fetchAgain }) => {
 
     const handleUiChange = (uiName) => {
         setCurrentUI(uiName);
-        if (uiName === 'profile')
-            setIsDropdownOpen(!isDropdownOpen);
-        else
-            setBubbleMenuContainer(!bubbleMenuContainer);
+        if (uiName === 'profile') setIsDropdownOpen(!isDropdownOpen);
+        else setBubbleMenuContainer(!bubbleMenuContainer);
     };
 
     const handleChatClick = (chat) => {
         setCurrentChat(chat);
-        setChats(prev => prev.map(c =>
-            c._id === chat._id ? { ...c, unseenCount: 0 } : c
-        ));
+        setChats((prev) => prev.map((c) => (c._id === chat._id ? { ...c, unseenCount: 0 } : c)));
     };
 
     return (
         <div className="chatMenuWrapper">
-            {currentUI === "chat" ? (
+            {currentUI === 'chat' ? (
                 <>
                     <div className="menu-topbar">
                         <div className="profile">
-                            <img className="profilepic" src={getProfilePic(user, null)} alt="" onClick={() => { setIsDropdownOpen(!isDropdownOpen) }} />
+                            <img
+                                className="profilepic"
+                                src={getProfilePic(user, null)}
+                                alt="profile"
+                                onClick={() => {
+                                    setIsDropdownOpen(!isDropdownOpen);
+                                }}
+                            />
 
-                            <CSSTransition in={isDropdownOpen} timeout={250} classNames="dropdown" unmountOnExit nodeRef={dropdownRef}>
+                            <CSSTransition
+                                in={isDropdownOpen}
+                                timeout={250}
+                                classNames="dropdown"
+                                unmountOnExit
+                                nodeRef={dropdownRef}
+                            >
                                 <div className="dropdown-menu" ref={dropdownRef}>
-                                    <button className='menu-item' onClick={() => handleUiChange("profile")}>
+                                    <button className="menu-item" onClick={() => handleUiChange('profile')}>
                                         <img className="dropdown-item-img" src={profile} alt="Profile" />
                                         Profile
                                     </button>
 
-                                    <button className='menu-item' onClick={handleLogout}>
+                                    <button className="menu-item" onClick={handleLogout}>
                                         <img className="dropdown-item-img" src={logout} alt="Profile" />
                                         Logout
                                     </button>
@@ -156,33 +162,50 @@ const ChatMenu = ({ socket, fetchAgain }) => {
 
                         <div className="menu-searchBar">
                             <FaSearch />
-                            <input placeholder='Search' className='chatMenuSearch' value={searchQuery} onChange={handleSearchInputChange}></input>
+                            <input
+                                placeholder="Search"
+                                className="chatMenuSearch"
+                                value={searchQuery}
+                                onChange={handleSearchInputChange}
+                            ></input>
                         </div>
                     </div>
 
                     <div className="chats">
-                        {chatList.map((chat) => (
-                            <div key={chat._id} onClick={() => handleChatClick(chat)}>
-                                {loading ? <ListItemSkeleton /> :
-                                    <Conversation
-                                        loggedUser={loggedUser}
-                                        chat={chat}
-                                    />}
-                            </div>
-                        ))}
+                        {loading ? (
+                            <ListItemSkeleton count={8} />
+                        ) : (
+                            chatList.map((chat) => (
+                                <div key={chat._id} onClick={() => handleChatClick(chat)}>
+                                    <Conversation loggedUser={loggedUser} chat={chat} />
+                                </div>
+                            ))
+                        )}
                     </div>
 
-                    <div className="newChatButton-div" >
-                        <button type='button' className='newChatButton' onClick={() => { setBubbleMenuContainer(!bubbleMenuContainer) }}>
-                            <img src={pen} alt='New Chat' />
+                    <div className="newChatButton-div">
+                        <button
+                            type="button"
+                            className="newChatButton"
+                            onClick={() => {
+                                setBubbleMenuContainer(!bubbleMenuContainer);
+                            }}
+                        >
+                            <img src={pen} alt="New Chat" />
                         </button>
-                        <CSSTransition in={bubbleMenuContainer} timeout={250} classNames="menuContainer" unmountOnExit nodeRef={bubbleMenuRef}>
+                        <CSSTransition
+                            in={bubbleMenuContainer}
+                            timeout={250}
+                            classNames="menuContainer"
+                            unmountOnExit
+                            nodeRef={bubbleMenuRef}
+                        >
                             <div className="menuContainer" ref={bubbleMenuRef}>
-                                <button className='menu-item' onClick={() => handleUiChange("message")}>
+                                <button className="menu-item" onClick={() => handleUiChange('message')}>
                                     <IoPersonAddSharp />
                                     New Contact
                                 </button>
-                                <button className='menu-item' onClick={() => handleUiChange("group")}>
+                                <button className="menu-item" onClick={() => handleUiChange('group')}>
                                     <FaUserGroup />
                                     Create New Group
                                 </button>
@@ -190,11 +213,11 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                         </CSSTransition>
                     </div>
                 </>
-            ) : currentUI === "message" ? (
+            ) : currentUI === 'message' ? (
                 <NewChat setCurrentUI={setCurrentUI} handleAddConversation={handleAddConversation} />
-            ) : currentUI === "group" ? (
+            ) : currentUI === 'group' ? (
                 <NewGroup setCurrentUI={setCurrentUI} />
-            ) : currentUI === "profile" ? (
+            ) : currentUI === 'profile' ? (
                 <ProfileInfo style={{ width: '100%' }} currentUI={currentUI} setCurrentUI={setCurrentUI} />
             ) : null}
         </div>
