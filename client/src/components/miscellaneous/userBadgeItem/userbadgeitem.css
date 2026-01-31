@@ -1,25 +1,26 @@
 .badge {
-    position: relative;
     display: flex;
     align-items: center;
     padding: 0.5rem 1rem;
-    display: inline-block;
     cursor: pointer;
     margin: 0 0.7rem;
-    font-size: 1.2rem;
-    width: 7rem;
+    font-size: 1.3rem;
+    gap: 1rem;
+    outline: 1px solid grey;
+    border-radius: 20px;
     color: #fff;
-}
 
-.removeSelectedUser {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    margin: 0 0.5rem;
-    filter: invert(1);
-}
+    .removeSelectedUser {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.2rem;
+        font-size: 1.7rem;
+        border-radius: 50%;
+        transition: all 200ms ease;
 
-.removeSelectedUser:hover {
-    background-color: #303030;
-    filter: invert(0);
+        &:hover {
+            background-color: #3a3a3a;
+        }
+    }
 }
