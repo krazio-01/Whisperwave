@@ -3,6 +3,7 @@ import axios from 'axios';
 import { CSSTransition } from 'react-transition-group';
 import NewChat from '../newChat/NewChat';
 import NewGroup from '../newGroupChat/NewGroup';
+import ProfileInfo from '../miscellaneous/profileInfo/Profile';
 import Conversation from '../conversations/Conversation';
 import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton';
 import { ChatState } from '../../context/ChatProvider';
