@@ -32,7 +32,7 @@
     cursor: pointer;
 }
 
-.Group>span {
+.Group > span {
     font-size: 18px;
     cursor: default;
 }
@@ -45,7 +45,7 @@
     cursor: text;
 }
 
-.searchUserForGroup>img {
+.searchUserForGroup > img {
     width: 18px;
     height: 18px;
     margin: 1.5rem;
@@ -53,6 +53,9 @@
 
 .selectedUsers {
     display: flex;
+    flex-wrap: wrap;
+    padding-inline: 0.8rem;
+    gap: 1.3rem;
     width: 100%;
     margin-top: 1.4rem;
 }
