@@ -44,7 +44,6 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const [showMoreOption, setShowMoreOption] = useState(false);
 
     const chatUserProfilePic = useMemo(() => getProfilePic(user, currentChat), [user, currentChat]);
-    const userProfilePic = useMemo(() => getProfilePic(user, null), [user]);
     const currentChatName = useMemo(() => getCurrentChatName(user, currentChat), [user, currentChat]);
 
     const isUserOnline = useMemo(() => {
@@ -255,8 +254,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                                 <Message
                                     message={message}
                                     own={message.sender._id === user._id}
-                                    userProfilepic={userProfilePic}
-                                    chatUserProfilePic={chatUserProfilePic}
+                                    isGroupChat={currentChat?.isGroupChat}
                                 />
                             </div>
                         ))

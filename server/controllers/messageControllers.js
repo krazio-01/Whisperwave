@@ -8,8 +8,8 @@ const { onlineUsers, activeChats } = require('../utils/RealtimeTrack');
 const fetchAllMessages = async (req, res) => {
     try {
         const messages = await Message.find({ chat: req.params.chatId })
-            .populate("sender", "username email profilePicture")
-            .populate("chat");
+            .populate("sender", "username profilePicture")
+            .select("-__v -updatedAt");
 
         const chatId = req.params.chatId;
         const chat = await Chat.findById(chatId);
