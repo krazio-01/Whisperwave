@@ -18,30 +18,149 @@
 .chatBoxTop {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     width: 100%;
     height: 5rem;
     padding: 3rem 2rem;
     background: #292929;
-}
 
-/* back button css */
-.closeConversation {
-    width: 24px;
-    height: 24px;
-    text-align: center;
-    border-radius: 50%;
-    margin-right: 1.5rem;
-    padding: 3px;
-    display: none;
-}
+    .left-section {
+        display: flex;
+        align-items: center;
 
-.closeConversation:hover {
-    background: #555;
-}
+        /* back button css */
+        .closeConversation {
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            border-radius: 50%;
+            margin-right: 1.5rem;
+            padding: 3px;
+            display: none;
 
-.closeConversation>img {
-    width: 20px;
-    height: 20px;
+            &:hover {
+                background: #555;
+            }
+            > img {
+                width: 20px;
+                height: 20px;
+            }
+        }
+
+        .userName {
+            padding: 0 1.8rem;
+            font-size: 1.8rem;
+            color: #fff;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            font-size: 1.2rem;
+
+            .numberOfMembers {
+                color: #fff;
+                padding: 0 1.1rem;
+                margin-left: 7px;
+            }
+
+            .statusForPrivateChats {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                padding: 0 1.7rem;
+
+                .userStatus {
+                    color: #fff;
+                    margin: 0.2rem 0.5rem;
+                }
+
+                .color {
+                    width: 0.6rem;
+                    height: 0.6rem;
+                    border-radius: 50%;
+                    background: var(--statusColor);
+                }
+            }
+        }
+    }
+
+    .right-section {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+
+        .call-actions {
+            button {
+                border: none;
+                background: transparent;
+                padding: 0.5rem;
+                color: white;
+                cursor: pointer;
+
+                > svg {
+                    font-size: 2rem;
+                }
+
+                &:last-child {
+                    margin-left: 2rem;
+                }
+            }
+        }
+
+        /* more options css */
+        .threeDotsContainer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .threeDots {
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 150ms ease-in-out;
+
+            > img {
+                width: 28px;
+                height: 28px;
+            }
+
+            &:hover {
+                background: #555;
+            }
+        }
+
+        .moreOptions-enter {
+            opacity: 0;
+            transform: translateX(10%) translateY(-10%);
+        }
+
+        .moreOptions-enter-active {
+            opacity: 1;
+            transform: translateX(0) translateY(0);
+            transition:
+                transform 250ms ease-in-out,
+                opacity 250ms ease-in-out;
+        }
+
+        .moreOptions-exit {
+            opacity: 1;
+            transform: translateX(0) translateY(0);
+        }
+
+        .moreOptions-exit-active {
+            opacity: 0;
+            transform: translateX(10%) translateY(-10%);
+            transition:
+                transform 250ms ease-out,
+                opacity 250ms ease-out;
+        }
+
+        .moreOptions-exit-done {
+            opacity: 0;
+        }
+    }
 }
 
 /* user details css */
@@ -49,95 +168,6 @@
     cursor: default;
     flex-direction: column;
     cursor: pointer;
-}
-
-.userName {
-    padding: 0 1.8rem;
-    font-size: 1.8rem;
-    color: #fff;
-}
-
-.status {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    font-size: 1.2rem;
-}
-
-.statusForPrivasteChats {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 0 1.7rem;
-}
-
-.numberOfMembers {
-    color: #fff;
-    padding: 0 1.1rem;
-    margin-left: 7px;
-}
-
-.userStatus {
-    color: #fff;
-    margin: 0.2rem 0.5rem;
-}
-
-.color {
-    width: 0.6rem;
-    height: 0.6rem;
-    border-radius: 50%;
-    background: var(--statusColor);
-}
-
-/* more options css */
-.threeDotsContainer {
-    display: flex;    
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    padding: 3px;
-    right: 15px;
-}
-
-.threeDots{
-    cursor: pointer;
-    border-radius: 50%;
-    transition: all 150ms ease-in-out;
-}
-
-.threeDots>img {
-    width: 28px;
-    height: 28px;
-}
-
-.threeDots:hover {
-    background: #555;
-}
-
-.moreOptions-enter {
-    opacity: 0;
-    transform: translateX(10%) translateY(-10%);
-}
-
-.moreOptions-enter-active {
-    opacity: 1;
-    transform: translateX(0) translateY(0);
-    transition: transform 250ms ease-in-out, opacity 250ms ease-in-out;
-}
-
-.moreOptions-exit {
-    opacity: 1;
-    transform: translateX(0) translateY(0);
-}
-
-.moreOptions-exit-active {
-    opacity: 0;
-    transform: translateX(10%) translateY(-10%);
-    transition: transform 250ms ease-out, opacity 250ms ease-out;
-}
-
-.moreOptions-exit-done {
-    opacity: 0;
 }
 
 .moreOptionDropdown {
@@ -272,7 +302,9 @@
 .imaageTransition-enter-active {
     opacity: 1;
     transform: translateY(0);
-    transition: transform 250ms ease-in-out, opacity 250ms ease-in-out;
+    transition:
+        transform 250ms ease-in-out,
+        opacity 250ms ease-in-out;
 }
 
 .imaageTransition-exit {
@@ -283,7 +315,9 @@
 .imaageTransition-exit-active {
     opacity: 0;
     transform: translateY(30%);
-    transition: transform 250ms ease-out, opacity 250ms ease-out;
+    transition:
+        transform 250ms ease-out,
+        opacity 250ms ease-out;
 }
 
 .imaageTransition-exit-done {
@@ -336,7 +370,7 @@
     transition: 250ms;
 }
 
-.chatSendBtn>img {
+.chatSendBtn > img {
     width: 2rem;
     height: 2rem;
 }

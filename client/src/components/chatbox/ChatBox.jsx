@@ -17,6 +17,9 @@ import fileSelection from '../../Assets/images/fileSelection.png';
 import previewClose from '../../Assets/images/previewClose.png';
 import BackIcon from '../../Assets/images/back.png';
 import dotsIcon from '../../Assets/images/dots.png';
+import { MdVideoCall, MdCall } from 'react-icons/md';
+import PeerService from '../../services/peer';
+import CallModal from '../callModal/callModal';
 
 const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => {
     const { currentChat, setCurrentChat, user } = ChatState();
@@ -27,6 +30,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const profileRef = useRef(null);
     const threeDotsRef = useRef(null);
     const imagePreviewRef = useRef(null);
+    const iceCandidatesQueue = useRef([]);
 
     const currentChatRef = useRef(currentChat);
 
@@ -38,17 +42,31 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
-
     const [showProfileInfo, setShowProfileInfo] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [showMoreOption, setShowMoreOption] = useState(false);
 
+    const initialCallState = {
+        callStatus: 'idle',
+        localStream: null,
+        remoteStream: null,
+        callPayload: null,
+        callType: 'video',
+        isAccepted: false,
+        isMicOn: true,
+        isVideoOn: true,
+    };
+    const [callState, setCallState] = useState(initialCallState);
+
     const chatUserProfilePic = useMemo(() => getProfilePic(user, currentChat), [user, currentChat]);
     const currentChatName = useMemo(() => getCurrentChatName(user, currentChat), [user, currentChat]);
+    const updateCallState = (updates) => {
+        setCallState((prev) => ({ ...prev, ...updates }));
+    };
 
     const isUserOnline = useMemo(() => {
         if (!currentChat || currentChat?.isGroupChat) return false;
-        const otherMember = currentChat?.members?.find(m => m?._id !== user?._id);
+        const otherMember = currentChat?.members?.find((m) => m?._id !== user?._id);
         return otherMember ? onlineUsers.includes(otherMember?._id) : false;
     }, [onlineUsers, currentChat, user?._id]);
 
@@ -57,7 +75,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     }, [currentChat]);
 
     useEffect(() => {
-        if (Notification.permission !== "granted" && Notification.permission !== "denied")
+        if (Notification.permission !== 'granted' && Notification.permission !== 'denied')
             Notification.requestPermission();
     }, []);
 
@@ -81,36 +99,39 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         handleInput();
     }, [newMessages, handleInput]);
 
-    const handleSubmit = useCallback(async (e) => {
-        if (e) e.preventDefault();
-        if (!newMessages.trim() || !currentChat) return;
+    const handleSubmit = useCallback(
+        async (e) => {
+            if (e) e.preventDefault();
+            if (!newMessages.trim() || !currentChat) return;
 
-        setMsgSendLoading(true);
-        try {
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${user.authToken}`,
-                },
-            };
+            setMsgSendLoading(true);
+            try {
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${user.authToken}`,
+                    },
+                };
 
-            const messagePayload = {
-                text: newMessages,
-                chatId: currentChat._id,
-            };
+                const messagePayload = {
+                    text: newMessages,
+                    chatId: currentChat._id,
+                };
 
-            const { data } = await axios.post('/messages', messagePayload, config);
+                const { data } = await axios.post('/messages', messagePayload, config);
 
-            setMessages((prev) => [...prev, data]);
-            socket.emit('sendMessage', data);
-            setNewMessages('');
-            setTextareaHeight('4.5rem');
-        } catch (err) {
-            console.error("Error sending message:", err.message);
-        } finally {
-            setMsgSendLoading(false);
-        }
-    }, [newMessages, currentChat, user.authToken, socket]);
+                setMessages((prev) => [...prev, data]);
+                socket.emit('sendMessage', data);
+                setNewMessages('');
+                setTextareaHeight('4.5rem');
+            } catch (err) {
+                console.error('Error sending message:', err.message);
+            } finally {
+                setMsgSendLoading(false);
+            }
+        },
+        [newMessages, currentChat, user.authToken, socket],
+    );
 
     const fetchMessages = useCallback(async () => {
         if (!currentChat) return;
@@ -124,9 +145,9 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             };
             const { data } = await axios.get(`/messages/${currentChat._id}`, config);
             setMessages(data);
-            socket.emit("joinChat", currentChat._id);
+            socket.emit('joinChat', currentChat._id);
         } catch (error) {
-            console.error("Error fetching messages:", error.message);
+            console.error('Error fetching messages:', error.message);
         } finally {
             setFetchMessagesLoading(false);
         }
@@ -136,7 +157,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         const ref = inputRef.current;
         if (ref) ref.focus();
 
-        setNewMessages(prev => {
+        setNewMessages((prev) => {
             if (!ref) return prev + e.native;
             const start = prev.substring(0, ref.selectionStart);
             const end = prev.substring(ref.selectionStart);
@@ -158,7 +179,190 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         }
     };
 
-    // --- Effects ---
+    // call logic ---
+    const cleanupCallSession = useCallback(() => {
+        if (callState.localStream) callState.localStream.getTracks().forEach((track) => track.stop());
+
+        PeerService.close();
+
+        // Reset to initial state
+        setCallState(initialCallState);
+    }, [callState.localStream]);
+
+    const getMediaStream = useCallback(async (type) => {
+        try {
+            const constraints = {
+                audio: true,
+                video: type === 'video',
+            };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            updateCallState({ localStream: stream });
+            return stream;
+        } catch (error) {
+            console.error('Error accessing media devices.', error);
+            alert('Could not access Camera/Microphone');
+            return null;
+        }
+    }, []);
+
+    const handleStartCall = useCallback(
+        async (type) => {
+            if (!currentChat) return;
+
+            const targetUser = currentChat.members.find((m) => m._id !== user._id);
+            if (!targetUser) return;
+
+            updateCallState({
+                callType: type,
+                callStatus: 'outbound',
+                callPayload: {
+                    userId: targetUser._id,
+                    name: targetUser.username,
+                    picture: targetUser.profilePicture,
+                    callType: type,
+                },
+            });
+
+            const stream = await getMediaStream(type);
+            if (!stream) {
+                updateCallState({ callStatus: 'idle', callPayload: null });
+                return;
+            }
+
+            const peer = PeerService.start();
+            stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+
+            peer.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('call:ice-candidate', {
+                        to: targetUser._id,
+                        candidate: event.candidate,
+                    });
+                }
+            };
+
+            peer.ontrack = (event) => {
+                updateCallState({ remoteStream: event.streams[0] });
+            };
+
+            const offer = await PeerService.getOffer();
+
+            socket.emit('call:offer', {
+                to: targetUser._id,
+                from: user._id,
+                offer: offer,
+                callType: type,
+                callerName: user.username,
+                callerPic: user.profilePicture,
+            });
+        },
+        [currentChat, user, socket, getMediaStream],
+    );
+
+    const handleAcceptCall = useCallback(async () => {
+        const { offer, from, callType: incomingType } = callState.callPayload;
+
+        updateCallState({
+            callStatus: 'active',
+            callType: incomingType,
+        });
+
+        const stream = await getMediaStream(incomingType);
+        if (!stream) return;
+
+        const peer = PeerService.start();
+        stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+
+        peer.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit('call:ice-candidate', {
+                    to: from,
+                    candidate: event.candidate,
+                });
+            }
+        };
+
+        peer.ontrack = (event) => {
+            updateCallState({ remoteStream: event.streams[0] });
+        };
+
+        const answer = await PeerService.getAnswer(offer);
+
+        iceCandidatesQueue.current.forEach(async (candidate) => {
+            try {
+                await peer.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) {
+                console.error('Error adding queued ice candidate', e);
+            }
+        });
+        iceCandidatesQueue.current = [];
+
+        socket.emit('call:answer', {
+            to: from,
+            answer: answer,
+        });
+    }, [callState.callPayload, socket, getMediaStream]);
+
+    const handleEndCall = useCallback(() => {
+        const targetId = callState.callPayload?.userId || callState.callPayload?.from;
+        if (targetId) socket.emit('call:end', { to: targetId });
+
+        cleanupCallSession();
+    }, [callState.callPayload, socket, cleanupCallSession]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on('call:offer', (data) => {
+            updateCallState({
+                callPayload: { ...data, name: data.callerName, picture: data.callerPic },
+                callStatus: 'incoming',
+            });
+            iceCandidatesQueue.current = [];
+        });
+
+        socket.on('call:answer', async ({ answer }) => {
+            if (callState.callStatus === 'outbound') {
+                updateCallState({ isAccepted: true });
+
+                await PeerService.setRemoteDescription(answer);
+
+                const peer = PeerService.peer;
+                iceCandidatesQueue.current.forEach(async (candidate) => {
+                    try {
+                        await peer.addIceCandidate(new RTCIceCandidate(candidate));
+                    } catch (e) {
+                        console.error('Error adding queued ice candidate', e);
+                    }
+                });
+                iceCandidatesQueue.current = [];
+                updateCallState({ callStatus: 'active' });
+            }
+        });
+
+        socket.on('call:ice-candidate', async ({ candidate }) => {
+            const peer = PeerService.peer;
+            if (peer && peer.remoteDescription) {
+                try {
+                    await peer.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (e) {
+                    console.error('Error adding ICE candidate', e);
+                }
+            } else iceCandidatesQueue.current.push(candidate);
+        });
+
+        socket.on('call:ended', () => {
+            cleanupCallSession();
+        });
+
+        return () => {
+            socket.off('call:offer');
+            socket.off('call:answer');
+            socket.off('call:ice-candidate');
+            socket.off('call:ended');
+        };
+    }, [socket, callState.callStatus]);
+
     useEffect(() => {
         fetchMessages();
     }, [fetchMessages]);
@@ -183,59 +387,80 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                 });
             }
 
-            if (!document.hasFocus() && Notification.permission === "granted") {
+            if (!document.hasFocus() && Notification.permission === 'granted') {
                 if (newMessageReceived.sender._id !== user._id) {
                     new Notification(newMessageReceived.sender.username, {
-                        body: newMessageReceived.text || "Message Recieved",
+                        body: newMessageReceived.text || 'Message Recieved',
                         icon: getProfilePic(newMessageReceived.sender, null),
                     });
                 }
             }
         };
 
-        socket.on("messageRecieved", handleMessageReceived);
+        socket.on('messageRecieved', handleMessageReceived);
 
         return () => {
             socket.off('onlineUsers', handleOnlineUsers);
-            socket.off("messageRecieved", handleMessageReceived);
+            socket.off('messageRecieved', handleMessageReceived);
         };
     }, [socket, user._id]);
 
     const renderHeader = () => (
         <div className="chatBoxTop">
-            <div className='closeConversation'>
-                <img src={BackIcon} alt='Back' onClick={() => setCurrentChat(null)} />
-            </div>
-            <img className='userImg' src={chatUserProfilePic} alt='User' />
-            <div className="userDetails" onClick={() => setShowProfileInfo(!showProfileInfo)}>
-                <span className='userName'>{currentChatName}</span>
-                <div className="status">
-                    {currentChat.isGroupChat ? (
-                        <div className='numberOfMembers'>{currentChat.members.length} Members</div>
-                    ) : (
-                        <div className='statusForPrivasteChats'>
-                            <div className="color" style={{ backgroundColor: isUserOnline ? '#2ecc71' : '#e74c3c' }}></div>
-                            <span className="userStatus">{isUserOnline ? 'Online' : 'Offline'}</span>
-                        </div>
-                    )}
+            <div className="left-section">
+                <div className="closeConversation">
+                    <img src={BackIcon} alt="Back" onClick={() => setCurrentChat(null)} />
+                </div>
+                <img className="userImg" src={chatUserProfilePic} alt="User" />
+                <div className="userDetails" onClick={() => setShowProfileInfo(!showProfileInfo)}>
+                    <span className="userName">{currentChatName}</span>
+                    <div className="status">
+                        {currentChat.isGroupChat ? (
+                            <div className="numberOfMembers">{currentChat.members.length} Members</div>
+                        ) : (
+                            <div className="statusForPrivateChats">
+                                <div
+                                    className="color"
+                                    style={{ backgroundColor: isUserOnline ? '#2ecc71' : '#e74c3c' }}
+                                ></div>
+                                <span className="userStatus">{isUserOnline ? 'Online' : 'Offline'}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            <div className="threeDotsContainer">
-                <div className="threeDots" onClick={() => setShowMoreOption(!showMoreOption)}>
-                    <img src={dotsIcon} alt='Dots' />
+            <div className="right-section">
+                <div className="call-actions">
+                    <button onClick={() => handleStartCall('video')}>
+                        <MdVideoCall />
+                    </button>
+                    <button onClick={() => handleStartCall('audio')}>
+                        <MdCall />
+                    </button>
                 </div>
-                <CSSTransition in={showMoreOption} timeout={250} classNames='moreOptions' unmountOnExit nodeRef={threeDotsRef}>
-                    <div className="moreOptionDropdown" ref={threeDotsRef}>
-                        <MoreOption
-                            fetchAgain={fetchAgain}
-                            setShowConfirmModal={setShowConfirmModal}
-                            setShowMoreOption={setShowMoreOption}
-                            setShowProfileInfo={setShowProfileInfo}
-                            showProfileInfo={showProfileInfo}
-                        />
+                <div className="threeDotsContainer">
+                    <div className="threeDots" onClick={() => setShowMoreOption(!showMoreOption)}>
+                        <img src={dotsIcon} alt="Dots" />
                     </div>
-                </CSSTransition>
+                    <CSSTransition
+                        in={showMoreOption}
+                        timeout={250}
+                        classNames="moreOptions"
+                        unmountOnExit
+                        nodeRef={threeDotsRef}
+                    >
+                        <div className="moreOptionDropdown" ref={threeDotsRef}>
+                            <MoreOption
+                                fetchAgain={fetchAgain}
+                                setShowConfirmModal={setShowConfirmModal}
+                                setShowMoreOption={setShowMoreOption}
+                                setShowProfileInfo={setShowProfileInfo}
+                                showProfileInfo={showProfileInfo}
+                            />
+                        </div>
+                    </CSSTransition>
+                </div>
             </div>
         </div>
     );
@@ -245,7 +470,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             <div className="userMessages">
                 <div className="messages">
                     {fetchMessagesLoading ? (
-                        <div className='messageLoading'>
+                        <div className="messageLoading">
                             <CircularProgress color="primary" />
                         </div>
                     ) : (
@@ -268,22 +493,33 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         <div className="chatBoxBottom">
             <div className="chatBoxbottomWrapper">
                 <div className="input">
-                    <img className='emoji' src={emojiPicker} alt='Emoji Picker' onClick={() => setIsPickerVisible(!isPickerVisible)} />
-                    <CSSTransition in={isPickerVisible} timeout={200} classNames='emojiPicker' unmountOnExit nodeRef={pickerRef}>
+                    <img
+                        className="emoji"
+                        src={emojiPicker}
+                        alt="Emoji Picker"
+                        onClick={() => setIsPickerVisible(!isPickerVisible)}
+                    />
+                    <CSSTransition
+                        in={isPickerVisible}
+                        timeout={200}
+                        classNames="emojiPicker"
+                        unmountOnExit
+                        nodeRef={pickerRef}
+                    >
                         <div className="emojiPicker" ref={pickerRef}>
                             <Picker
                                 data={data}
-                                previewPosition='none'
+                                previewPosition="none"
                                 emojiSize={20}
-                                style={{ height: "20px" }}
+                                style={{ height: '20px' }}
                                 onEmojiSelect={handleEmojiPick}
                             />
                         </div>
                     </CSSTransition>
 
                     <textarea
-                        className='chatMessageInput'
-                        placeholder='Message'
+                        className="chatMessageInput"
+                        placeholder="Message"
                         onKeyDown={handleKeyDown}
                         ref={inputRef}
                         onInput={handleInput}
@@ -293,11 +529,23 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                     />
 
                     <div>
-                        <input className='file-select' style={{ display: 'none' }} type="file" id="file" onChange={handleFileChange} />
+                        <input
+                            className="file-select"
+                            style={{ display: 'none' }}
+                            type="file"
+                            id="file"
+                            onChange={handleFileChange}
+                        />
                         <label htmlFor="file">
-                            <img className='file' src={fileSelection} alt='File Selection' />
+                            <img className="file" src={fileSelection} alt="File Selection" />
                         </label>
-                        <CSSTransition in={showPreview} timeout={250} classNames='imaageTransition' unmountOnExit nodeRef={imagePreviewRef}>
+                        <CSSTransition
+                            in={showPreview}
+                            timeout={250}
+                            classNames="imaageTransition"
+                            unmountOnExit
+                            nodeRef={imagePreviewRef}
+                        >
                             <div className="imagePreview" ref={imagePreviewRef}>
                                 <FilePreview
                                     previewClose={previewClose}
@@ -313,8 +561,12 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                     </div>
                 </div>
 
-                <button className='chatSendBtn' onClick={handleSubmit} disabled={msgSendLoading}>
-                    {msgSendLoading ? <CircularProgress size={28} color="primary" /> : <img src={sendIcon} alt='Send' />}
+                <button className="chatSendBtn" onClick={handleSubmit} disabled={msgSendLoading}>
+                    {msgSendLoading ? (
+                        <CircularProgress size={28} color="primary" />
+                    ) : (
+                        <img src={sendIcon} alt="Send" />
+                    )}
                 </button>
             </div>
         </div>
@@ -330,12 +582,18 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                         {renderInputArea()}
                     </>
                 ) : (
-                    <span className='noConversationText'>Open a conversation to start chat.</span>
+                    <span className="noConversationText">Open a conversation to start chat.</span>
                 )}
             </div>
 
-            <CSSTransition in={showProfileInfo} timeout={350} classNames='profileInfo' unmountOnExit nodeRef={profileRef}>
-                <div ref={profileRef} className='profileTranisitionDiv'>
+            <CSSTransition
+                in={showProfileInfo}
+                timeout={350}
+                classNames="profileInfo"
+                unmountOnExit
+                nodeRef={profileRef}
+            >
+                <div ref={profileRef} className="profileTranisitionDiv">
                     <ProfileInfo
                         setShowProfileInfo={setShowProfileInfo}
                         fetchAgain={fetchAgain}
@@ -343,6 +601,20 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                     />
                 </div>
             </CSSTransition>
+
+            <CallModal
+                callStatus={callState.callStatus}
+                localStream={callState.localStream}
+                remoteStream={callState.remoteStream}
+                callPayload={callState.callPayload}
+                callType={callState.callType}
+                isMicOn={callState.isMicOn}
+                isVideoOn={callState.isVideoOn}
+                updateCallState={updateCallState}
+                endCall={handleEndCall}
+                acceptCall={handleAcceptCall}
+                isAccepted={callState.isAccepted}
+            />
         </div>
     );
 };
