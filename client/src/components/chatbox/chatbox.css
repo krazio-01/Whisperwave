@@ -111,6 +111,7 @@
 
         /* more options css */
         .threeDotsContainer {
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;

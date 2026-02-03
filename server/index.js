@@ -127,6 +127,13 @@ io.on('connection', (socket) => {
         });
     });
 
+    socket.on('call:toggle-media', (data) => {
+        socket.to(data.to).emit('call:toggle-media', {
+            type: data.type,
+            status: data.status
+        });
+    });
+
     socket.on('call:end', (data) => {
         if (data.to) socket.to(data.to).emit('call:ended');
     });

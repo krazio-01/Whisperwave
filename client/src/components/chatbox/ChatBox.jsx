@@ -1,74 +1,38 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { CSSTransition } from 'react-transition-group';
-import axios from 'axios';
-import Picker from '@emoji-mart/react';
-import data from '@emoji-mart/data';
-import { CircularProgress } from '@mui/material';
-import Message from '../message/Message';
-import MoreOption from '../moreOption/MoreOption';
 import ProfileInfo from '../miscellaneous/profileInfo/Profile';
-import FilePreview from '../filePreview/FilePreview';
-import { ChatState } from '../../context/ChatProvider';
-import { getProfilePic, getCurrentChatName } from '../../utils/chatUtils';
-import './chatbox.css';
-import sendIcon from '../../Assets/images/send.png';
-import emojiPicker from '../../Assets/images/emojiPicker.png';
-import fileSelection from '../../Assets/images/fileSelection.png';
-import previewClose from '../../Assets/images/previewClose.png';
-import BackIcon from '../../Assets/images/back.png';
-import dotsIcon from '../../Assets/images/dots.png';
-import { MdVideoCall, MdCall } from 'react-icons/md';
-import PeerService from '../../services/peer';
 import CallModal from '../callModal/callModal';
+import ChatHeader from './ChatHeader';
+import ChatInput from './ChatInput';
+import ChatMessages from './ChatMessages';
+import { ChatState } from '../../context/ChatProvider';
+import useWebRTC from '../../hooks/useWebRTC';
+import { getProfilePic } from '../../utils/chatUtils';
+import './chatbox.css';
 
 const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => {
     const { currentChat, setCurrentChat, user } = ChatState();
 
-    const inputRef = useRef(null);
-    const scrollRef = useRef();
-    const pickerRef = useRef(null);
     const profileRef = useRef(null);
-    const threeDotsRef = useRef(null);
-    const imagePreviewRef = useRef(null);
-    const iceCandidatesQueue = useRef([]);
-
     const currentChatRef = useRef(currentChat);
 
-    const [textareaHeight, setTextareaHeight] = useState('4.5rem');
     const [messages, setMessages] = useState([]);
-    const [fetchMessagesLoading, setFetchMessagesLoading] = useState(false);
-    const [msgSendLoading, setMsgSendLoading] = useState(false);
-    const [newMessages, setNewMessages] = useState('');
-    const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState([]);
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [showProfileInfo, setShowProfileInfo] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
-    const [showMoreOption, setShowMoreOption] = useState(false);
+    const [uiState, setUiState] = useState({ showProfileInfo: false });
 
-    const initialCallState = {
-        callStatus: 'idle',
-        localStream: null,
-        remoteStream: null,
-        callPayload: null,
-        callType: 'video',
-        isAccepted: false,
-        isMicOn: true,
-        isVideoOn: true,
-    };
-    const [callState, setCallState] = useState(initialCallState);
-
-    const chatUserProfilePic = useMemo(() => getProfilePic(user, currentChat), [user, currentChat]);
-    const currentChatName = useMemo(() => getCurrentChatName(user, currentChat), [user, currentChat]);
-    const updateCallState = (updates) => {
-        setCallState((prev) => ({ ...prev, ...updates }));
-    };
+    const { call, handleStartCall, handleAcceptCall, handleEndCall, updateCallState, toggleMedia } = useWebRTC(
+        socket,
+        user,
+        currentChat,
+    );
 
     const isUserOnline = useMemo(() => {
         if (!currentChat || currentChat?.isGroupChat) return false;
         const otherMember = currentChat?.members?.find((m) => m?._id !== user?._id);
         return otherMember ? onlineUsers.includes(otherMember?._id) : false;
     }, [onlineUsers, currentChat, user?._id]);
+
+    const toggleProfile = () => setUiState((prev) => ({ showProfileInfo: !prev.showProfileInfo }));
 
     useEffect(() => {
         currentChatRef.current = currentChat;
@@ -79,324 +43,24 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             Notification.requestPermission();
     }, []);
 
-    const handleInput = useCallback(() => {
-        const textarea = inputRef.current;
-        if (!textarea) return;
-
-        textarea.style.height = '4.5rem';
-        const { scrollHeight, clientHeight } = textarea;
-
-        if (scrollHeight > clientHeight) {
-            const newHeight = `${scrollHeight}px`;
-            textarea.style.height = newHeight;
-            setTextareaHeight(newHeight);
-        } else {
-            setTextareaHeight(`${clientHeight}px`);
-        }
-    }, []);
-
-    useEffect(() => {
-        handleInput();
-    }, [newMessages, handleInput]);
-
-    const handleSubmit = useCallback(
-        async (e) => {
-            if (e) e.preventDefault();
-            if (!newMessages.trim() || !currentChat) return;
-
-            setMsgSendLoading(true);
-            try {
-                const config = {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${user.authToken}`,
-                    },
-                };
-
-                const messagePayload = {
-                    text: newMessages,
-                    chatId: currentChat._id,
-                };
-
-                const { data } = await axios.post('/messages', messagePayload, config);
-
-                setMessages((prev) => [...prev, data]);
-                socket.emit('sendMessage', data);
-                setNewMessages('');
-                setTextareaHeight('4.5rem');
-            } catch (err) {
-                console.error('Error sending message:', err.message);
-            } finally {
-                setMsgSendLoading(false);
-            }
-        },
-        [newMessages, currentChat, user.authToken, socket],
-    );
-
-    const fetchMessages = useCallback(async () => {
-        if (!currentChat) return;
-
-        setFetchMessagesLoading(true);
-        try {
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${user.authToken}`,
-                },
-            };
-            const { data } = await axios.get(`/messages/${currentChat._id}`, config);
-            setMessages(data);
-            socket.emit('joinChat', currentChat._id);
-        } catch (error) {
-            console.error('Error fetching messages:', error.message);
-        } finally {
-            setFetchMessagesLoading(false);
-        }
-    }, [currentChat, user.authToken, socket]);
-
-    const handleEmojiPick = useCallback((e) => {
-        const ref = inputRef.current;
-        if (ref) ref.focus();
-
-        setNewMessages((prev) => {
-            if (!ref) return prev + e.native;
-            const start = prev.substring(0, ref.selectionStart);
-            const end = prev.substring(ref.selectionStart);
-            return start + e.native + end;
-        });
-    }, []);
-
-    const handleFileChange = useCallback((e) => {
-        if (e.target.files && e.target.files[0]) {
-            setSelectedFile(e.target.files[0]);
-            setShowPreview(true);
-        }
-    }, []);
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit(e);
-        }
-    };
-
-    // call logic ---
-    const cleanupCallSession = useCallback(() => {
-        if (callState.localStream) callState.localStream.getTracks().forEach((track) => track.stop());
-
-        PeerService.close();
-
-        // Reset to initial state
-        setCallState(initialCallState);
-    }, [callState.localStream]);
-
-    const getMediaStream = useCallback(async (type) => {
-        try {
-            const constraints = {
-                audio: true,
-                video: type === 'video',
-            };
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            updateCallState({ localStream: stream });
-            return stream;
-        } catch (error) {
-            console.error('Error accessing media devices.', error);
-            alert('Could not access Camera/Microphone');
-            return null;
-        }
-    }, []);
-
-    const handleStartCall = useCallback(
-        async (type) => {
-            if (!currentChat) return;
-
-            const targetUser = currentChat.members.find((m) => m._id !== user._id);
-            if (!targetUser) return;
-
-            updateCallState({
-                callType: type,
-                callStatus: 'outbound',
-                callPayload: {
-                    userId: targetUser._id,
-                    name: targetUser.username,
-                    picture: targetUser.profilePicture,
-                    callType: type,
-                },
-            });
-
-            const stream = await getMediaStream(type);
-            if (!stream) {
-                updateCallState({ callStatus: 'idle', callPayload: null });
-                return;
-            }
-
-            const peer = PeerService.start();
-            stream.getTracks().forEach((track) => peer.addTrack(track, stream));
-
-            peer.onicecandidate = (event) => {
-                if (event.candidate) {
-                    socket.emit('call:ice-candidate', {
-                        to: targetUser._id,
-                        candidate: event.candidate,
-                    });
-                }
-            };
-
-            peer.ontrack = (event) => {
-                updateCallState({ remoteStream: event.streams[0] });
-            };
-
-            const offer = await PeerService.getOffer();
-
-            socket.emit('call:offer', {
-                to: targetUser._id,
-                from: user._id,
-                offer: offer,
-                callType: type,
-                callerName: user.username,
-                callerPic: user.profilePicture,
-            });
-        },
-        [currentChat, user, socket, getMediaStream],
-    );
-
-    const handleAcceptCall = useCallback(async () => {
-        const { offer, from, callType: incomingType } = callState.callPayload;
-
-        updateCallState({
-            callStatus: 'active',
-            callType: incomingType,
-        });
-
-        const stream = await getMediaStream(incomingType);
-        if (!stream) return;
-
-        const peer = PeerService.start();
-        stream.getTracks().forEach((track) => peer.addTrack(track, stream));
-
-        peer.onicecandidate = (event) => {
-            if (event.candidate) {
-                socket.emit('call:ice-candidate', {
-                    to: from,
-                    candidate: event.candidate,
-                });
-            }
-        };
-
-        peer.ontrack = (event) => {
-            updateCallState({ remoteStream: event.streams[0] });
-        };
-
-        const answer = await PeerService.getAnswer(offer);
-
-        iceCandidatesQueue.current.forEach(async (candidate) => {
-            try {
-                await peer.addIceCandidate(new RTCIceCandidate(candidate));
-            } catch (e) {
-                console.error('Error adding queued ice candidate', e);
-            }
-        });
-        iceCandidatesQueue.current = [];
-
-        socket.emit('call:answer', {
-            to: from,
-            answer: answer,
-        });
-    }, [callState.callPayload, socket, getMediaStream]);
-
-    const handleEndCall = useCallback(() => {
-        const targetId = callState.callPayload?.userId || callState.callPayload?.from;
-        if (targetId) socket.emit('call:end', { to: targetId });
-
-        cleanupCallSession();
-    }, [callState.callPayload, socket, cleanupCallSession]);
-
-    useEffect(() => {
-        if (!socket) return;
-
-        socket.on('call:offer', (data) => {
-            updateCallState({
-                callPayload: { ...data, name: data.callerName, picture: data.callerPic },
-                callStatus: 'incoming',
-            });
-            iceCandidatesQueue.current = [];
-        });
-
-        socket.on('call:answer', async ({ answer }) => {
-            if (callState.callStatus === 'outbound') {
-                updateCallState({ isAccepted: true });
-
-                await PeerService.setRemoteDescription(answer);
-
-                const peer = PeerService.peer;
-                iceCandidatesQueue.current.forEach(async (candidate) => {
-                    try {
-                        await peer.addIceCandidate(new RTCIceCandidate(candidate));
-                    } catch (e) {
-                        console.error('Error adding queued ice candidate', e);
-                    }
-                });
-                iceCandidatesQueue.current = [];
-                updateCallState({ callStatus: 'active' });
-            }
-        });
-
-        socket.on('call:ice-candidate', async ({ candidate }) => {
-            const peer = PeerService.peer;
-            if (peer && peer.remoteDescription) {
-                try {
-                    await peer.addIceCandidate(new RTCIceCandidate(candidate));
-                } catch (e) {
-                    console.error('Error adding ICE candidate', e);
-                }
-            } else iceCandidatesQueue.current.push(candidate);
-        });
-
-        socket.on('call:ended', () => {
-            cleanupCallSession();
-        });
-
-        return () => {
-            socket.off('call:offer');
-            socket.off('call:answer');
-            socket.off('call:ice-candidate');
-            socket.off('call:ended');
-        };
-    }, [socket, callState.callStatus]);
-
-    useEffect(() => {
-        fetchMessages();
-    }, [fetchMessages]);
-
-    useEffect(() => {
-        scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, [messages]);
-
     useEffect(() => {
         if (!socket) return;
 
         const handleOnlineUsers = (users) => setOnlineUsers(users);
-        socket.on('onlineUsers', handleOnlineUsers);
-
-        const handleMessageReceived = (newMessageReceived) => {
+        const handleMessageReceived = (newMessage) => {
             const activeChat = currentChatRef.current;
+            if (activeChat && activeChat._id === newMessage.chat._id)
+                setMessages((prev) => (prev.some((m) => m._id === newMessage._id) ? prev : [...prev, newMessage]));
 
-            if (activeChat && activeChat._id === newMessageReceived.chat._id) {
-                setMessages((prev) => {
-                    if (prev.some((m) => m._id === newMessageReceived._id)) return prev;
-                    return [...prev, newMessageReceived];
+            if (!document.hasFocus() && Notification.permission === 'granted' && newMessage.sender._id !== user._id) {
+                new Notification(newMessage.sender.username, {
+                    body: newMessage.text || 'Message Recieved',
+                    icon: getProfilePic(newMessage.sender, null),
                 });
-            }
-
-            if (!document.hasFocus() && Notification.permission === 'granted') {
-                if (newMessageReceived.sender._id !== user._id) {
-                    new Notification(newMessageReceived.sender.username, {
-                        body: newMessageReceived.text || 'Message Recieved',
-                        icon: getProfilePic(newMessageReceived.sender, null),
-                    });
-                }
             }
         };
 
+        socket.on('onlineUsers', handleOnlineUsers);
         socket.on('messageRecieved', handleMessageReceived);
 
         return () => {
@@ -405,181 +69,32 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         };
     }, [socket, user._id]);
 
-    const renderHeader = () => (
-        <div className="chatBoxTop">
-            <div className="left-section">
-                <div className="closeConversation">
-                    <img src={BackIcon} alt="Back" onClick={() => setCurrentChat(null)} />
-                </div>
-                <img className="userImg" src={chatUserProfilePic} alt="User" />
-                <div className="userDetails" onClick={() => setShowProfileInfo(!showProfileInfo)}>
-                    <span className="userName">{currentChatName}</span>
-                    <div className="status">
-                        {currentChat.isGroupChat ? (
-                            <div className="numberOfMembers">{currentChat.members.length} Members</div>
-                        ) : (
-                            <div className="statusForPrivateChats">
-                                <div
-                                    className="color"
-                                    style={{ backgroundColor: isUserOnline ? '#2ecc71' : '#e74c3c' }}
-                                ></div>
-                                <span className="userStatus">{isUserOnline ? 'Online' : 'Offline'}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <div className="right-section">
-                <div className="call-actions">
-                    <button onClick={() => handleStartCall('video')}>
-                        <MdVideoCall />
-                    </button>
-                    <button onClick={() => handleStartCall('audio')}>
-                        <MdCall />
-                    </button>
-                </div>
-                <div className="threeDotsContainer">
-                    <div className="threeDots" onClick={() => setShowMoreOption(!showMoreOption)}>
-                        <img src={dotsIcon} alt="Dots" />
-                    </div>
-                    <CSSTransition
-                        in={showMoreOption}
-                        timeout={250}
-                        classNames="moreOptions"
-                        unmountOnExit
-                        nodeRef={threeDotsRef}
-                    >
-                        <div className="moreOptionDropdown" ref={threeDotsRef}>
-                            <MoreOption
-                                fetchAgain={fetchAgain}
-                                setShowConfirmModal={setShowConfirmModal}
-                                setShowMoreOption={setShowMoreOption}
-                                setShowProfileInfo={setShowProfileInfo}
-                                showProfileInfo={showProfileInfo}
-                            />
-                        </div>
-                    </CSSTransition>
-                </div>
-            </div>
-        </div>
-    );
-
-    const renderMessages = () => (
-        <div className="messageWrapper">
-            <div className="userMessages">
-                <div className="messages">
-                    {fetchMessagesLoading ? (
-                        <div className="messageLoading">
-                            <CircularProgress color="primary" />
-                        </div>
-                    ) : (
-                        messages.map((message) => (
-                            <div key={message._id || message.createdAt} ref={scrollRef}>
-                                <Message
-                                    message={message}
-                                    own={message.sender._id === user._id}
-                                    isGroupChat={currentChat?.isGroupChat}
-                                />
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-
-    const renderInputArea = () => (
-        <div className="chatBoxBottom">
-            <div className="chatBoxbottomWrapper">
-                <div className="input">
-                    <img
-                        className="emoji"
-                        src={emojiPicker}
-                        alt="Emoji Picker"
-                        onClick={() => setIsPickerVisible(!isPickerVisible)}
-                    />
-                    <CSSTransition
-                        in={isPickerVisible}
-                        timeout={200}
-                        classNames="emojiPicker"
-                        unmountOnExit
-                        nodeRef={pickerRef}
-                    >
-                        <div className="emojiPicker" ref={pickerRef}>
-                            <Picker
-                                data={data}
-                                previewPosition="none"
-                                emojiSize={20}
-                                style={{ height: '20px' }}
-                                onEmojiSelect={handleEmojiPick}
-                            />
-                        </div>
-                    </CSSTransition>
-
-                    <textarea
-                        className="chatMessageInput"
-                        placeholder="Message"
-                        onKeyDown={handleKeyDown}
-                        ref={inputRef}
-                        onInput={handleInput}
-                        onChange={(e) => setNewMessages(e.target.value)}
-                        value={newMessages}
-                        style={{ '--textarea-height': textareaHeight }}
-                    />
-
-                    <div>
-                        <input
-                            className="file-select"
-                            style={{ display: 'none' }}
-                            type="file"
-                            id="file"
-                            onChange={handleFileChange}
-                        />
-                        <label htmlFor="file">
-                            <img className="file" src={fileSelection} alt="File Selection" />
-                        </label>
-                        <CSSTransition
-                            in={showPreview}
-                            timeout={250}
-                            classNames="imaageTransition"
-                            unmountOnExit
-                            nodeRef={imagePreviewRef}
-                        >
-                            <div className="imagePreview" ref={imagePreviewRef}>
-                                <FilePreview
-                                    previewClose={previewClose}
-                                    selectedFile={selectedFile}
-                                    setSelectedFile={setSelectedFile}
-                                    setShowPreview={setShowPreview}
-                                    socket={socket}
-                                    sendIcon={sendIcon}
-                                    setMessages={setMessages}
-                                />
-                            </div>
-                        </CSSTransition>
-                    </div>
-                </div>
-
-                <button className="chatSendBtn" onClick={handleSubmit} disabled={msgSendLoading}>
-                    {msgSendLoading ? (
-                        <CircularProgress size={28} color="primary" />
-                    ) : (
-                        <img src={sendIcon} alt="Send" />
-                    )}
-                </button>
-            </div>
-        </div>
-    );
-
     return (
         <div className="main">
-            <div className={`chatBoxWrapper ${showProfileInfo ? 'active' : ''}`}>
+            <div className={`chatBoxWrapper ${uiState.showProfileInfo ? 'active' : ''}`}>
                 {currentChat ? (
                     <>
-                        {renderHeader()}
-                        {renderMessages()}
-                        {renderInputArea()}
+                        <ChatHeader
+                            user={user}
+                            currentChat={currentChat}
+                            setCurrentChat={setCurrentChat}
+                            isUserOnline={isUserOnline}
+                            handleStartCall={handleStartCall}
+                            fetchAgain={fetchAgain}
+                            setShowConfirmModal={setShowConfirmModal}
+                            setShowProfileInfo={toggleProfile}
+                            showProfileInfo={uiState.showProfileInfo}
+                        />
+
+                        <ChatMessages
+                            currentChat={currentChat}
+                            user={user}
+                            socket={socket}
+                            messages={messages}
+                            setMessages={setMessages}
+                        />
+
+                        <ChatInput currentChat={currentChat} user={user} socket={socket} setMessages={setMessages} />
                     </>
                 ) : (
                     <span className="noConversationText">Open a conversation to start chat.</span>
@@ -587,7 +102,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             </div>
 
             <CSSTransition
-                in={showProfileInfo}
+                in={uiState.showProfileInfo}
                 timeout={350}
                 classNames="profileInfo"
                 unmountOnExit
@@ -595,7 +110,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             >
                 <div ref={profileRef} className="profileTranisitionDiv">
                     <ProfileInfo
-                        setShowProfileInfo={setShowProfileInfo}
+                        setShowProfileInfo={toggleProfile}
                         fetchAgain={fetchAgain}
                         setFetchAgain={setFetchAgain}
                     />
@@ -603,17 +118,12 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             </CSSTransition>
 
             <CallModal
-                callStatus={callState.callStatus}
-                localStream={callState.localStream}
-                remoteStream={callState.remoteStream}
-                callPayload={callState.callPayload}
-                callType={callState.callType}
-                isMicOn={callState.isMicOn}
-                isVideoOn={callState.isVideoOn}
+                user={user}
+                call={call}
+                toggleMedia={toggleMedia}
                 updateCallState={updateCallState}
                 endCall={handleEndCall}
                 acceptCall={handleAcceptCall}
-                isAccepted={callState.isAccepted}
             />
         </div>
     );

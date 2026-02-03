@@ -1,139 +1,133 @@
-import { useCallback } from 'react';
 import { MdCallEnd, MdCall, MdMic, MdMicOff, MdVideocam, MdVideocamOff } from 'react-icons/md';
 import './callModal.css';
 
-const CallModal = (props) => {
-    const {
-        callStatus,
-        localStream,
-        remoteStream,
-        endCall,
-        acceptCall,
-        callType,
-        callPayload,
-        isMicOn,
-        isVideoOn,
-        updateCallState,
-        isAccepted,
-    } = props;
+const CallModal = ({ user, call, toggleMedia, endCall, acceptCall }) => {
+    const { status, type, payload, local, remote } = call;
 
-    const isVideoCall = callType === 'video';
+    const isVideoCall = type === 'video';
+    const isConnecting = status === 'active' && !remote.stream;
 
-    // Toggle Handlers
-    const toggleMic = useCallback(() => {
-        if (localStream) {
-            const audioTrack = localStream.getAudioTracks()[0];
-            if (audioTrack) {
-                audioTrack.enabled = !audioTrack.enabled;
-                updateCallState({ isMicOn: audioTrack.enabled });
-            }
-        }
-    }, [localStream, updateCallState]);
+    const handleMicToggle = () => toggleMedia('audio');
+    const handleCamToggle = () => toggleMedia('video');
 
-    const toggleCamera = useCallback(() => {
-        if (localStream) {
-            const videoTrack = localStream.getVideoTracks()[0];
-            if (videoTrack) {
-                videoTrack.enabled = !videoTrack.enabled;
-                updateCallState({ isVideoOn: videoTrack.enabled });
-            }
-        }
-    }, [localStream, updateCallState]);
-
-    if (callStatus === 'idle') return null;
+    if (status === 'idle') return null;
 
     return (
         <div className="call-modal-overlay">
-
-            {callStatus === 'incoming' && (
+            {/* incoming call*/}
+            {status === 'incoming' && (
                 <div className="incoming-call-card">
-                    <img
-                        src={callPayload?.picture || 'https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg'}
-                        alt="Caller"
-                        className="caller-img"
-                    />
+                    <img src={payload?.picture} alt="Caller" className="caller-img" />
                     <div className="incoming-text">
-                        <h3>{callPayload?.name}</h3>
+                        <h3>{payload?.name}</h3>
                         <p>{isVideoCall ? 'Incoming Video Call' : 'Incoming Voice Call'}</p>
                     </div>
-
                     <div className="action-buttons">
-                        <button className="btn-decline" onClick={endCall}><MdCallEnd /></button>
-                        <button className="btn-accept" onClick={acceptCall}><MdCall /></button>
+                        <button className="btn-decline" onClick={endCall}>
+                            <MdCallEnd />
+                        </button>
+                        <button className="btn-accept" onClick={acceptCall}>
+                            <MdCall />
+                        </button>
                     </div>
                 </div>
             )}
 
-            {(callStatus === 'active' || callStatus === 'outbound') && (
+            {/* active/outbout state */}
+            {(status === 'active' || status === 'outbound') && (
                 <div className="call-modal-content">
-
+                    {/* remote user */}
                     <div className="remote-video-container">
                         {!isVideoCall ? (
                             <div className="audio-call-card">
-                                <img
-                                    src={callPayload?.picture || 'https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg'}
-                                    alt="User"
-                                    className="audio-user-img"
-                                />
-                                <h3>{callPayload?.name || 'Unknown User'}</h3>
-                                <p className="call-timer">
-                                    {remoteStream
-                                        ? 'Voice Call Active'
-                                        : (isAccepted ? 'Connecting Audio...' : 'Ringing...')}
-                                </p>
+                                <img src={payload?.picture} alt="User" className="audio-user-img" />
+                                <h3>{payload?.name || 'Unknown User'}</h3>
+                                <p className="call-timer">{remote.stream ? 'Voice Call Active' : 'Connecting...'}</p>
 
-                                {remoteStream && (
+                                {/* 1. AUDIO MUTED INDICATOR */}
+                                {!remote.audio && remote.stream && (
+                                    <div className="remote-muted-badge">
+                                        <MdMicOff /> <span>Muted</span>
+                                    </div>
+                                )}
+
+                                {remote.stream && (
                                     <video
-                                        ref={(ref) => { if (ref) ref.srcObject = remoteStream; }}
+                                        ref={(ref) => {
+                                            if (ref) ref.srcObject = remote.stream;
+                                        }}
                                         autoPlay
                                         playsInline
                                         style={{ display: 'none' }}
                                     />
                                 )}
                             </div>
-                        ) : (
-                            remoteStream ? (
+                        ) : remote.stream && remote.video ? (
+                            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                                 <video
-                                    ref={(ref) => { if (ref) ref.srcObject = remoteStream; }}
+                                    ref={(ref) => {
+                                        if (ref) ref.srcObject = remote.stream;
+                                    }}
                                     autoPlay
                                     playsInline
                                     className="remote-video"
                                 />
-                            ) : (
-                                <div className="connecting-state">
-                                    <img
-                                        src={callPayload?.picture || 'https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg'}
-                                        alt="Caller"
-                                        style={{ width: 80, height: 80, borderRadius: '50%', marginBottom: 15 }}
-                                    />
-                                    <p>
-                                        {callStatus === 'outbound'
-                                            ? (isAccepted ? 'Connecting...' : 'Ringing...')
-                                            : 'Connecting...'}
-                                    </p>
-                                </div>
-                            )
+
+                                {!remote.audio && (
+                                    <div className="video-muted-overlay">
+                                        <MdMicOff size={20} />
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="connecting-state">
+                                <img className="user-profilePic" src={payload?.picture} alt="Caller" />
+                                <p style={{ color: 'white', fontSize: '1.1rem' }}>
+                                    {status === 'outbound'
+                                        ? 'Ringing...'
+                                        : isConnecting
+                                            ? 'Connecting...'
+                                            : 'Camera Off'}
+                                </p>
+
+                                {!remote.audio && remote.stream && (
+                                    <div className="remote-muted-badge" style={{ marginTop: 10 }}>
+                                        <MdMicOff /> <span>Muted</span>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
 
+                    {/* local stream */}
                     <div className={`local-video-container ${!isVideoCall ? 'hidden' : ''}`}>
-                        <video
-                            ref={(ref) => { if (ref) ref.srcObject = localStream; }}
-                            autoPlay
-                            playsInline
-                            muted
-                            className="local-video"
-                        />
+                        {local.video ? (
+                            <video
+                                ref={(ref) => {
+                                    if (ref) ref.srcObject = local.stream;
+                                }}
+                                autoPlay
+                                playsInline
+                                muted
+                                className="local-video"
+                            />
+                        ) : (
+                            <div className="local-off-state">
+                                <img className="user-profilePic" src={user?.profilePicture} alt="Caller" />
+                                <MdVideocamOff size={24} />
+                                <span>Camera Off</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="call-controls">
-                        <button className={`control-btn ${!isMicOn ? 'off' : ''}`} onClick={toggleMic}>
-                            {isMicOn ? <MdMic /> : <MdMicOff />}
+                        <button className={`control-btn ${!local.audio ? 'off' : ''}`} onClick={handleMicToggle}>
+                            {local.audio ? <MdMic /> : <MdMicOff />}
                         </button>
 
                         {isVideoCall && (
-                            <button className={`control-btn ${!isVideoOn ? 'off' : ''}`} onClick={toggleCamera}>
-                                {isVideoOn ? <MdVideocam /> : <MdVideocamOff />}
+                            <button className={`control-btn ${!local.video ? 'off' : ''}`} onClick={handleCamToggle}>
+                                {local.video ? <MdVideocam /> : <MdVideocamOff />}
                             </button>
                         )}
 

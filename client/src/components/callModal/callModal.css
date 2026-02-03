@@ -14,7 +14,9 @@
     animation: fadeIn 0.3s forwards;
 
     @keyframes fadeIn {
-        to { opacity: 1; }
+        to {
+            opacity: 1;
+        }
     }
 
     .incoming-call-card {
@@ -61,7 +63,8 @@
             gap: 40px;
             margin-top: 20px;
 
-            .btn-accept, .btn-decline {
+            .btn-accept,
+            .btn-decline {
                 width: 60px;
                 height: 60px;
                 border-radius: 50%;
@@ -81,9 +84,17 @@
                 animation: pulse-green 1.5s infinite;
 
                 @keyframes pulse-green {
-                    0% { box-shadow: 0 0 0 0 rgba(76, 209, 55, 0.7); }
-                    70% { box-shadow: 0 0 0 15px rgba(76, 209, 55, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(76, 209, 55, 0); }
+                    0% {
+                        box-shadow: 0 0 0 0 rgba(76, 209, 55, 0.7);
+                    }
+
+                    70% {
+                        box-shadow: 0 0 0 15px rgba(76, 209, 55, 0);
+                    }
+
+                    100% {
+                        box-shadow: 0 0 0 0 rgba(76, 209, 55, 0);
+                    }
                 }
             }
 
@@ -93,9 +104,17 @@
                 animation: pulse-red 1.5s infinite;
 
                 @keyframes pulse-red {
-                    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-                    70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+                    0% {
+                        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+                    }
+
+                    70% {
+                        box-shadow: 0 0 0 15px rgba(231, 76, 60, 0);
+                    }
+
+                    100% {
+                        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+                    }
                 }
             }
         }
@@ -106,6 +125,16 @@
         height: 100%;
         position: relative;
         overflow: hidden;
+
+        :where(.connecting-state, .local-video-container) {
+            .user-profilePic {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                object-fit: cover;
+                margin-bottom: 1.5rem;
+            }
+        }
 
         .remote-video-container {
             width: 100%;
@@ -126,13 +155,7 @@
                 align-items: center;
                 color: white;
                 font-size: 1.2rem;
-                background: #2f3640;
-
-                > img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
+                background-color: #202020;
             }
 
             .audio-call-card {
@@ -156,16 +179,27 @@
                 }
 
                 @keyframes pulse-avatar {
-                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1); }
-                    50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
-                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1); }
+                    0% {
+                        transform: scale(1);
+                        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1);
+                    }
+
+                    50% {
+                        transform: scale(1.05);
+                        box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+                    }
+
+                    100% {
+                        transform: scale(1);
+                        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1);
+                    }
                 }
 
                 h3 {
                     font-size: 2rem;
                     font-weight: 600;
                     margin: 0;
-                    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
                 }
 
                 .call-timer {
@@ -174,6 +208,35 @@
                     margin-top: 5px;
                     letter-spacing: 1px;
                 }
+            }
+
+            :where(.remote-muted-badge, .video-muted-overlay) {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #e74c3c;
+            }
+
+            .remote-muted-badge {
+                gap: 6px;
+                background-color: rgba(231, 76, 60, 0.2);
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                margin-top: 8px;
+                font-weight: 500;
+            }
+
+            .video-muted-overlay {
+                position: absolute;
+                bottom: 6rem;
+                right: 3rem;
+                background-color: rgba(0, 0, 0, 0.7);
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                z-index: 10;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             }
         }
 
@@ -186,7 +249,7 @@
             border-radius: 12px;
             overflow: hidden;
             background: #000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             border: 2px solid rgba(255, 255, 255, 0.2);
             transition: all 0.3s ease;
             z-index: 2;
@@ -205,6 +268,20 @@
 
             &.hidden {
                 display: none;
+            }
+
+            .local-off-state {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background-color: #2b2b2b;
+
+                span,
+                svg {
+                    color: #dfdfdf;
+                }
             }
         }
 
