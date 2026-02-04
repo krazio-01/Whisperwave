@@ -1,8 +1,8 @@
-import React, { useState, useRef, useCallback } from 'react';
-import './filepreview.css';
+import { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { CircularProgress } from '@mui/material';
 import { ChatState } from '../../context/ChatProvider';
+import './filepreview.css';
 
 const FilePreview = ({ previewClose, selectedFile, setSelectedFile, setShowPreview, socket, sendIcon, setMessages }) => {
     const filePreviewInput = useRef();
@@ -59,7 +59,7 @@ const FilePreview = ({ previewClose, selectedFile, setSelectedFile, setShowPrevi
 
             <div className="previewInput">
                 <input
-                    placeholder='type anything...'
+                    placeholder='Add a caption...'
                     type="text" ref={filePreviewInput}
                     onKeyDown={handleKeyDown}
                     onChange={(e) => { setNewMessages(e.target.value) }}

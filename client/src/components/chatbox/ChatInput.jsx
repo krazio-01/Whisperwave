@@ -10,9 +10,10 @@ import fileSelection from '../../Assets/images/fileSelection.png';
 import previewClose from '../../Assets/images/previewClose.png';
 import sendIcon from '../../Assets/images/send.png';
 
+const BASE_HEIGHT = '4.5rem';
+
 const ChatInput = ({ currentChat, user, socket, setMessages }) => {
-    const [newMessages, setNewMessages] = useState('');
-    const [textareaHeight, setTextareaHeight] = useState('4.5rem');
+    const [newMessage, setNewMessage] = useState('');
     const [msgSendLoading, setMsgSendLoading] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isPickerVisible, setIsPickerVisible] = useState(false);
@@ -22,47 +23,63 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
     const pickerRef = useRef(null);
     const imagePreviewRef = useRef(null);
 
-    const handleInput = useCallback(() => {
+    const adjustTextareaHeight = useCallback(() => {
         const textarea = inputRef.current;
         if (!textarea) return;
 
-        textarea.style.height = '4.5rem';
-        const { scrollHeight, clientHeight } = textarea;
+        textarea.style.height = BASE_HEIGHT;
+        const scrollHeight = textarea.scrollHeight;
+        const clientHeight = textarea.clientHeight;
 
-        if (scrollHeight > clientHeight) {
-            const newHeight = `${scrollHeight}px`;
-            textarea.style.height = newHeight;
-            setTextareaHeight(newHeight);
-        } else {
-            setTextareaHeight(`${clientHeight}px`);
-        }
+        if (scrollHeight > clientHeight) textarea.style.height = `${scrollHeight}px`;
     }, []);
 
-    const handleEmojiPick = useCallback((e) => {
-        const ref = inputRef.current;
-        if (ref) ref.focus();
+    const handleChange = (e) => {
+        setNewMessage(e.target.value);
+        adjustTextareaHeight();
+    };
 
-        setNewMessages((prev) => {
-            if (!ref) return prev + e.native;
-            const start = prev.substring(0, ref.selectionStart);
-            const end = prev.substring(ref.selectionStart);
-            return start + e.native + end;
-        });
-    }, []);
+    const handleEmojiPick = useCallback(
+        (e) => {
+            const ref = inputRef.current;
+            if (!ref) return;
+
+            ref.focus();
+            const emoji = e.native;
+            const start = ref.selectionStart;
+            const end = ref.selectionEnd;
+            const text = ref.value;
+
+            const updatedText = text.substring(0, start) + emoji + text.substring(end);
+
+            setNewMessage(updatedText);
+
+            setTimeout(() => {
+                ref.selectionStart = ref.selectionEnd = start + emoji.length;
+                adjustTextareaHeight();
+            }, 0);
+        },
+        [adjustTextareaHeight],
+    );
 
     const handleFileChange = useCallback((e) => {
-        if (e.target.files && e.target.files[0]) {
-            setSelectedFile(e.target.files[0]);
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
             setShowPreview(true);
         }
+        e.target.value = '';
     }, []);
 
     const handleSubmit = useCallback(
         async (e) => {
             if (e) e.preventDefault();
-            if (!newMessages.trim() || !currentChat) return;
+
+            const trimmedMessage = newMessage.trim();
+            if (!trimmedMessage || !currentChat || msgSendLoading) return;
 
             setMsgSendLoading(true);
+
             try {
                 const config = {
                     headers: {
@@ -71,45 +88,50 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
                     },
                 };
 
-                const messagePayload = {
-                    text: newMessages,
+                const payload = {
+                    text: trimmedMessage,
                     chatId: currentChat._id,
                 };
 
-                const { data } = await axios.post('/messages', messagePayload, config);
+                const { data } = await axios.post('/messages', payload, config);
 
                 setMessages((prev) => [...prev, data]);
-
                 socket.emit('sendMessage', data);
-                setNewMessages('');
-                setTextareaHeight('4.5rem');
+
+                setNewMessage('');
                 setIsPickerVisible(false);
+                if (inputRef.current) inputRef.current.style.height = BASE_HEIGHT;
             } catch (err) {
                 console.error('Error sending message:', err.message);
             } finally {
                 setMsgSendLoading(false);
             }
         },
-        [newMessages, currentChat, user.authToken, socket, setMessages],
+        [newMessage, currentChat, user.authToken, socket, setMessages, msgSendLoading],
     );
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSubmit(e);
+            handleSubmit();
         }
     };
+
+    const isSendDisabled = msgSendLoading || (!newMessage.trim() && !selectedFile);
 
     return (
         <div className="chatBoxBottom">
             <div className="chatBoxbottomWrapper">
-                <div className="input">
-                    <img
-                        className="emoji"
-                        src={emojiPicker}
-                        alt="Emoji Picker"
-                        onClick={() => setIsPickerVisible(!isPickerVisible)}
-                    />
+                <div className="input-container">
+                    <button
+                        type="button"
+                        className="emoji-trigger"
+                        onClick={() => setIsPickerVisible((prev) => !prev)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                        <img className="emoji" src={emojiPicker} alt="Open Emoji Picker" />
+                    </button>
+
                     <CSSTransition
                         in={isPickerVisible}
                         timeout={200}
@@ -117,39 +139,36 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
                         unmountOnExit
                         nodeRef={pickerRef}
                     >
-                        <div className="emojiPicker" ref={pickerRef}>
-                            <Picker
-                                data={data}
-                                previewPosition="none"
-                                emojiSize={20}
-                                style={{ height: '20px' }}
-                                onEmojiSelect={handleEmojiPick}
-                            />
+                        <div className="emojiPicker-wrapper" ref={pickerRef}>
+                            <Picker data={data} previewPosition="none" emojiSize={20} onEmojiSelect={handleEmojiPick} />
                         </div>
                     </CSSTransition>
 
                     <textarea
+                        ref={inputRef}
                         className="chatMessageInput"
                         placeholder="Message"
                         onKeyDown={handleKeyDown}
-                        ref={inputRef}
-                        onInput={handleInput}
-                        onChange={(e) => setNewMessages(e.target.value)}
-                        value={newMessages}
-                        style={{ '--textarea-height': textareaHeight }}
+                        onChange={handleChange}
+                        value={newMessage}
+                        autoComplete="off"
+                        rows={1}
+                        style={{ height: BASE_HEIGHT, resize: 'none' }}
                     />
 
                     <div>
                         <input
-                            className="file-select"
                             style={{ display: 'none' }}
+                            className="file-select"
                             type="file"
                             id="file"
+                            accept="image/*"
                             onChange={handleFileChange}
                         />
                         <label htmlFor="file">
                             <img className="file" src={fileSelection} alt="File Selection" />
                         </label>
+
                         <CSSTransition
                             in={showPreview}
                             timeout={250}
@@ -172,7 +191,12 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
                     </div>
                 </div>
 
-                <button className="chatSendBtn" onClick={handleSubmit} disabled={msgSendLoading}>
+                <button
+                    className="chatSendBtn"
+                    onClick={handleSubmit}
+                    disabled={isSendDisabled}
+                    style={{ opacity: isSendDisabled ? 0.6 : 1, cursor: isSendDisabled ? 'default' : 'pointer' }}
+                >
                     {msgSendLoading ? (
                         <CircularProgress size={28} color="primary" />
                     ) : (
