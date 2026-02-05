@@ -128,31 +128,10 @@
         }
     }
 
-    .emptyState {
+    .empty-state-container {
         text-align: center;
         max-width: 300px;
         opacity: 0.8;
-
-        > h3 {
-            margin: 0 0 10px 0;
-            color: #e4e6eb;
-        }
-
-        > p {
-            font-size: 1.35rem;
-            line-height: 1.5;
-            color: #b0b3b8;
-        }
-
-        .emptyIcon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: #6e44ff;
-        }
-
-        .emptyIcon.error {
-            color: #ff4b5c;
-        }
     }
 }
 

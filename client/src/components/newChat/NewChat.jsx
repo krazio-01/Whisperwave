@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import backBtn from '../../Assets/images/backBtn.png';
-import { FaSearch, FaUserPlus, FaUserTimes, FaCommentDots } from 'react-icons/fa';
+import { FaSearch, FaCommentDots } from 'react-icons/fa';
 import axios from 'axios';
 import { ChatState } from '../../context/ChatProvider';
 import { CircularProgress } from '@mui/material';
+import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import { toast } from 'react-toastify';
 import './newchat.css';
 
@@ -64,9 +65,9 @@ const NewChat = ({ setCurrentUI, handleAddConversation }) => {
     const renderContent = () => {
         if (searchLoading) {
             return (
-                <div className="emptyState">
-                    <CircularProgress size={40} style={{ marginBottom: '20px', color: '#6e44ff' }} />
-                    <h3>Searching...</h3>
+                <div className="empty-state-container">
+                    <CircularProgress size={40} style={{ marginBlock: '2.5rem', color: '#6e44ff' }} />
+                    <h3 style={{ marginBottom: '1rem' }}>Searching...</h3>
                     <p>Looking for users matching "{username}"</p>
                 </div>
             );
@@ -97,22 +98,24 @@ const NewChat = ({ setCurrentUI, handleAddConversation }) => {
 
         if (foundMessage) {
             return (
-                <div className="emptyState">
-                    <FaUserTimes className="emptyIcon error" />
-                    <h3>User not found</h3>
-                    <p>
-                        We couldn't find anyone with the username "<strong>{username}</strong>".
-                    </p>
-                </div>
+                <EmptyState
+                    src="/animations/loading-paperplane.lottie"
+                    title="User not found"
+                    description={
+                        <>
+                            We couldn't find anyone with the username "<strong>{username}</strong>".
+                        </>
+                    }
+                />
             );
         }
 
         return (
-            <div className="emptyState">
-                <FaUserPlus className="emptyIcon" />
-                <h3>Find People</h3>
-                <p>Enter a username above to find friends and start a new conversation.</p>
-            </div>
+            <EmptyState
+                src="/animations/address-book.lottie"
+                title="Find People"
+                description="Enter a username above to find friends and start a new conversation."
+            />
         );
     };
 
