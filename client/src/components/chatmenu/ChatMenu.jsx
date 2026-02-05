@@ -15,6 +15,7 @@ import pen from '../../Assets/images/pen.png';
 import { FaSearch } from 'react-icons/fa';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import { FaUserGroup } from 'react-icons/fa6';
+import EmptyState from '../miscellaneous/emptyState/EmptyState';
 
 const ChatMenu = ({ socket, fetchAgain }) => {
     const { user, chats, setChats, currentChat, setCurrentChat } = ChatState();
@@ -25,7 +26,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
     const [loggedUser, setLoggedUser] = useState(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [bubbleMenuContainer, setBubbleMenuContainer] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [currentUI, setCurrentUI] = useState('chat');
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredUsers, setFilteredUsers] = useState([]);
@@ -36,14 +37,14 @@ const ChatMenu = ({ socket, fetchAgain }) => {
 
         if (!loggedUser) return;
 
-        const filteredUsers = chats.filter((chat) => {
+        const searchResults = chats.filter((chat) => {
             if (chat.isGroupChat) return chat.chatName.toLowerCase().includes(value.toLowerCase());
             else {
                 const otherMember = chat.members.find((member) => member._id !== loggedUser._id);
                 return otherMember ? otherMember.username.toLowerCase().includes(value.toLowerCase()) : false;
             }
         });
-        setFilteredUsers(filteredUsers);
+        setFilteredUsers(searchResults);
     };
 
     const chatList = searchQuery.trim() === '' ? chats : filteredUsers;
@@ -58,6 +59,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
     const fetchChats = async () => {
         try {
             setLoading(true);
+
             const config = {
                 headers: {
                     Authorization: `Bearer ${user.authToken}`,
@@ -65,9 +67,9 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             };
             const { data } = await axios.get('/chat/fetchChats', config);
             setChats(data);
+            setLoading(false);
         } catch (error) {
             console.error('Error fetching chats:', error);
-        } finally {
             setLoading(false);
         }
     };
@@ -177,12 +179,29 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                     <div className="chats">
                         {loading ? (
                             <ListItemSkeleton count={8} />
-                        ) : (
+                        ) : chatList.length > 0 ? (
                             chatList.map((chat) => (
                                 <div key={chat._id} onClick={() => handleChatClick(chat)}>
                                     <Conversation loggedUser={loggedUser} chat={chat} />
                                 </div>
                             ))
+                        ) : (
+                            <div className="empty-state-container">
+                                {searchQuery ? (
+                                    <EmptyState
+                                        src="./animations/communication.lottie"
+                                        title="No chats found"
+                                        description={`We couldn't find any chats matching "${searchQuery}"`}
+                                        animationStyle={{ filter: 'invert(1)' }}
+                                    />
+                                ) : (
+                                    <EmptyState
+                                        src="/animations/empty-loading-state.lottie"
+                                        title="It's quiet here..."
+                                        description="Start a new conversation with friends or create a group!"
+                                    />
+                                )}
+                            </div>
                         )}
                     </div>
 
