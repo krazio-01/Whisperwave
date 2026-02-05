@@ -51,14 +51,16 @@ const ChatHeader = ({
             </div>
 
             <div className="right-section">
-                <div className="call-actions">
-                    <button onClick={() => handleStartCall('video')}>
-                        <MdVideoCall size={24} />
-                    </button>
-                    <button onClick={() => handleStartCall('audio')}>
-                        <MdCall size={22} />
-                    </button>
-                </div>
+                {!currentChat.isGroupChat && (
+                    <div className="call-actions">
+                        <button onClick={() => handleStartCall('video')}>
+                            <MdVideoCall size={24} />
+                        </button>
+                        <button onClick={() => handleStartCall('audio')}>
+                            <MdCall size={22} />
+                        </button>
+                    </div>
+                )}
 
                 <div className="threeDotsContainer">
                     <div className="threeDots" onClick={() => setShowMoreOption((prev) => !prev)}>
