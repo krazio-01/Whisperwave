@@ -5,18 +5,15 @@
     border-radius: 12px;
     width: 100%;
     cursor: pointer;
-}
 
-.userChat:hover {
-    background-color: #303030;
-}
+    &:not(.selectedChat):hover {
+        background-color: #303030;
+    }
 
-.selectedChat {
-    background-color: #2d3436;
-}
-
-.selectedChat:hover {
-    background-color: #2d3436;
+    &.selectedChat {
+        background-color: #2d3436;
+        pointer-events: none;
+    }
 }
 
 .conversationImg {

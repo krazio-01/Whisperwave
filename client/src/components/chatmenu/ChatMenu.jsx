@@ -121,6 +121,8 @@ const ChatMenu = ({ socket, fetchAgain }) => {
     };
 
     const handleChatClick = (chat) => {
+        if (currentChat && currentChat._id === chat._id) return;
+
         setCurrentChat(chat);
         setChats((prev) => prev.map((c) => (c._id === chat._id ? { ...c, unseenCount: 0 } : c)));
     };
