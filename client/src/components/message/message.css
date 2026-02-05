@@ -67,6 +67,8 @@
             max-width: 42rem;
             word-wrap: break-word;
             background-color: #8c7ae6;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
     }
 }
