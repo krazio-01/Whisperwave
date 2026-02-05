@@ -259,7 +259,7 @@
     width: 80%;
 }
 
-.input {
+.input-container {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -329,7 +329,7 @@
     position: relative;
 }
 
-.emojiPicker {
+.emojiPicker-wrapper {
     position: absolute;
     bottom: 70px;
     left: 135px;
@@ -343,7 +343,7 @@
     font-size: 15px;
     color: #fff;
     padding: 14px;
-    max-height: 150px;
+    max-height: 172px;
     background: #303030;
     outline: none;
     border: none;
@@ -446,7 +446,7 @@
         width: 100%;
     }
 
-    .input {
+    .input-container {
         margin: 0 12px;
     }
 
@@ -471,7 +471,7 @@
         height: 15px;
     }
 
-    .emojiPicker {
+    .emojiPicker-wrapper {
         bottom: 58px;
         left: 108px;
         height: 24rem;
@@ -480,7 +480,7 @@
     .chatMessageInput {
         padding: 12px;
         height: 4rem;
-        max-height: 120px;
+        max-height: 154px;
     }
 
     .chatSendBtn {
@@ -507,57 +507,26 @@
         display: block;
     }
 
-    .chatBoxBottom {
-        margin-bottom: 0.8rem;
-    }
-
     .chatBoxbottomWrapper {
         margin: 0 7px;
-        width: 100%;
-    }
-
-    .input {
-        margin: 0 12px;
-    }
-
-    .emoji,
-    .file {
-        width: 18px;
-        height: 18px;
-        margin: 0 10px;
     }
 
     .imagePreview {
         width: 27rem;
         height: 17rem;
-        bottom: 22px;
-        right: 73px;
     }
 
-    .previewClose {
-        top: 10px;
-        right: 10px;
-        width: 15px;
-        height: 15px;
-    }
-
-    .emojiPicker {
+    .emojiPicker-wrapper {
         left: 34px;
         height: 22rem;
     }
 
     .chatMessageInput {
         height: 4rem;
-        max-height: 120px;
     }
 
     .chatMessageInput:is(:focus, :valid) {
         padding: 12px;
-    }
-
-    .chatSendBtn {
-        width: 6rem;
-        height: 4rem;
     }
 }
 
