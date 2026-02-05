@@ -11,6 +11,7 @@ import { ChatState } from '../../context/ChatProvider';
 import backBtnIcon from '../../Assets/images/backBtn.png';
 import doneIcon from '../../Assets/images/next.png';
 import GroupPicture from '../../Assets/images/uploadPicture.png';
+import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import './newgroup.css';
 
 const NewGroup = ({ setCurrentUI }) => {
@@ -23,6 +24,7 @@ const NewGroup = ({ setCurrentUI }) => {
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const { user, chats, setChats } = ChatState();
 
@@ -125,6 +127,7 @@ const NewGroup = ({ setCurrentUI }) => {
 
     const handleSearchChange = (e) => {
         const val = e.target.value;
+        setSearchQuery(val);
 
         if (!val) setFilteredUsers(associatedUsers);
         else {
@@ -152,7 +155,12 @@ const NewGroup = ({ setCurrentUI }) => {
                 </div>
 
                 <div className="searchUserForGroup">
-                    <input onChange={handleSearchChange} placeholder="Add people..." className="chatGroupSearch" />
+                    <input
+                        onChange={handleSearchChange}
+                        value={searchQuery}
+                        placeholder="Add people..."
+                        className="chatGroupSearch"
+                    />
                 </div>
                 <div className="selectedUsers">
                     {selectedUsers.map((u) => (
@@ -165,6 +173,33 @@ const NewGroup = ({ setCurrentUI }) => {
                 <div className="output">
                     {initialLoading ? (
                         <ListItemSkeleton count={8} />
+                    ) : associatedUsers.length === 0 ? (
+                        <div className="empty-state-container">
+                            <EmptyState
+                                src="/animations/group-chat.lottie"
+                                title="Ready to assemble your crew?"
+                                description={
+                                    <>
+                                        You don't have any friends to add yet.
+                                        <br />
+                                        Start a one-on-one chat first!
+                                    </>
+                                }
+                            />
+                        </div>
+                    ) : filteredUsers.length === 0 ? (
+                        <div className="empty-state-container">
+                            <EmptyState
+                                src="./animations/communication.lottie"
+                                title="No one found"
+                                description={
+                                    <>
+                                        We couldn't find "<strong>{searchQuery}</strong>" in your contacts.
+                                    </>
+                                }
+                                animationStyle={{ filter: 'invert(1)' }}
+                            />
+                        </div>
                     ) : (
                         filteredUsers?.map((user) => (
                             <UserListItem key={user._id} user={user} handleClick={() => handleAddToGroup(user)} />
