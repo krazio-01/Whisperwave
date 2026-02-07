@@ -1,27 +1,37 @@
-const Message = require("../models/messageModel");
-const User = require("../models/userModel");
-const Chat = require("../models/chatModel");
+const Message = require('../models/messageModel');
+const User = require('../models/userModel');
+const Chat = require('../models/chatModel');
 const { uploadImageToCloudinary } = require('../controllers/uploadController');
 const { onlineUsers, activeChats } = require('../utils/RealtimeTrack');
 
 // getting all messages
-const fetchAllMessages = async (req, res) => {
+const fetchMessages = async (req, res) => {
     try {
+        const { page = 1, limit = 20 } = req.query;
+        const skip = (page - 1) * limit;
+
         const messages = await Message.find({ chat: req.params.chatId })
-            .populate("sender", "username profilePicture")
-            .select("-__v -updatedAt");
+            .populate('sender', 'username profilePicture')
+            .select('-__v -updatedAt')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
 
-        const chatId = req.params.chatId;
-        const chat = await Chat.findById(chatId);
+        const totalMessages = await Message.countDocuments({ chat: req.params.chatId });
 
-        if (chat) {
-            chat.unseenMessageCounts.set(req.userId.toString(), 0);
-            await chat.save();
+        if (page === 1) {
+            const chat = await Chat.findById(req.params.chatId);
+            if (chat) {
+                chat.unseenMessageCounts.set(req.userId.toString(), 0);
+                await chat.save();
+            }
         }
 
-        res.json(messages);
-    }
-    catch (error) {
+        res.json({
+            messages: messages.reverse(),
+            hasMore: totalMessages > skip + messages.length,
+        });
+    } catch (error) {
         res.status(400).send(error.message);
     }
 };
@@ -29,11 +39,11 @@ const fetchAllMessages = async (req, res) => {
 async function createMessageAndSendResponse(newMessage, chatId, res) {
     var message = await Message.create(newMessage);
 
-    message = await message.populate("sender", "username profilePicture");
-    message = await message.populate("chat");
+    message = await message.populate('sender', 'username profilePicture');
+    message = await message.populate('chat');
     message = await User.populate(message, {
-        path: "chat.members",
-        select: "username email profilePicture",
+        path: 'chat.members',
+        select: 'username email profilePicture',
     });
 
     await Chat.findByIdAndUpdate(chatId, { lastMessage: message });
@@ -52,7 +62,10 @@ async function createMessageAndSendResponse(newMessage, chatId, res) {
                 const hasReceiverOpenedSenderChat = receiverOpenedChatId === chatId;
 
                 if (!hasReceiverOpenedSenderChat)
-                    chat.unseenMessageCounts.set(member.toString(), (chat.unseenMessageCounts.get(member.toString()) || 0) + 1);
+                    chat.unseenMessageCounts.set(
+                        member.toString(),
+                        (chat.unseenMessageCounts.get(member.toString()) || 0) + 1,
+                    );
             }
         });
 
@@ -77,11 +90,9 @@ const sendMessage = async (req, res) => {
                 image: filename,
             };
             await createMessageAndSendResponse(newMessage, chatId, res);
-        }
-
-        else {
+        } else {
             if (!text || !chatId) {
-                console.log("Invalid data passed into request");
+                console.log('Invalid data passed into request');
                 return res.sendStatus(400);
             }
             var newMessage = {
@@ -91,11 +102,10 @@ const sendMessage = async (req, res) => {
             };
             await createMessageAndSendResponse(newMessage, chatId, res);
         }
-    }
-    catch (error) {
+    } catch (error) {
         console.log(error);
         res.status(400).send(error.message);
     }
 };
 
-module.exports = { fetchAllMessages, sendMessage };
+module.exports = { fetchMessages, sendMessage };

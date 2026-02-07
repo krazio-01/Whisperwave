@@ -206,13 +206,18 @@
 
 .messages {
     width: 75%;
-}
 
-.messageLoading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
+    .pagination-loader {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .messageLoading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100% - 10px);
+    }
 }
 
 /* scroll bar design */

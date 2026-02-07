@@ -1,5 +1,5 @@
 const express = require("express");
-const { fetchAllMessages, sendMessage, } = require("../controllers/messageControllers");
+const { fetchMessages, sendMessage, } = require("../controllers/messageControllers");
 const { protect } = require("../middlewares/authMiddleware");
 const multer = require('multer');
 
@@ -9,7 +9,7 @@ const upload = multer({ storage: storage });
 const router = express.Router();
 
 // route for fetching all the messages
-router.route("/:chatId").get(protect, fetchAllMessages);
+router.route("/:chatId").get(protect, fetchMessages);
 
 // route for sending a message
 router.route("/").post(protect, upload.single('image'), sendMessage);
