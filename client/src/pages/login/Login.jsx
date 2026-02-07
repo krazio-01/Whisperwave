@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CircularProgress } from '@mui/material';
+import Mascot from '../../components/miscellaneous/mascot/Mascot';
 import './login.css';
 
 const Login = () => {
@@ -13,6 +14,7 @@ const Login = () => {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
+    const [mascotAction, setMascotAction] = useState('idle');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -44,6 +46,8 @@ const Login = () => {
                 <div className="loginShadow"></div>
 
                 <div className="loginBox">
+                    <Mascot action={mascotAction} />
+
                     <div className="logo">
                         <Link to={'/'}>
                             <label>WhisperWave</label>
@@ -52,9 +56,23 @@ const Login = () => {
                     <span className="title">Welcome Back!</span>
 
                     <form onSubmit={handleSubmit} className="loginForm">
-                        <input className="loginInput" type="email" ref={email} placeholder="Email" />
-                        <input className="loginInput" type="password" ref={password} placeholder="Password" />
-                        <button disabled={loading} type="submit" className="customLoginBtn loginBtn">
+                        <input
+                            className="loginInput"
+                            type="email"
+                            ref={email}
+                            placeholder="Email"
+                            onFocus={() => setMascotAction('looking')}
+                            onBlur={() => setMascotAction('idle')}
+                        />
+                        <input
+                            className="loginInput"
+                            type="password"
+                            ref={password}
+                            placeholder="Password"
+                            onFocus={() => setMascotAction('hiding')}
+                            onBlur={() => setMascotAction('idle')}
+                        />
+                        <button disabled={loading} type="submit" className="loginBtn">
                             {loading ? <CircularProgress size={28} color="inherit" /> : <span>Login</span>}
                         </button>
                     </form>
