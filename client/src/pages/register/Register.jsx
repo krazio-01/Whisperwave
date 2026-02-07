@@ -5,6 +5,7 @@ import avatar from '../../Assets/images/addAvatar.png';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CircularProgress } from '@mui/material';
+import Mascot from '../../components/miscellaneous/mascot/Mascot';
 import './register.css';
 
 const Register = () => {
@@ -18,6 +19,7 @@ const Register = () => {
     const [loading, setLoading] = useState(false);
     const [file, setFile] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [mascotAction, setMascotAction] = useState('idle');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -72,6 +74,8 @@ const Register = () => {
                 <div className="shadow"></div>
 
                 <div className="registerBox">
+                    <Mascot action={mascotAction} />
+
                     <div className="logo">
                         <Link to="/">
                             <label>WhisperWave</label>
@@ -97,23 +101,44 @@ const Register = () => {
                             </label>
                         </div>
 
-                        <input className="registerInput" type="text" ref={username} placeholder="Username" />
-                        <input className="registerInput" type="email" ref={email} placeholder="Email" />
+                        <input
+                            className="registerInput"
+                            type="text"
+                            ref={username}
+                            placeholder="Username"
+                            onFocus={() => setMascotAction('looking')}
+                            onBlur={() => setMascotAction('idle')}
+                        />
+
+                        <input
+                            className="registerInput"
+                            type="email"
+                            ref={email}
+                            placeholder="Email"
+                            onFocus={() => setMascotAction('looking')}
+                            onBlur={() => setMascotAction('idle')}
+                        />
+
                         <input
                             className="registerInput"
                             type="password"
                             ref={password}
                             minLength="1"
                             placeholder="Password"
+                            onFocus={() => setMascotAction('hiding')}
+                            onBlur={() => setMascotAction('idle')}
                         />
+
                         <input
                             className="registerInput"
                             type="password"
                             ref={confirmPass}
                             placeholder="Confirm Password"
+                            onFocus={() => setMascotAction('hiding')}
+                            onBlur={() => setMascotAction('idle')}
                         />
 
-                        <button disabled={loading} type="submit" className="customRegBtn regBtn">
+                        <button disabled={loading} type="submit" className="regBtn">
                             {loading ? <CircularProgress size={28} color="inherit" /> : <span>Register</span>}
                         </button>
                     </form>
