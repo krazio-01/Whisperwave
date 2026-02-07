@@ -1,0 +1,59 @@
+.mascot-container {
+    width: 136px;
+    height: 136px;
+    position: absolute;
+    top: -95px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.mascot-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+
+    .mascot-eyes {
+        transition: transform 0.3s ease-in-out;
+        transform-origin: center;
+    }
+
+    .hand-left,
+    .hand-right {
+        transition: transform 450ms ease-in-out;
+        transform-box: fill-box;
+        transform-origin: center;
+        transform: rotate(180deg) translateY(-5px);
+    }
+
+    &.is-hiding {
+        .hand-left {
+            transform: rotate(0deg) translate(10px, -24px) rotate(15deg);
+        }
+
+        .hand-right {
+            transform: rotate(360deg) translate(-10px, -24px) rotate(-15deg);
+        }
+    }
+
+    &.is-looking {
+        .mascot-eyes {
+            transform: translateY(7px);
+        }
+    }
+
+    .spirit-body {
+        animation: float 2.5s ease-in-out infinite;
+    }
+}
+
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
