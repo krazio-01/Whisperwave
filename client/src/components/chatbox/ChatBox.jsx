@@ -8,6 +8,7 @@ import ChatMessages from './ChatMessages';
 import { ChatState } from '../../context/ChatProvider';
 import useWebRTC from '../../hooks/useWebRTC';
 import { getProfilePic } from '../../utils/chatUtils';
+import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import './chatbox.css';
 
 const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => {
@@ -97,7 +98,12 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                         <ChatInput currentChat={currentChat} user={user} socket={socket} setMessages={setMessages} />
                     </>
                 ) : (
-                    <span className="noConversationText">Open a conversation to start chat.</span>
+                    <div className='noConversationText'>
+                        <EmptyState
+                            src="./animations/start-chat.lottie"
+                            title="Open a conversation to start chat."
+                        />
+                    </div>
                 )}
             </div>
 

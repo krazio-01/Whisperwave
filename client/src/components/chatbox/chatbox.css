@@ -216,7 +216,20 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        height: calc(100% - 10px);
+        height: calc(100% - 12px);
+    }
+
+    .noMessages {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        font-size: 1.5rem;
+        color: #fff;
+
+        .animation-container {
+            width: min(450px, 100%);
+        }
     }
 }
 
@@ -491,11 +504,6 @@
     .chatSendBtn {
         width: 6rem;
         height: 4rem;
-    }
-
-    .noConversationText {
-        margin: 20%;
-        font-size: 2rem;
     }
 }
 
