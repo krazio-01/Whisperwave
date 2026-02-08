@@ -12,8 +12,12 @@
 
 .chatbox {
     flex: 5;
-    background-image: url('../../Assets/images/chatBackground.jpg');
+    background:
+        linear-gradient(rgba(18, 18, 18, 0.7), rgba(18, 18, 18, 0.7)), url('../../Assets/images/chatBackground.jpg');
     background-size: cover;
+    background-position: center;
+    filter: blur(0px);
+    /* background: radial-gradient(circle at 50% 40%, #1e1e26 0%, #121214 100%); */
 }
 
 .modal-overlay {
