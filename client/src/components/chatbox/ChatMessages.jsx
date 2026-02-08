@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState, useLayoutEffect, useCallback } from 
 import { CircularProgress } from '@mui/material';
 import axios from 'axios';
 import Message from '../message/Message';
+import EmptyState from '../miscellaneous/emptyState/EmptyState';
 
 const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
     const [status, setStatus] = useState({
@@ -12,68 +13,115 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
 
     const scrollContainerRef = useRef(null);
     const topSentinelRef = useRef(null);
+    const observerRef = useRef(null);
     const chatMeta = useRef({
         prevHeight: 0,
         isInitialLoad: true,
     });
 
-    useEffect(() => {
-        setMessages([]);
-        chatMeta.current = { prevHeight: 0, isInitialLoad: true };
-        setStatus({ loading: false, hasMore: false, page: 1 });
-        fetchMessages(1, true);
-    }, [currentChat._id]);
-
     const fetchMessages = useCallback(
-        async (pageNum, initial = false) => {
+        async (pageNum, chatId, signal) => {
             try {
-                setStatus((prev) => ({ ...prev, loading: true }));
-
-                if (scrollContainerRef.current) chatMeta.current.prevHeight = scrollContainerRef.current.scrollHeight;
-
-                const { data } = await axios.get(`/messages/${currentChat._id}`, {
+                const { data } = await axios.get(`/messages/${chatId}`, {
                     headers: { Authorization: `Bearer ${user.authToken}` },
                     params: { page: pageNum, limit: 20 },
+                    signal: signal,
                 });
-
-                setMessages((prev) => (initial ? data.messages : [...data.messages, ...prev]));
-                setStatus((prev) => ({ ...prev, hasMore: data.hasMore, loading: false }));
                 socket.emit('joinChat', currentChat._id);
+                return data;
             } catch (error) {
+                if (axios.isCancel(error)) return null;
                 console.error('Fetch error:', error);
-                setStatus((prev) => ({ ...prev, loading: false }));
+                throw error;
             }
         },
-        [currentChat._id, user.authToken, setMessages, socket],
+        [user.authToken],
     );
 
     useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting && status.hasMore && !status.loading) {
-                    chatMeta.current.isInitialLoad = false;
-                    const nextPage = status.page + 1;
-                    setStatus((prev) => ({ ...prev, page: nextPage }));
-                    fetchMessages(nextPage, false);
+        const controller = new AbortController();
+
+        setMessages([]);
+        setStatus({ loading: true, hasMore: false, page: 1 });
+        chatMeta.current = { prevHeight: 0, isInitialLoad: true };
+
+        const loadInitial = async () => {
+            try {
+                const data = await fetchMessages(1, currentChat._id, controller.signal);
+                if (data) {
+                    setMessages(data.messages);
+                    setStatus({ loading: false, hasMore: data.hasMore, page: 1 });
                 }
+            } catch (e) {
+                setStatus((prev) => ({ ...prev, loading: false }));
+            }
+        };
+
+        loadInitial();
+
+        return () => {
+            controller.abort();
+        };
+    }, [currentChat._id, fetchMessages, setMessages, socket]);
+
+    const handleLoadMore = useCallback(async () => {
+        if (status.loading || !status.hasMore) return;
+
+        setStatus((prev) => ({ ...prev, loading: true }));
+
+        if (scrollContainerRef.current) {
+            chatMeta.current.prevHeight = scrollContainerRef.current.scrollHeight;
+            chatMeta.current.isInitialLoad = false;
+        }
+
+        try {
+            const nextPage = status.page + 1;
+            const data = await fetchMessages(nextPage, currentChat._id);
+
+            if (data) {
+                setMessages((prev) => [...data.messages, ...prev]);
+                setStatus((prev) => ({
+                    ...prev,
+                    hasMore: data.hasMore,
+                    loading: false,
+                    page: nextPage,
+                }));
+            }
+        } catch (error) {
+            setStatus((prev) => ({ ...prev, loading: false }));
+        }
+    }, [status.loading, status.hasMore, status.page, currentChat._id, fetchMessages, setMessages]);
+
+    useEffect(() => {
+        const currentSentinel = topSentinelRef.current;
+        if (observerRef.current) observerRef.current.disconnect();
+
+        observerRef.current = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) handleLoadMore();
             },
-            { root: scrollContainerRef.current, threshold: 0.1 },
+            {
+                root: scrollContainerRef.current,
+                threshold: 0.5,
+            },
         );
 
-        if (topSentinelRef.current) observer.observe(topSentinelRef.current);
-        return () => observer.disconnect();
-    }, [status.hasMore, status.loading, status.page, fetchMessages]);
+        if (currentSentinel) observerRef.current.observe(currentSentinel);
 
-    // Consolidated Scroll Management
+        return () => observerRef.current?.disconnect();
+    }, [handleLoadMore]);
+
     useLayoutEffect(() => {
         const container = scrollContainerRef.current;
         if (!container) return;
 
-        if (chatMeta.current.isInitialLoad) {
-            container.scrollTop = container.scrollHeight;
-        } else if (!chatMeta.current.isInitialLoad && chatMeta.current.prevHeight > 0) {
-            const heightDiff = container.scrollHeight - chatMeta.current.prevHeight;
+        if (chatMeta.current.isInitialLoad) container.scrollTop = container.scrollHeight;
+        else if (chatMeta.current.prevHeight > 0) {
+            const newHeight = container.scrollHeight;
+            const heightDiff = newHeight - chatMeta.current.prevHeight;
+
             container.scrollTop = heightDiff;
+            chatMeta.current.prevHeight = 0;
         }
     }, [messages]);
 
@@ -81,17 +129,39 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
         <div className="messageWrapper">
             <div className="userMessages" ref={scrollContainerRef}>
                 <div className="messages">
-                    <div ref={topSentinelRef} />
+                    {status.hasMore && <div ref={topSentinelRef} style={{ height: '10px' }} />}
 
-                    {status.loading && (
-                        <div className={status.page === 1 ? 'messageLoading' : 'pagination-loader'}>
-                            <CircularProgress size={24} />
+                    {status.loading && messages.length && status.hasMore && (
+                        <div className="pagination-loader">
+                            <CircularProgress size={30} />
+                        </div>
+                    )}
+
+                    {status.loading && !messages.length && (
+                        <div className="messageLoading">
+                            <CircularProgress size={40} />
+                        </div>
+                    )}
+
+                    {!status.loading && status.page === 1 && !messages.length && (
+                        <div className="noMessages">
+                            <EmptyState
+                                src="./animations/greet.lottie"
+                                title={
+                                    'Say Hi to ' +
+                                    (currentChat?.isGroupChat
+                                        ? 'the group'
+                                        : currentChat?.members.find((u) => u._id !== user._id)?.username)
+                                }
+                                description="Break the ice and start the conversation."
+                                animationStyle={{ filter: 'invert(1)' }}
+                            />
                         </div>
                     )}
 
                     {messages.map((m, i) => (
                         <Message
-                            key={m._id || i}
+                            key={m._id || `msg-${i}`}
                             message={m}
                             own={m.sender._id === user._id}
                             isGroupChat={currentChat?.isGroupChat}
