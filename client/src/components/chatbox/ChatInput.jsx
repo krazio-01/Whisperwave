@@ -9,6 +9,7 @@ import emojiPicker from '../../Assets/images/emojiPicker.png';
 import fileSelection from '../../Assets/images/fileSelection.png';
 import previewClose from '../../Assets/images/previewClose.png';
 import sendIcon from '../../Assets/images/send.png';
+import encryptionManager from '../../services/EncryptionManager';
 
 const BASE_HEIGHT = '4.5rem';
 
@@ -81,6 +82,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
             setMsgSendLoading(true);
 
             try {
+                const encryptedText = encryptionManager.encrypt(trimmedMessage);
                 const config = {
                     headers: {
                         'Content-Type': 'application/json',
@@ -89,7 +91,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
                 };
 
                 const payload = {
-                    text: trimmedMessage,
+                    text: encryptedText,
                     chatId: currentChat._id,
                 };
 

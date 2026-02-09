@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { getProfilePic, getCurrentChatName } from '../../utils/chatUtils';
 import { ChatState } from '../../context/ChatProvider';
+import encryptionManager from '../../services/EncryptionManager';
 import './conversation.css';
 
 const Conversation = ({ loggedUser, chat }) => {
@@ -8,13 +9,16 @@ const Conversation = ({ loggedUser, chat }) => {
 
     const getLastMessage = useMemo(() => {
         const truncatedTextLength = 35;
+
         if (chat.lastMessage) {
             const { sender, text } = chat.lastMessage;
-            const msgText = text || "";
 
-            const truncatedText = msgText.length > truncatedTextLength
-                ? msgText.substring(0, truncatedTextLength) + '...'
-                : msgText;
+            const decryptedFullText = encryptionManager.decrypt(text || '');
+
+            const truncatedText =
+                decryptedFullText.length > truncatedTextLength
+                    ? decryptedFullText.substring(0, truncatedTextLength) + '...'
+                    : decryptedFullText;
 
             if (truncatedText) return `${sender.username} : ${truncatedText}`;
             return `${sender.username} : Photo`;
@@ -34,9 +38,7 @@ const Conversation = ({ loggedUser, chat }) => {
                 <span className="lastMessage">{getLastMessage}</span>
             </div>
 
-            {(chat.unseenCount > 0) && (
-                <span className="newMessageBadge">{chat.unseenCount}</span>
-            )}
+            {chat.unseenCount > 0 && <span className="newMessageBadge">{chat.unseenCount}</span>}
         </div>
     );
 };

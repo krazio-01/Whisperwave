@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import moment from 'moment';
 import { getChatImages } from '../../utils/chatUtils';
 import './message.css';
+import encryptionManager from '../../services/EncryptionManager';
 
 const Message = ({ message, own, isGroupChat }) => {
     const [viewImage, setViewImage] = useState(false);
     const messageImg = getChatImages(message);
+
+    const decryptedText = useMemo(() => {
+        console.log('Decrypting message:', encryptionManager.decrypt(message.text));
+        return encryptionManager.decrypt(message.text);
+    }, [message.text]);
 
     const handleImageClick = () => {
         setViewImage(!viewImage);
@@ -23,12 +29,12 @@ const Message = ({ message, own, isGroupChat }) => {
                                 <p className="messageSenderName in-image">{message.sender.username}</p>
                             )}
                             <img className="messageImg" src={messageImg} alt="attachment" onClick={handleImageClick} />
-                            {message.text && <p className="msgWithImgText">{message.text}</p>}
+                            {message.text && <p className="msgWithImgText">{decryptedText}</p>}
                         </div>
                     ) : (
                         <div className="messageText">
                             {!own && isGroupChat && <p className="messageSenderName">{message.sender.username}</p>}
-                            {message.text}
+                            {decryptedText}
                         </div>
                     )}
                 </div>
