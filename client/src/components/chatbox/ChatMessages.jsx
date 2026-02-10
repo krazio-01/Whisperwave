@@ -164,6 +164,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
                             key={m._id || `msg-${i}`}
                             message={m}
                             own={m.sender._id === user._id}
+                            chatId={currentChat?._id}
                             isGroupChat={currentChat?.isGroupChat}
                         />
                     ))}

@@ -4,14 +4,13 @@ import { getChatImages } from '../../utils/chatUtils';
 import './message.css';
 import encryptionManager from '../../services/EncryptionManager';
 
-const Message = ({ message, own, isGroupChat }) => {
+const Message = ({ message, own, isGroupChat, chatId }) => {
     const [viewImage, setViewImage] = useState(false);
     const messageImg = getChatImages(message);
 
     const decryptedText = useMemo(() => {
-        console.log('Decrypting message:', encryptionManager.decrypt(message.text));
-        return encryptionManager.decrypt(message.text);
-    }, [message.text]);
+        return encryptionManager.decrypt(message.text, chatId);
+    }, [message.text, chatId]);
 
     const handleImageClick = () => {
         setViewImage(!viewImage);

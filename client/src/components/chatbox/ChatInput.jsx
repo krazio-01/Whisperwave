@@ -82,7 +82,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
             setMsgSendLoading(true);
 
             try {
-                const encryptedText = encryptionManager.encrypt(trimmedMessage);
+                const encryptedText = encryptionManager.encrypt(trimmedMessage, currentChat?._id);
                 const config = {
                     headers: {
                         'Content-Type': 'application/json',

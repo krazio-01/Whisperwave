@@ -12,8 +12,7 @@ const Conversation = ({ loggedUser, chat }) => {
 
         if (chat.lastMessage) {
             const { sender, text } = chat.lastMessage;
-
-            const decryptedFullText = encryptionManager.decrypt(text || '');
+            const decryptedFullText = encryptionManager.decrypt(text || '', chat?._id);
 
             const truncatedText =
                 decryptedFullText.length > truncatedTextLength
