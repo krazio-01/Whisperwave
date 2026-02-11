@@ -27,7 +27,6 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
                     params: { page: pageNum, limit: 20 },
                     signal: signal,
                 });
-                socket.emit('joinChat', currentChat._id);
                 return data;
             } catch (error) {
                 if (axios.isCancel(error)) return null;
@@ -40,6 +39,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
 
     useEffect(() => {
         const controller = new AbortController();
+        const chatId = currentChat._id;
 
         setMessages([]);
         setStatus({ loading: true, hasMore: false, page: 1 });
@@ -47,11 +47,12 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
 
         const loadInitial = async () => {
             try {
-                const data = await fetchMessages(1, currentChat._id, controller.signal);
+                const data = await fetchMessages(1, chatId, controller.signal);
                 if (data) {
                     setMessages(data.messages);
                     setStatus({ loading: false, hasMore: data.hasMore, page: 1 });
                 }
+                socket.emit('joinChat', chatId);
             } catch (e) {
                 setStatus((prev) => ({ ...prev, loading: false }));
             }
@@ -61,6 +62,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
 
         return () => {
             controller.abort();
+            socket.emit('leaveChat', chatId);
         };
     }, [currentChat._id, fetchMessages, setMessages, socket]);
 

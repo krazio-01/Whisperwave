@@ -2,7 +2,7 @@ const { onlineUsers, updateOnlineUsers, activeChats } = require('../utils/Realti
 
 const socketHandler = (io) => {
     io.on('connection', (socket) => {
-        
+
         // --- User Setup ---
         socket.on('setup', (userId) => {
             socket.join(userId);
@@ -25,6 +25,11 @@ const socketHandler = (io) => {
                 if (user._id === newMessageReceived.sender._id) return;
                 socket.in(user._id).emit('messageRecieved', newMessageReceived);
             });
+        });
+
+        socket.on('leaveChat', (room) => {
+            socket.leave(room);
+            activeChats.delete(socket.id);
         });
 
         // --- Call Logic ---
