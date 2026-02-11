@@ -9,6 +9,7 @@ import { ChatState } from '../../context/ChatProvider';
 import useWebRTC from '../../hooks/useWebRTC';
 import { getProfilePic } from '../../utils/chatUtils';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
+import encryptionManager from '../../services/EncryptionManager';
 import './chatbox.css';
 
 const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => {
@@ -54,8 +55,9 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                 setMessages((prev) => (prev.some((m) => m._id === newMessage._id) ? prev : [...prev, newMessage]));
 
             if (!document.hasFocus() && Notification.permission === 'granted' && newMessage.sender._id !== user._id) {
+                const decryptedText = encryptionManager.decrypt(newMessage.text, newMessage.chat._id);
                 new Notification(newMessage.sender.username, {
-                    body: newMessage.text || 'Message Recieved',
+                    body: decryptedText || 'Message Recieved',
                     icon: getProfilePic(newMessage.sender, null),
                 });
             }
