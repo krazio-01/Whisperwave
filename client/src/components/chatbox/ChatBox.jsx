@@ -20,7 +20,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
 
     const [messages, setMessages] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
-    const [uiState, setUiState] = useState({ showProfileInfo: false });
+    const [showProfileInfo, setShowProfileInfo] = useState(false);
 
     const { call, handleStartCall, handleAcceptCall, handleEndCall, updateCallState, toggleMedia } = useWebRTC(
         socket,
@@ -34,7 +34,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         return otherMember ? onlineUsers.includes(otherMember?._id) : false;
     }, [onlineUsers, currentChat, user?._id]);
 
-    const toggleProfile = () => setUiState((prev) => ({ showProfileInfo: !prev.showProfileInfo }));
+    const toggleProfile = () => setShowProfileInfo((prev) => !prev);
 
     useEffect(() => {
         currentChatRef.current = currentChat;
@@ -51,9 +51,11 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         const handleOnlineUsers = (users) => setOnlineUsers(users);
         const handleMessageReceived = (newMessage) => {
             const activeChat = currentChatRef.current;
+
             if (activeChat && activeChat._id === newMessage.chat._id)
                 setMessages((prev) => (prev.some((m) => m._id === newMessage._id) ? prev : [...prev, newMessage]));
 
+            // Handle Notification
             if (!document.hasFocus() && Notification.permission === 'granted' && newMessage.sender._id !== user._id) {
                 const decryptedText = encryptionManager.decrypt(newMessage.text, newMessage.chat._id);
                 new Notification(newMessage.sender.username, {
@@ -74,7 +76,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
 
     return (
         <div className="main">
-            <div className={`chatBoxWrapper ${uiState.showProfileInfo ? 'active' : ''}`}>
+            <div className={`chatBoxWrapper ${showProfileInfo ? 'active' : ''}`}>
                 {currentChat ? (
                     <>
                         <ChatHeader
@@ -86,7 +88,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                             fetchAgain={fetchAgain}
                             setShowConfirmModal={setShowConfirmModal}
                             setShowProfileInfo={toggleProfile}
-                            showProfileInfo={uiState.showProfileInfo}
+                            showProfileInfo={showProfileInfo}
                         />
 
                         <ChatMessages
@@ -100,17 +102,14 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                         <ChatInput currentChat={currentChat} user={user} socket={socket} setMessages={setMessages} />
                     </>
                 ) : (
-                    <div className='noConversation-wrapper'>
-                        <EmptyState
-                            src="./animations/start-chat.lottie"
-                            title="Open a conversation to start chat."
-                        />
+                    <div className="noConversation-wrapper">
+                        <EmptyState src="./animations/start-chat.lottie" title="Open a conversation to start chat." />
                     </div>
                 )}
             </div>
 
             <CSSTransition
-                in={uiState.showProfileInfo}
+                in={showProfileInfo}
                 timeout={350}
                 classNames="profileInfo"
                 unmountOnExit
