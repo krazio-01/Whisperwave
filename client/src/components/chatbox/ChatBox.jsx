@@ -100,7 +100,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                         <ChatInput currentChat={currentChat} user={user} socket={socket} setMessages={setMessages} />
                     </>
                 ) : (
-                    <div className='noConversationText'>
+                    <div className='noConversation-wrapper'>
                         <EmptyState
                             src="./animations/start-chat.lottie"
                             title="Open a conversation to start chat."

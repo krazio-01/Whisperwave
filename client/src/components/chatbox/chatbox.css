@@ -412,11 +412,8 @@
     background-color: #8c7ae6;
 }
 
-.noConversationText {
-    position: absolute;
-    margin: 30%;
-    font-size: 2.5rem;
-    color: #fff;
+.noConversation-wrapper {
+    margin: auto;
     cursor: default;
 }
 
