@@ -10,10 +10,13 @@ import fileSelection from '../../Assets/images/fileSelection.png';
 import previewClose from '../../Assets/images/previewClose.png';
 import sendIcon from '../../Assets/images/send.png';
 import encryptionManager from '../../services/EncryptionManager';
+import { ChatState } from '../../context/ChatProvider';
 
 const BASE_HEIGHT = '4.5rem';
 
 const ChatInput = ({ currentChat, user, socket, setMessages }) => {
+    const { updateChatList } = ChatState();
+
     const [newMessage, setNewMessage] = useState('');
     const [msgSendLoading, setMsgSendLoading] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -98,6 +101,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
                 const { data } = await axios.post('/messages', payload, config);
 
                 setMessages((prev) => [...prev, data]);
+                updateChatList(data);
                 socket.emit('sendMessage', data);
 
                 setNewMessage('');
@@ -109,7 +113,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
                 setMsgSendLoading(false);
             }
         },
-        [newMessage, currentChat, user.authToken, socket, setMessages, msgSendLoading],
+        [newMessage, currentChat, user.authToken, socket, setMessages, msgSendLoading, updateChatList],
     );
 
     const handleKeyDown = (e) => {

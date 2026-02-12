@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ChatContext = createContext();
 
@@ -15,13 +15,29 @@ const ChatProvider = ({ children }) => {
 
     // get the current loggedin user
     useEffect(() => {
-        const user = JSON.parse(localStorage.getItem("user"));
+        const user = JSON.parse(localStorage.getItem('user'));
         setUser(user);
 
-        if (user) navigate("/home");
-        else navigate("/");
+        if (user) navigate('/home');
+        else navigate('/');
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const updateChatList = (message) => {
+        setChats((prevChats) => {
+            const chatIndex = prevChats.findIndex((c) => c._id === message.chat._id);
+            if (chatIndex === -1) return prevChats;
+
+            const updatedChat = {
+                ...prevChats[chatIndex],
+                lastMessage: message,
+                updatedAt: new Date().toISOString(),
+            };
+
+            const otherChats = prevChats.filter((c) => c._id !== message.chat._id);
+            return [updatedChat, ...otherChats];
+        });
+    };
 
     return (
         <ChatContext.Provider
@@ -32,6 +48,7 @@ const ChatProvider = ({ children }) => {
                 setUser,
                 chats,
                 setChats,
+                updateChatList
             }}
         >
             {children}
