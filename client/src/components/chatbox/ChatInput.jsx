@@ -102,7 +102,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
 
                 setMessages((prev) => [...prev, data]);
                 updateChatList(data);
-                socket.emit('sendMessage', data);
+                socket.emit('chat:send-message', data);
 
                 setNewMessage('');
                 setIsPickerVisible(false);

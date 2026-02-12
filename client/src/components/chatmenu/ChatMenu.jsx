@@ -105,10 +105,10 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             });
         };
 
-        socket.on('messageRecieved', handleMessageReceived);
+        socket.on('chat:message-received', handleMessageReceived);
 
         return () => {
-            socket.off('messageRecieved', handleMessageReceived);
+            socket.off('chat:message-received', handleMessageReceived);
         };
     }, [socket, currentChat, setChats]);
 

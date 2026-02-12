@@ -52,7 +52,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
                     setMessages(data.messages);
                     setStatus({ loading: false, hasMore: data.hasMore, page: 1 });
                 }
-                socket.emit('joinChat', chatId);
+                socket.emit('chat:join', chatId);
             } catch (e) {
                 setStatus((prev) => ({ ...prev, loading: false }));
             }
@@ -62,7 +62,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
 
         return () => {
             controller.abort();
-            socket.emit('leaveChat', chatId);
+            socket.emit('chat:leave', chatId);
         };
     }, [currentChat._id, fetchMessages, setMessages, socket]);
 

@@ -4,32 +4,32 @@ const socketHandler = (io) => {
     io.on('connection', (socket) => {
 
         // --- User Setup ---
-        socket.on('setup', (userId) => {
+        socket.on('user:setup', (userId) => {
             socket.join(userId);
-            socket.emit('connected');
+            socket.emit('user:connected');
             updateOnlineUsers(userId, socket.id);
-            io.emit('onlineUsers', onlineUsers.map((user) => user.userId));
+            io.emit('user:online-list', onlineUsers.map((user) => user.userId));
         });
 
         // --- Chat Logic ---
-        socket.on('joinChat', (room) => {
+        socket.on('chat:join', (room) => {
             socket.join(room);
             activeChats.set(socket.id, room);
         });
 
-        socket.on('sendMessage', (newMessageReceived) => {
+        socket.on('chat:leave', (room) => {
+            socket.leave(room);
+            activeChats.delete(socket.id);
+        });
+
+        socket.on('chat:send-message', (newMessageReceived) => {
             const chat = newMessageReceived.chat;
             if (!chat.members) return;
 
             chat.members.forEach((user) => {
                 if (user._id === newMessageReceived.sender._id) return;
-                socket.in(user._id).emit('messageRecieved', newMessageReceived);
+                socket.in(user._id).emit('chat:message-received', newMessageReceived);
             });
-        });
-
-        socket.on('leaveChat', (room) => {
-            socket.leave(room);
-            activeChats.delete(socket.id);
         });
 
         // --- Call Logic ---
@@ -73,7 +73,7 @@ const socketHandler = (io) => {
             const userIndex = onlineUsers.findIndex((user) => user.socketId === socket.id);
             if (userIndex !== -1) {
                 onlineUsers.splice(userIndex, 1);
-                io.emit('onlineUsers', onlineUsers.map((user) => user.userId));
+                io.emit('user:online-list', onlineUsers.map((user) => user.userId));
             }
             activeChats.delete(socket.id);
         });

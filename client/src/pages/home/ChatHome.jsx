@@ -28,7 +28,7 @@ const ChatHome = () => {
 
         const socketInstance = io(SERVER_URL);
 
-        socketInstance.emit('setup', user._id);
+        socketInstance.emit('user:setup', user._id);
 
         setSocket(socketInstance);
 

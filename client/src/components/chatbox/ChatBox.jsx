@@ -63,12 +63,12 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             }
         };
 
-        socket.on('onlineUsers', handleOnlineUsers);
-        socket.on('messageRecieved', handleMessageReceived);
+        socket.on('user:online-list', handleOnlineUsers);
+        socket.on('chat:message-received', handleMessageReceived);
 
         return () => {
-            socket.off('onlineUsers', handleOnlineUsers);
-            socket.off('messageRecieved', handleMessageReceived);
+            socket.off('user:online-list', handleOnlineUsers);
+            socket.off('chat:message-received', handleMessageReceived);
         };
     }, [socket, user._id]);
 
