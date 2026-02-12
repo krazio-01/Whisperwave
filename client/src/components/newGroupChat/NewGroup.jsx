@@ -12,6 +12,7 @@ import backBtnIcon from '../../Assets/images/backBtn.png';
 import doneIcon from '../../Assets/images/next.png';
 import GroupPicture from '../../Assets/images/uploadPicture.png';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
+import { HiUserGroup } from 'react-icons/hi';
 import './newgroup.css';
 
 const NewGroup = ({ setCurrentUI }) => {
@@ -212,24 +213,51 @@ const NewGroup = ({ setCurrentUI }) => {
 
     const renderGroupFinalization = () => (
         <div className="createGroupChat">
-            <div className="doneHeader">
-                <img className="backButtonGroup" src={backBtnIcon} alt="Back" onClick={() => setStep(1)} />
-
-                <div className="selectImage">
-                    <input style={{ display: 'none' }} type="file" id="groupPictureId" onChange={handleFileChange} />
-                    <label htmlFor="groupPictureId">
-                        <img src={selectedImage || GroupPicture} alt="Group Icon" />
-                    </label>
-                </div>
+            <div className="final-step-header">
+                <img
+                    className="backButtonGroup"
+                    src={backBtnIcon}
+                    alt="Back"
+                    onClick={() => setStep(1)}
+                />
+                <span>Group Details</span>
             </div>
 
-            <div className="searchUserForGroup">
-                <input
-                    className="chatGroupSearch"
-                    placeholder="Group Name"
-                    value={groupChatName}
-                    onChange={(e) => setGroupChatName(e.target.value)}
-                />
+            <div className="group-setup-content">
+                <div className="image-upload-wrapper">
+                    <input
+                        style={{ display: 'none' }}
+                        type="file"
+                        id="groupPictureId"
+                        onChange={handleFileChange}
+                    />
+                    <label htmlFor="groupPictureId" className="image-label">
+                        {selectedImage ? (
+                            <img src={selectedImage} alt="Group Preview" />
+                        ) : (
+                            <div className="default-icon-placeholder">
+                                <HiUserGroup size={70} color="#fff" />
+                            </div>
+                        )}
+
+                        <div className="image-overlay">
+                            <span>Change Photo</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div className="group-name-input-wrapper">
+                    <input
+                        className="group-name-input"
+                        placeholder="Enter Group Name..."
+                        value={groupChatName}
+                        onChange={(e) => setGroupChatName(e.target.value)}
+                        autoFocus
+                    />
+                    <p className="member-count-hint">
+                        {selectedUsers.length} members selected
+                    </p>
+                </div>
             </div>
         </div>
     );
