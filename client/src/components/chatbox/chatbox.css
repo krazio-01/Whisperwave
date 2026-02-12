@@ -47,6 +47,20 @@
             }
         }
 
+        .details-wrapper {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+
+            .userImg {
+                justify-content: flex-start;
+                object-fit: cover;
+                height: 45px;
+                width: 45px;
+                border-radius: 50%;
+            }
+        }
+
         .userName {
             padding: 0 1.8rem;
             font-size: 1.8rem;
@@ -164,13 +178,6 @@
     }
 }
 
-/* user details css */
-.userDetails {
-    cursor: default;
-    flex-direction: column;
-    cursor: pointer;
-}
-
 .moreOptionDropdown {
     position: absolute;
     display: flex;
@@ -250,15 +257,6 @@
 
 .userMessages::-webkit-scrollbar-track {
     background-color: transparent;
-}
-
-.userImg {
-    justify-content: flex-start;
-    object-fit: cover;
-    height: 45px;
-    width: 45px;
-    border-radius: 50%;
-    cursor: pointer;
 }
 
 .chatBoxBottom {

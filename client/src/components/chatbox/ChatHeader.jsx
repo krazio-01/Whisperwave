@@ -43,10 +43,12 @@ const ChatHeader = ({
                 <div className="closeConversation" onClick={() => setCurrentChat(null)}>
                     <img src={BackIcon} alt="Back" />
                 </div>
-                <img className="userImg" src={chatUserProfilePic} alt="User" />
-                <div className="userDetails" onClick={() => setShowProfileInfo((prev) => !prev)}>
-                    <span className="userName">{currentChatName}</span>
-                    <div className="status">{renderStatus()}</div>
+                <div className='details-wrapper' onClick={() => setShowProfileInfo((prev) => !prev)}>
+                    <img className="userImg" src={chatUserProfilePic} alt="User" />
+                    <div className="userDetails">
+                        <span className="userName">{currentChatName}</span>
+                        <div className="status">{renderStatus()}</div>
+                    </div>
                 </div>
             </div>
 
