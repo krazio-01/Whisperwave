@@ -2,13 +2,15 @@ const { onlineUsers, updateOnlineUsers, activeChats } = require('../utils/Realti
 
 const socketHandler = (io) => {
     io.on('connection', (socket) => {
-
         // --- User Setup ---
         socket.on('user:setup', (userId) => {
             socket.join(userId);
             socket.emit('user:connected');
             updateOnlineUsers(userId, socket.id);
-            io.emit('user:online-list', onlineUsers.map((user) => user.userId));
+            io.emit(
+                'user:online-list',
+                onlineUsers.map((user) => user.userId),
+            );
         });
 
         // --- Chat Logic ---
@@ -30,6 +32,15 @@ const socketHandler = (io) => {
                 if (user._id === newMessageReceived.sender._id) return;
                 socket.in(user._id).emit('chat:message-received', newMessageReceived);
             });
+        });
+
+        // --- typing Logic ---
+        socket.on('typing:start', (room) => {
+            socket.to(room).emit('typing:start', room);
+        });
+
+        socket.on('typing:stop', (room) => {
+            socket.to(room).emit('typing:stop', room);
         });
 
         // --- Call Logic ---
@@ -60,7 +71,7 @@ const socketHandler = (io) => {
         socket.on('call:toggle-media', (data) => {
             socket.to(data.to).emit('call:toggle-media', {
                 type: data.type,
-                status: data.status
+                status: data.status,
             });
         });
 
@@ -73,7 +84,10 @@ const socketHandler = (io) => {
             const userIndex = onlineUsers.findIndex((user) => user.socketId === socket.id);
             if (userIndex !== -1) {
                 onlineUsers.splice(userIndex, 1);
-                io.emit('user:online-list', onlineUsers.map((user) => user.userId));
+                io.emit(
+                    'user:online-list',
+                    onlineUsers.map((user) => user.userId),
+                );
             }
             activeChats.delete(socket.id);
         });
