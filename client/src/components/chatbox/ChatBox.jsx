@@ -21,6 +21,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const [messages, setMessages] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [showProfileInfo, setShowProfileInfo] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
 
     const { call, handleStartCall, handleAcceptCall, handleEndCall, updateCallState, toggleMedia } = useWebRTC(
         socket,
@@ -39,6 +40,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     useEffect(() => {
         currentChatRef.current = currentChat;
         setMessages([]);
+        setIsTyping(false);
     }, [currentChat]);
 
     useEffect(() => {
@@ -50,6 +52,14 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         if (!socket) return;
 
         const handleOnlineUsers = (users) => setOnlineUsers(users);
+
+        const handleTyping = (room) => {
+            if (currentChatRef.current?._id === room) setIsTyping(true);
+        };
+        const handleStopTyping = (room) => {
+            if (currentChatRef.current?._id === room) setIsTyping(false);
+        };
+
         const handleMessageReceived = (newMessage) => {
             const activeChat = currentChatRef.current;
 
@@ -67,10 +77,14 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         };
 
         socket.on('user:online-list', handleOnlineUsers);
+        socket.on('typing:start', handleTyping);
+        socket.on('typing:stop', handleStopTyping);
         socket.on('chat:message-received', handleMessageReceived);
 
         return () => {
             socket.off('user:online-list', handleOnlineUsers);
+            socket.off('typing:start', handleTyping);
+            socket.off('typing:stop', handleStopTyping);
             socket.off('chat:message-received', handleMessageReceived);
         };
     }, [socket, user._id]);
@@ -98,6 +112,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                             socket={socket}
                             messages={messages}
                             setMessages={setMessages}
+                            isTyping={isTyping}
                         />
 
                         <ChatInput currentChat={currentChat} user={user} socket={socket} setMessages={setMessages} />

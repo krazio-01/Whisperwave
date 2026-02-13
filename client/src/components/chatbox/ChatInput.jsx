@@ -22,7 +22,9 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [typing, setTyping] = useState(false);
 
+    const typingTimeoutRef = useRef(null);
     const inputRef = useRef(null);
     const pickerRef = useRef(null);
     const imagePreviewRef = useRef(null);
@@ -39,8 +41,23 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
     }, []);
 
     const handleChange = (e) => {
-        setNewMessage(e.target.value);
+        const val = e.target.value;
+        setNewMessage(val);
         adjustTextareaHeight();
+
+        if (!socket || !currentChat) return;
+
+        if (!typing) {
+            setTyping(true);
+            socket.emit('typing:start', currentChat._id);
+        }
+
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+        typingTimeoutRef.current = setTimeout(() => {
+            socket.emit('typing:stop', currentChat._id);
+            setTyping(false);
+        }, 2000);
     };
 
     const handleEmojiPick = useCallback(
@@ -78,6 +95,10 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
     const handleSubmit = useCallback(
         async (e) => {
             if (e) e.preventDefault();
+
+            socket.emit('typing:stop', currentChat._id);
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            setTyping(false);
 
             const trimmedMessage = newMessage.trim();
             if (!trimmedMessage || !currentChat || msgSendLoading) return;

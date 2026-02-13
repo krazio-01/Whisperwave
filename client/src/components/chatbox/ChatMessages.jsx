@@ -4,7 +4,7 @@ import axios from 'axios';
 import Message from '../message/Message';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
 
-const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
+const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTyping }) => {
     const [status, setStatus] = useState({
         loading: false,
         hasMore: false,
@@ -125,7 +125,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
             container.scrollTop = heightDiff;
             chatMeta.current.prevHeight = 0;
         }
-    }, [messages]);
+    }, [messages, isTyping]);
 
     return (
         <div className="messageWrapper">
@@ -170,6 +170,37 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages }) => {
                             isGroupChat={currentChat?.isGroupChat}
                         />
                     ))}
+
+                    {isTyping && (
+                        <div className="message" style={{ marginBottom: 15 }}>
+                            <div className="messageTop">
+                                <img
+                                    className="messageUserImg"
+                                    src={currentChat.members.find((m) => m._id !== user._id)?.profilePicture}
+                                    alt="Typing..."
+                                />
+
+                                <div className="messageContent">
+                                    <div
+                                        className="messageText"
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            minWidth: '80px',
+                                            minHeight: '38px',
+                                        }}
+                                    >
+                                        <div className="typing-bubble">
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
