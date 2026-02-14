@@ -22,9 +22,9 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [isPickerVisible, setIsPickerVisible] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
-    const [typing, setTyping] = useState(false);
 
     const typingTimeoutRef = useRef(null);
+    const isTypingRef = useRef(false);
     const inputRef = useRef(null);
     const pickerRef = useRef(null);
     const imagePreviewRef = useRef(null);
@@ -47,16 +47,16 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
 
         if (!socket || !currentChat) return;
 
-        if (!typing) {
-            setTyping(true);
-            socket.emit('typing:start', currentChat._id);
+        if (!isTypingRef.current) {
+            isTypingRef.current = true;
+            socket.emit('typing:start', { chatId: currentChat._id, userId: user._id });
         }
 
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
         typingTimeoutRef.current = setTimeout(() => {
-            socket.emit('typing:stop', currentChat._id);
-            setTyping(false);
+            socket.emit('typing:stop', { chatId: currentChat._id, userId: user._id });
+            isTypingRef.current = false;
         }, 2000);
     };
 
@@ -98,7 +98,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
 
             socket.emit('typing:stop', currentChat._id);
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-            setTyping(false);
+            isTypingRef.current = false;
 
             const trimmedMessage = newMessage.trim();
             if (!trimmedMessage || !currentChat || msgSendLoading) return;

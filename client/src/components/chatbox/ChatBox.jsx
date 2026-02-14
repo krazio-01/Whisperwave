@@ -21,7 +21,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const [messages, setMessages] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [showProfileInfo, setShowProfileInfo] = useState(false);
-    const [isTyping, setIsTyping] = useState(false);
+    const [typingUsers, setTypingUsers] = useState([]);
 
     const { call, handleStartCall, handleAcceptCall, handleEndCall, updateCallState, toggleMedia } = useWebRTC(
         socket,
@@ -40,7 +40,6 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     useEffect(() => {
         currentChatRef.current = currentChat;
         setMessages([]);
-        setIsTyping(false);
     }, [currentChat]);
 
     useEffect(() => {
@@ -53,18 +52,32 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
 
         const handleOnlineUsers = (users) => setOnlineUsers(users);
 
-        const handleTyping = (room) => {
-            if (currentChatRef.current?._id === room) setIsTyping(true);
+        const handleTyping = ({ chatId, userId }) => {
+            if (userId === user._id) return;
+            if (currentChatRef.current?._id !== chatId) return;
+
+            setTypingUsers((prev) => {
+                if (prev.includes(userId)) return prev;
+                return [...prev, userId];
+            });
         };
-        const handleStopTyping = (room) => {
-            if (currentChatRef.current?._id === room) setIsTyping(false);
+
+        const handleStopTyping = ({ chatId, userId }) => {
+            if (currentChatRef.current?._id !== chatId) return;
+
+            setTypingUsers((prev) => {
+                if (!prev.includes(userId)) return prev;
+                return prev.filter((id) => id !== userId);
+            });
         };
 
         const handleMessageReceived = (newMessage) => {
             const activeChat = currentChatRef.current;
 
-            if (activeChat && activeChat._id === newMessage.chat._id)
+            if (activeChat && activeChat._id === newMessage.chat._id) {
                 setMessages((prev) => (prev.some((m) => m._id === newMessage._id) ? prev : [...prev, newMessage]));
+                setTypingUsers((prev) => prev.filter((id) => id !== newMessage.sender._id));
+            }
 
             // Handle Notification
             if (!document.hasFocus() && Notification.permission === 'granted' && newMessage.sender._id !== user._id) {
@@ -112,7 +125,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                             socket={socket}
                             messages={messages}
                             setMessages={setMessages}
-                            isTyping={isTyping}
+                            typingUsers={typingUsers}
                         />
 
                         <ChatInput currentChat={currentChat} user={user} socket={socket} setMessages={setMessages} />

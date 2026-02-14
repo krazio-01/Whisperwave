@@ -1,11 +1,11 @@
-import { memo, useEffect, useRef, useState, useLayoutEffect, useCallback } from 'react';
+import { memo, useEffect, useRef, useState, useLayoutEffect, useCallback, useMemo } from 'react';
 import { CircularProgress } from '@mui/material';
 import axios from 'axios';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import Message from '../message/Message';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
 
-const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTyping }) => {
+const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typingUsers }) => {
     const [status, setStatus] = useState({
         loading: false,
         hasMore: false,
@@ -20,6 +20,11 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTypi
         isInitialLoad: true,
         isPagination: false,
     });
+
+    const typingMembers = useMemo(() => {
+        if (!currentChat?.members || !typingUsers) return [];
+        return currentChat.members.filter((m) => typingUsers.includes(m._id));
+    }, [currentChat?.members, typingUsers]);
 
     const fetchMessages = useCallback(
         async (pageNum, chatId, signal) => {
@@ -130,7 +135,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTypi
                 behavior: 'smooth',
             });
         }
-    }, [messages, isTyping]);
+    }, [messages, typingUsers]);
 
     return (
         <div className="messageWrapper">
@@ -183,35 +188,9 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTypi
                             </CSSTransition>
                         ))}
 
-                        {isTyping && (
+                        {typingMembers.length > 0 && (
                             <CSSTransition key="typing-indicator" timeout={300} classNames="message-item" unmountOnExit>
-                                <div className="message" style={{ marginBottom: 15, width: '100%' }}>
-                                    <div className="messageTop">
-                                        <img
-                                            className="messageUserImg"
-                                            src={currentChat.members.find((m) => m._id !== user._id)?.profilePicture}
-                                            alt="Typing..."
-                                        />
-                                        <div className="messageContent">
-                                            <div
-                                                className="messageText"
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    minWidth: '80px',
-                                                    minHeight: '38px',
-                                                }}
-                                            >
-                                                <div className="typing-bubble">
-                                                    <div className="typing-dot"></div>
-                                                    <div className="typing-dot"></div>
-                                                    <div className="typing-dot"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <Message typing={true} typingMembers={typingMembers} own={false} />
                             </CSSTransition>
                         )}
                     </TransitionGroup>
