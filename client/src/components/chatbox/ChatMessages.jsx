@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, useState, useLayoutEffect, useCallback } from 'react';
 import { CircularProgress } from '@mui/material';
 import axios from 'axios';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import Message from '../message/Message';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
 
@@ -17,6 +18,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTypi
     const chatMeta = useRef({
         prevHeight: 0,
         isInitialLoad: true,
+        isPagination: false,
     });
 
     const fetchMessages = useCallback(
@@ -43,7 +45,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTypi
 
         setMessages([]);
         setStatus({ loading: true, hasMore: false, page: 1 });
-        chatMeta.current = { prevHeight: 0, isInitialLoad: true };
+        chatMeta.current = { prevHeight: 0, isInitialLoad: true, isPagination: false };
 
         const loadInitial = async () => {
             try {
@@ -74,6 +76,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTypi
         if (scrollContainerRef.current) {
             chatMeta.current.prevHeight = scrollContainerRef.current.scrollHeight;
             chatMeta.current.isInitialLoad = false;
+            chatMeta.current.isPagination = true;
         }
 
         try {
@@ -102,14 +105,10 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTypi
             ([entry]) => {
                 if (entry.isIntersecting) handleLoadMore();
             },
-            {
-                root: scrollContainerRef.current,
-                threshold: 0.5,
-            },
+            { root: scrollContainerRef.current, threshold: 0.5 },
         );
 
         if (currentSentinel) observerRef.current.observe(currentSentinel);
-
         return () => observerRef.current?.disconnect();
     }, [handleLoadMore]);
 
@@ -118,12 +117,18 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTypi
         if (!container) return;
 
         if (chatMeta.current.isInitialLoad) container.scrollTop = container.scrollHeight;
-        else if (chatMeta.current.prevHeight > 0) {
+        else if (chatMeta.current.isPagination && chatMeta.current.prevHeight > 0) {
             const newHeight = container.scrollHeight;
             const heightDiff = newHeight - chatMeta.current.prevHeight;
-
             container.scrollTop = heightDiff;
+
             chatMeta.current.prevHeight = 0;
+            chatMeta.current.isPagination = false;
+        } else {
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: 'smooth',
+            });
         }
     }, [messages, isTyping]);
 
@@ -161,46 +166,55 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, isTypi
                         </div>
                     )}
 
-                    {messages.map((m, i) => (
-                        <Message
-                            key={m._id || `msg-${i}`}
-                            message={m}
-                            own={m.sender._id === user._id}
-                            chatId={currentChat?._id}
-                            isGroupChat={currentChat?.isGroupChat}
-                        />
-                    ))}
-
-                    {isTyping && (
-                        <div className="message" style={{ marginBottom: 15 }}>
-                            <div className="messageTop">
-                                <img
-                                    className="messageUserImg"
-                                    src={currentChat.members.find((m) => m._id !== user._id)?.profilePicture}
-                                    alt="Typing..."
+                    <TransitionGroup className="transition-group">
+                        {messages.map((m, i) => (
+                            <CSSTransition
+                                key={m._id || `msg-${i}`}
+                                timeout={chatMeta.current.isInitialLoad ? 0 : 300}
+                                classNames="message-item"
+                                unmountOnExit
+                            >
+                                <Message
+                                    message={m}
+                                    own={m.sender._id === user._id}
+                                    chatId={currentChat?._id}
+                                    isGroupChat={currentChat?.isGroupChat}
                                 />
+                            </CSSTransition>
+                        ))}
 
-                                <div className="messageContent">
-                                    <div
-                                        className="messageText"
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            minWidth: '80px',
-                                            minHeight: '38px',
-                                        }}
-                                    >
-                                        <div className="typing-bubble">
-                                            <div className="typing-dot"></div>
-                                            <div className="typing-dot"></div>
-                                            <div className="typing-dot"></div>
+                        {isTyping && (
+                            <CSSTransition key="typing-indicator" timeout={300} classNames="message-item" unmountOnExit>
+                                <div className="message" style={{ marginBottom: 15, width: '100%' }}>
+                                    <div className="messageTop">
+                                        <img
+                                            className="messageUserImg"
+                                            src={currentChat.members.find((m) => m._id !== user._id)?.profilePicture}
+                                            alt="Typing..."
+                                        />
+                                        <div className="messageContent">
+                                            <div
+                                                className="messageText"
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    minWidth: '80px',
+                                                    minHeight: '38px',
+                                                }}
+                                            >
+                                                <div className="typing-bubble">
+                                                    <div className="typing-dot"></div>
+                                                    <div className="typing-dot"></div>
+                                                    <div className="typing-dot"></div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    )}
+                            </CSSTransition>
+                        )}
+                    </TransitionGroup>
                 </div>
             </div>
         </div>
