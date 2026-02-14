@@ -35,12 +35,14 @@ const socketHandler = (io) => {
         });
 
         // --- typing Logic ---
-        socket.on('typing:start', (room) => {
-            socket.to(room).emit('typing:start', room);
+        socket.on('typing:start', (data) => {
+            const { chatId, userId } = data;
+            socket.to(chatId).emit("typing:start", { chatId, userId });
         });
 
-        socket.on('typing:stop', (room) => {
-            socket.to(room).emit('typing:stop', room);
+        socket.on('typing:stop', (data) => {
+            const { chatId, userId } = data;
+            socket.to(chatId).emit("typing:stop", { chatId, userId });
         });
 
         // --- Call Logic ---
