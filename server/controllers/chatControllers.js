@@ -1,8 +1,7 @@
 const User = require('../models/userModel');
 const Chat = require('../models/chatModel');
 const Message = require('../models/messageModel');
-const cloudinary = require('../config/cloudinaryConfig');
-const { uploadImageToCloudinary } = require('../controllers/uploadController');
+const { uploadImageToCloudinary, deleteManyImages } = require('../controllers/uploadController');
 
 const newChat = async (req, res) => {
     const { senderId, selectedReceiverId } = req.body;
@@ -107,14 +106,7 @@ const deleteChat = async (req, res) => {
         // find and delete images in chat as well
         const messagesWithImages = await Message.find({ chat: chatId, image: { $exists: true, $ne: '' } });
         const imageUrls = messagesWithImages.map((message) => message.image);
-
-        await Promise.all(
-            imageUrls.map(async (imageUrl) => {
-                const Id = imageUrl.split('/').pop().split('.')[0];
-                const publicId = `whisperwave/messages/${Id}`;
-                await cloudinary.uploader.destroy(publicId);
-            }),
-        );
+        await deleteManyImages(imageUrls, 'messages');
 
         // delete messages from database
         await Message.deleteMany({ chat: chatId });
@@ -250,7 +242,7 @@ const addToGroup = async (req, res) => {
         const added = await Chat.findByIdAndUpdate(chatId, { $push: { members: userId } }, { new: true });
 
         if (!added) res.status(404).send('Chat Not Found');
-        else res.json({ message: "User added successfully", success: true });
+        else res.json({ message: 'User added successfully', success: true });
     } catch (error) {
         res.status(400).send(error.message);
     }
