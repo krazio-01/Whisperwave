@@ -62,6 +62,7 @@ const ConfirmModal = ({ setShowConfirmModal, setFetchAgain }) => {
                     id="btn1"
                     className="modal-btn"
                     onClick={() => setShowConfirmModal(false)}
+                    disabled={loading}
                 >
                     Cancel
                 </button>
