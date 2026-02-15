@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { CircularProgress } from '@mui/material';
 import { ChatState } from '../../context/ChatProvider';
+import encryptionManager from '../../services/EncryptionManager';
 import './filepreview.css';
 
 const FilePreview = ({
@@ -24,8 +25,13 @@ const FilePreview = ({
             if (e) e.preventDefault();
 
             setLoading(true);
+
+            const encryptedCaption = newMessages
+                ? encryptionManager.encrypt(newMessages, currentChat._id)
+                : "";
+
             const formData = new FormData();
-            formData.append('text', newMessages);
+            formData.append('text', encryptedCaption);
             formData.append('chatId', currentChat._id);
             formData.append('image', selectedFile);
 
@@ -48,9 +54,8 @@ const FilePreview = ({
                 console.error(err.message);
                 setLoading(false);
             }
-            // eslint-disable-next-line
         },
-        [newMessages, currentChat, user.authToken, socket],
+        [newMessages, currentChat, user.authToken, socket, setSelectedFile, setMessages, setShowPreview, selectedFile],
     );
 
     const handleKeyDown = (e) => {
