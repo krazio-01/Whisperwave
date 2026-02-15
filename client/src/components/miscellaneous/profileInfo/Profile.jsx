@@ -87,8 +87,9 @@ const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchAgai
                 }));
                 toast.info(`Verification code sent to ${formData.email}`);
             } else {
-                localStorage.setItem('userInfo', JSON.stringify(response.data));
-                setUser(response.data);
+                const updatedUser = { ...user, ...response.data };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                setUser(updatedUser);
                 setUiState((prev) => ({ ...prev, isEditing: false, loading: false }));
                 toast.success('Profile Updated!');
             }
@@ -110,8 +111,9 @@ const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchAgai
 
             const response = await axios.post('/users/verify-email-change', { otp }, config);
 
-            localStorage.setItem('userInfo', JSON.stringify(response.data));
-            setUser(response.data);
+            const updatedUser = { ...user, ...response.data };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
 
             setUiState({ isEditing: false, loading: false, showOtpUI: false, showAddOrRemoveControls: false });
             setOtp('');
@@ -136,12 +138,6 @@ const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchAgai
                             />
                             <span className="header-title">{uiState.isEditing ? 'Edit Profile' : 'Profile'}</span>
                         </div>
-
-                        {/* {uiState.isEditing && (
-                            <button onClick={handleUpdateProfile} disabled={uiState.loading} className="btn-save">
-                                {uiState.loading ? 'Saving...' : 'Save'}
-                            </button>
-                        )} */}
 
                         {uiState.isEditing && !uiState.showOtpUI && (
                             <button onClick={handleUpdateProfile} disabled={uiState.loading} className="btn-save">
@@ -192,7 +188,7 @@ const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchAgai
                                     />
                                 </div>
                                 <button
-                                    className="btn-save full-width"
+                                    className="otp-verify-bn"
                                     onClick={verifyOtpAndSave}
                                     disabled={uiState.loading}
                                 >
@@ -215,6 +211,7 @@ const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchAgai
                                         value={formData.username}
                                         onChange={handleInputChange}
                                         placeholder="Enter username"
+                                        disabled={uiState.loading}
                                     />
                                 </div>
                                 <div className="input-group">
@@ -225,6 +222,7 @@ const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchAgai
                                         value={formData.email}
                                         onChange={handleInputChange}
                                         placeholder="Enter email"
+                                        disabled={uiState.loading}
                                     />
                                 </div>
                                 <button
@@ -238,6 +236,7 @@ const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchAgai
                                             preview: user.profilePicture,
                                         }));
                                     }}
+                                    disabled={uiState.loading}
                                 >
                                     Cancel
                                 </button>
