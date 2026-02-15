@@ -1,8 +1,7 @@
 const User = require('../models/userModel');
 const Chat = require('../models/chatModel');
 const sendEmail = require('../utils/sendMail');
-const { uploadImageToCloudinary } = require('../controllers/uploadController');
-const cloudinary = require('cloudinary').v2;
+const { uploadImageToCloudinary, deleteImageFromCloudinary } = require('../controllers/uploadController');
 const crypto = require('crypto');
 
 const COOLDOWN_DAYS = 30;
@@ -51,12 +50,20 @@ const updateUserProfile = async (req, res) => {
         const userId = req.userId;
         const { username, email } = req.body;
 
-        console.log('md-userId: ', userId);
-        console.log('md-username, email: ', username, email);
-
         const user = await User.findById(userId);
-
         if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const isUsernameSame = !username || username === user.username;
+        const isEmailSame = !email || email === user.email;
+        const isFileUploaded = !!req.file;
+
+        if (isUsernameSame && isEmailSame && !isFileUploaded) {
+            return res.status(400).json({
+                message: 'No changes detected. Please update at least one field.',
+            });
+        }
+
+        let responseUpdates = {};
 
         if (username && username !== user.username) {
             if (user.lastUsernameChange) {
@@ -77,20 +84,18 @@ const updateUserProfile = async (req, res) => {
 
             user.username = username;
             user.lastUsernameChange = new Date();
+            responseUpdates.username = username;
         }
-
-        let otpSent = false;
 
         if (email && email !== user.email) {
             const emailExists = await User.findOne({ email });
             if (emailExists) return res.status(400).json({ message: 'This email is already registered.' });
 
-            // const otp = Math.floor(100000 + Math.random() * 900000).toString();
             const otp = crypto.randomInt(100000, 999999).toString();
 
             user.tempEmail = email;
             user.emailOtp = otp;
-            user.otpExpire = Date.now() + 10 * 60 * 1000; // Expires in 10 mins
+            user.otpExpire = Date.now() + 10 * 60 * 1000; // 10 Minutes
 
             const subject = 'Verify Email Change';
             const html = `
@@ -106,7 +111,7 @@ const updateUserProfile = async (req, res) => {
 
             try {
                 await sendEmail(email, subject, null, html);
-                otpSent = true;
+                responseUpdates.otpSent = true;
             } catch (emailErr) {
                 console.error('Email send failed:', emailErr);
                 return res.status(500).json({ message: 'Failed to send verification email.' });
@@ -115,32 +120,19 @@ const updateUserProfile = async (req, res) => {
 
         if (req.file) {
             const newImageUrl = await uploadImageToCloudinary(req.file, 'person');
-            const isDefaultAvatar = user.profilePicture.includes('noAvatar_fr72mb.png');
 
-            if (user.profilePicture && !isDefaultAvatar) {
-                try {
-                    const urlParts = user.profilePicture.split('/');
-                    const fileName = urlParts[urlParts.length - 1].split('.')[0];
-                    const publicId = `whisperwave/person/${fileName}`;
-                    await cloudinary.uploader.destroy(publicId);
-                } catch (delErr) {
-                    console.error('Failed to delete old profile image:', delErr);
-                }
-            }
+            if (user.profilePicture) await deleteImageFromCloudinary(user.profilePicture, 'person');
+
             user.profilePicture = newImageUrl;
+            responseUpdates.profilePicture = newImageUrl;
         }
 
-        const updatedUser = await user.save();
+        await user.save();
 
-        res.json({
-            _id: updatedUser._id,
-            username: updatedUser.username,
-            email: updatedUser.email,
-            profilePicture: updatedUser.profilePicture,
-            isAdmin: updatedUser.isAdmin,
-            authToken: req.headers.authorization.split(' ')[1],
-            otpSent: otpSent,
-        });
+        if (Object.keys(responseUpdates).length === 0)
+            return res.status(200).json({ message: 'No changes were applied.' });
+
+        res.json(responseUpdates);
     } catch (error) {
         console.error('Update Profile Error:', error);
         res.status(500).json({ message: 'Failed to update profile' });
@@ -149,7 +141,7 @@ const updateUserProfile = async (req, res) => {
 
 const verifyEmailChange = async (req, res) => {
     const { otp } = req.body;
-    const userId = req.user._id;
+    const userId = req.userId;
 
     try {
         const user = await User.findById(userId);
@@ -166,14 +158,7 @@ const verifyEmailChange = async (req, res) => {
 
         await user.save();
 
-        res.json({
-            _id: user._id,
-            username: user.username,
-            email: user.email,
-            profilePicture: user.profilePicture,
-            token: generateToken(user._id),
-            success: true,
-        });
+        res.json({ email: user.email });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
