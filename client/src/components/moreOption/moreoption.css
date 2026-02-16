@@ -1,33 +1,44 @@
-.more {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 8px;
+.more-options-container {
     width: 100%;
-    border-radius: 7px;
-    transition: all 150ms ease-in-out;
-    cursor: pointer;
 
-    &:hover {
-        background-color: #555;
-    }
+    .more-item {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 8px;
+        width: 100%;
+        border-radius: 7px;
+        transition: background-color 150ms ease-in-out;
+        cursor: pointer;
+        background: transparent;
+        border: none;
 
-    img,
-    svg {
-        width: 18px;
-        height: 18px;
-        margin-right: 12px;
-    }
+        &:hover {
+            background-color: #555;
+        }
 
-    span {
-        font-size: 12px;
-        color: #fff;
-        font-weight: 500;
-    }
+        span,
+        svg {
+            color: #fff;
+        }
 
-    #delete {
-        font-size: 12px;
-        color: #dc1c1c;
-        font-weight: 500;
+        img,
+        svg {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+        }
+
+        span {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        &.delete-btn {
+            span,
+            svg {
+                color: #dc1c1c;
+            }
+        }
     }
 }

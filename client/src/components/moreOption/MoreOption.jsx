@@ -1,13 +1,12 @@
 import { ChatState } from '../../context/ChatProvider';
-import deleteIcon from '../../Assets/images/deleteIcon.png';
+import { MdClose, MdDelete, MdExitToApp } from 'react-icons/md';
 import profileIcon from '../../Assets/images/profile.png';
-import { MdClose } from 'react-icons/md';
 import './moreoption.css';
 
-const MoreOption = ({ setShowConfirmModal, setShowMoreOption, setShowProfileInfo }) => {
+const MoreOption = ({ setShowConfirmModal, setShowMoreOption, setShowProfileInfo, setMessages }) => {
     const { currentChat, setCurrentChat } = ChatState();
 
-    const hanldeDelete = async () => {
+    const handleDelete = () => {
         setShowMoreOption(false);
         setShowConfirmModal(true);
     };
@@ -18,25 +17,49 @@ const MoreOption = ({ setShowConfirmModal, setShowMoreOption, setShowProfileInfo
     };
 
     const handleCloseChat = () => {
-        setCurrentChat(null);
+        setShowMoreOption(false);
+        setMessages([]);
         setShowProfileInfo(false);
+        setCurrentChat(null);
     };
 
+    const menuItems = [
+        {
+            id: 'contact',
+            label: 'Contact info',
+            icon: profileIcon,
+            action: handleContactInfo,
+        },
+        {
+            id: 'close',
+            label: 'Close chat',
+            icon: MdClose,
+            action: handleCloseChat,
+        },
+        {
+            id: 'delete',
+            label: currentChat?.isGroupChat ? 'Leave Group' : 'Delete chat',
+            icon: currentChat?.isGroupChat ? MdExitToApp : MdDelete,
+            action: handleDelete,
+            className: 'delete-btn',
+        },
+    ];
+
     return (
-        <>
-            <div className="more" onClick={handleContactInfo}>
-                <img src={profileIcon} alt="delete" />
-                <span>Contact info</span>
-            </div>
-            <div className="more" onClick={handleCloseChat}>
-                <MdClose style={{ color: 'white' }} />
-                <span>Close chat</span>
-            </div>
-            <div className="more" onClick={hanldeDelete}>
-                <img src={deleteIcon} alt="delete" />
-                <span id="delete">{currentChat?.isGroupChat ? 'Leave Group' : 'Delete chat'}</span>
-            </div>
-        </>
+        <div className="more-options-container">
+            {menuItems.map((item) => (
+                <button
+                    key={item.id}
+                    type="button"
+                    className={`more-item ${item.className || ''}`}
+                    onClick={item.action}
+                    aria-label={item.label}
+                >
+                    {item.id === 'contact' ? <img src={item.icon} /> : <item.icon className="icon" />}
+                    <span>{item.label}</span>
+                </button>
+            ))}
+        </div>
     );
 };
 
