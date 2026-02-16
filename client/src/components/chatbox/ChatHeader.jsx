@@ -3,7 +3,7 @@ import { CSSTransition } from 'react-transition-group';
 import { getProfilePic, getCurrentChatName } from '../../utils/chatUtils';
 import { MdVideoCall, MdCall } from 'react-icons/md';
 import MoreOption from '../moreOption/MoreOption';
-import BackIcon from '../../Assets/images/back.png';
+import { IoIosArrowBack } from "react-icons/io";
 import dotsIcon from '../../Assets/images/dots.png';
 
 const ChatHeader = ({
@@ -42,7 +42,7 @@ const ChatHeader = ({
         <div className="chatBoxTop">
             <div className="left-section">
                 <div className="closeConversation" onClick={() => setCurrentChat(null)}>
-                    <img src={BackIcon} alt="Back" />
+                    <IoIosArrowBack />
                 </div>
                 <div className='details-wrapper' onClick={() => setShowProfileInfo((prev) => !prev)}>
                     <img className="userImg" src={chatUserProfilePic} alt="User" />
