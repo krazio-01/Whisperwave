@@ -18,7 +18,6 @@ const extractPublicId = (imageUrl, folderName) => {
 const uploadImageToCloudinary = async (file, folder) => {
     try {
         const compressedImageBuffer = await sharp(file.buffer)
-            .resize({ width: 1200, withoutEnlargement: true })
             .webp({ quality: 80 })
             .toBuffer();
 
@@ -27,7 +26,7 @@ const uploadImageToCloudinary = async (file, folder) => {
                 {
                     folder: `${CLOUD_FOLDER_PREFIX}/${folder}`,
                     upload_preset: CLOUD_FOLDER_PREFIX,
-                    timeout: 60000
+                    resource_type: "auto",
                 },
                 (error, result) => {
                     if (error) return reject(error);
