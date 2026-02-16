@@ -15,7 +15,6 @@ const ChatHeader = ({
     fetchAgain,
     setShowConfirmModal,
     setShowProfileInfo,
-    showProfileInfo,
     setMessages
 }) => {
     const [showMoreOption, setShowMoreOption] = useState(false);
@@ -82,7 +81,6 @@ const ChatHeader = ({
                                 setShowConfirmModal={setShowConfirmModal}
                                 setShowMoreOption={setShowMoreOption}
                                 setShowProfileInfo={setShowProfileInfo}
-                                showProfileInfo={showProfileInfo}
                                 setMessages={setMessages}
                             />
                         </div>

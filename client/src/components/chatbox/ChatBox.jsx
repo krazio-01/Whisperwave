@@ -35,8 +35,6 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         return otherMember ? onlineUsers.includes(otherMember?._id) : false;
     }, [onlineUsers, currentChat, user?._id]);
 
-    const toggleProfile = () => setShowProfileInfo((prev) => !prev);
-
     useEffect(() => {
         currentChatRef.current = currentChat;
     }, [currentChat]);
@@ -114,8 +112,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                             handleStartCall={handleStartCall}
                             fetchAgain={fetchAgain}
                             setShowConfirmModal={setShowConfirmModal}
-                            setShowProfileInfo={toggleProfile}
-                            showProfileInfo={showProfileInfo}
+                            setShowProfileInfo={setShowProfileInfo}
                             setMessages={setMessages}
                         />
 
@@ -146,7 +143,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             >
                 <div ref={profileRef} className="profileTranisitionDiv">
                     <ProfileInfo
-                        setShowProfileInfo={toggleProfile}
+                        setShowProfileInfo={setShowProfileInfo}
                         fetchAgain={fetchAgain}
                         setFetchAgain={setFetchAgain}
                     />

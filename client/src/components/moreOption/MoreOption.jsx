@@ -17,9 +17,9 @@ const MoreOption = ({ setShowConfirmModal, setShowMoreOption, setShowProfileInfo
     };
 
     const handleCloseChat = () => {
+        setShowProfileInfo(false);
         setShowMoreOption(false);
         setMessages([]);
-        setShowProfileInfo(false);
         setCurrentChat(null);
     };
 
