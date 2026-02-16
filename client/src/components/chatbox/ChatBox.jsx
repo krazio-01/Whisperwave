@@ -39,7 +39,6 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
 
     useEffect(() => {
         currentChatRef.current = currentChat;
-        setMessages([]);
     }, [currentChat]);
 
     useEffect(() => {
