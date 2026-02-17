@@ -5,6 +5,7 @@ import { MdVideoCall, MdCall } from 'react-icons/md';
 import MoreOption from '../moreOption/MoreOption';
 import { IoIosArrowBack } from "react-icons/io";
 import dotsIcon from '../../Assets/images/dots.png';
+import useClickOutside from '../../hooks/useClickOutside';
 
 const ChatHeader = ({
     user,
@@ -20,9 +21,12 @@ const ChatHeader = ({
     const [showMoreOption, setShowMoreOption] = useState(false);
 
     const threeDotsRef = useRef(null);
+    const optionsContainerRef = useRef(null);
 
     const chatUserProfilePic = useMemo(() => getProfilePic(user, currentChat), [user, currentChat]);
     const currentChatName = useMemo(() => getCurrentChatName(user, currentChat), [user, currentChat]);
+
+    useClickOutside(optionsContainerRef, () => setShowMoreOption(false));
 
     const renderStatus = () => {
         if (currentChat.isGroupChat) {
@@ -64,7 +68,7 @@ const ChatHeader = ({
                     </div>
                 )}
 
-                <div className="threeDotsContainer">
+                <div className="threeDotsContainer" ref={optionsContainerRef}>
                     <div className="threeDots" onClick={() => setShowMoreOption((prev) => !prev)}>
                         <img src={dotsIcon} alt="Dots" />
                     </div>

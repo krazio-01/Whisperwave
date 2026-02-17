@@ -8,7 +8,6 @@ import Conversation from '../conversations/Conversation';
 import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton';
 import { ChatState } from '../../context/ChatProvider';
 import { getProfilePic } from '../../utils/chatUtils';
-import './chatmenu.css';
 import profile from '../../Assets/images/profile.png';
 import logout from '../../Assets/images/logout.png';
 import pen from '../../Assets/images/pen.png';
@@ -16,12 +15,16 @@ import { FaSearch } from 'react-icons/fa';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import { FaUserGroup } from 'react-icons/fa6';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
+import useClickOutside from '../../hooks/useClickOutside';
+import './chatmenu.css';
 
 const ChatMenu = ({ socket, fetchAgain }) => {
     const { user, chats, setChats, currentChat, setCurrentChat } = ChatState();
 
     const dropdownRef = useRef(null);
+    const dropDownParentRef = useRef(null);
     const bubbleMenuRef = useRef(null);
+    const bubbleMenuParentRef = useRef(null);
 
     const [loggedUser, setLoggedUser] = useState(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -30,6 +33,9 @@ const ChatMenu = ({ socket, fetchAgain }) => {
     const [currentUI, setCurrentUI] = useState('chat');
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredUsers, setFilteredUsers] = useState([]);
+
+    useClickOutside(dropDownParentRef, () => setIsDropdownOpen(false));
+    useClickOutside(bubbleMenuParentRef, () => setBubbleMenuContainer(false));
 
     const handleSearchInputChange = (event) => {
         const { value } = event.target;
@@ -134,12 +140,13 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             {currentUI === 'chat' ? (
                 <>
                     <div className="menu-topbar">
-                        <div className="profile">
+                        <div className="profile" ref={dropDownParentRef}>
                             <img
                                 className="profilepic"
                                 src={getProfilePic(user, null)}
                                 alt="profile"
-                                onClick={() => {
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     setIsDropdownOpen(!isDropdownOpen);
                                 }}
                             />
@@ -205,7 +212,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                         )}
                     </div>
 
-                    <div className="newChatButton-div">
+                    <div className="newChatButton-div" ref={bubbleMenuParentRef}>
                         <button
                             type="button"
                             className="newChatButton"
