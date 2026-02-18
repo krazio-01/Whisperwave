@@ -1,16 +1,15 @@
-const { onlineUsers, updateOnlineUsers, activeChats } = require('../utils/RealtimeTrack');
+const { onlineUsers, updateOnlineUsers, removeOnlineUser, activeChats } = require('../utils/RealtimeTrack');
 
 const socketHandler = (io) => {
+    const getOnlineUsersObj = () => Object.fromEntries(onlineUsers);
+
     io.on('connection', (socket) => {
         // --- User Setup ---
         socket.on('user:setup', (userId) => {
             socket.join(userId);
             socket.emit('user:connected');
             updateOnlineUsers(userId, socket.id);
-            io.emit(
-                'user:online-list',
-                onlineUsers.map((user) => user.userId),
-            );
+            io.emit('user:online-list', getOnlineUsersObj());
         });
 
         // --- Chat Logic ---
@@ -37,12 +36,12 @@ const socketHandler = (io) => {
         // --- typing Logic ---
         socket.on('typing:start', (data) => {
             const { chatId, userId } = data;
-            socket.to(chatId).emit("typing:start", { chatId, userId });
+            socket.to(chatId).emit('typing:start', { chatId, userId });
         });
 
         socket.on('typing:stop', (data) => {
             const { chatId, userId } = data;
-            socket.to(chatId).emit("typing:stop", { chatId, userId });
+            socket.to(chatId).emit('typing:stop', { chatId, userId });
         });
 
         // --- Call Logic ---
@@ -83,14 +82,8 @@ const socketHandler = (io) => {
 
         // --- Disconnect ---
         socket.on('disconnect', () => {
-            const userIndex = onlineUsers.findIndex((user) => user.socketId === socket.id);
-            if (userIndex !== -1) {
-                onlineUsers.splice(userIndex, 1);
-                io.emit(
-                    'user:online-list',
-                    onlineUsers.map((user) => user.userId),
-                );
-            }
+            const removedUserId = removeOnlineUser(socket.id);
+            if (removedUserId) io.emit('user:online-list', getOnlineUsersObj());
             activeChats.delete(socket.id);
         });
     });

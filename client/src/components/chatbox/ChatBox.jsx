@@ -19,7 +19,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const currentChatRef = useRef(currentChat);
 
     const [messages, setMessages] = useState([]);
-    const [onlineUsers, setOnlineUsers] = useState([]);
+    const [onlineUsers, setOnlineUsers] = useState({});
     const [showProfileInfo, setShowProfileInfo] = useState(false);
     const [typingUsers, setTypingUsers] = useState([]);
 
@@ -32,7 +32,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     const isUserOnline = useMemo(() => {
         if (!currentChat || currentChat?.isGroupChat) return false;
         const otherMember = currentChat?.members?.find((m) => m?._id !== user?._id);
-        return otherMember ? onlineUsers.includes(otherMember?._id) : false;
+        return otherMember ? !!onlineUsers[otherMember?._id] : false;
     }, [onlineUsers, currentChat, user?._id]);
 
     useEffect(() => {
@@ -47,7 +47,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
     useEffect(() => {
         if (!socket) return;
 
-        const handleOnlineUsers = (users) => setOnlineUsers(users);
+        const handleOnlineUsers = (usersObj) => setOnlineUsers(usersObj);
 
         const handleTyping = ({ chatId, userId }) => {
             if (userId === user._id) return;

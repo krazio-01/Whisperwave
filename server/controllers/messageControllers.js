@@ -56,7 +56,7 @@ async function createMessageAndSendResponse(newMessage, chatId, res) {
         chat.members.forEach(async (member) => {
             const memberId = member.toString();
             if (memberId !== newMessage.sender.toString()) {
-                const receiverSocketId = onlineUsers.find((user) => user.userId.toString() === memberId)?.socketId;
+                const receiverSocketId = onlineUsers.get(memberId);
 
                 // Check if the receiver has the sender's chat open
                 const receiverOpenedChatId = activeChats.get(receiverSocketId);

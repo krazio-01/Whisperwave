@@ -1,14 +1,18 @@
-let onlineUsers = [];
-
+const onlineUsers = new Map();
 const activeChats = new Map();
 
 const updateOnlineUsers = (userId, socketId) => {
-    const existingUserIndex = onlineUsers.findIndex(user => user.userId === userId);
-
-    if (existingUserIndex !== -1)
-        onlineUsers[existingUserIndex].socketId = socketId;
-    else
-        onlineUsers.push({ userId, socketId });
+    onlineUsers.set(userId, socketId);
 };
 
-module.exports = { onlineUsers, updateOnlineUsers, activeChats };
+const removeOnlineUser = (socketIdParam) => {
+    for (const [userId, socketId] of onlineUsers.entries()) {
+        if (socketId === socketIdParam) {
+            onlineUsers.delete(userId);
+            return userId;
+        }
+    }
+    return null;
+};
+
+module.exports = { onlineUsers, updateOnlineUsers, removeOnlineUser, activeChats };
