@@ -70,6 +70,7 @@
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    gap: 3px;
     width: 180px;
     height: 100px;
     top: 100%;
@@ -89,7 +90,7 @@
     height: 38px;
     font-size: 13px;
     padding: 12px;
-    margin: 3px;
+    gap: 7px;
     border-radius: 5px;
     border: none;
     outline: none;
@@ -97,9 +98,13 @@
     background-color: transparent;
     color: #fff;
 
+    > img {
+        width: 20px;
+        height: 20px;
+    }
+
     > svg {
         font-size: 1.7rem;
-        margin: 7px;
         color: #fff;
     }
 
