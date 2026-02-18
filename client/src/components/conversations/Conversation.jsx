@@ -12,11 +12,12 @@ const Conversation = ({ loggedUser, chat }) => {
         if (!chat.lastMessage) return '';
 
         const { sender, text } = chat.lastMessage;
-
         const decryptedFullText = encryptionManager.decrypt(text || '', chat?._id);
-        if (decryptedFullText) return `${sender.username} : ${decryptedFullText}`;
+        const prefix = chat.isGroupChat ? `${sender.username} : ` : '';
 
-        return `${sender.username} : Photo`;
+        if (decryptedFullText) return `${prefix}${decryptedFullText}`;
+
+        return `${prefix}Photo`;
     }, [chat]);
 
     const isSelectedChat = currentChat && currentChat._id === chat._id;
