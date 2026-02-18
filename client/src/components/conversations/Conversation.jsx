@@ -8,22 +8,15 @@ import './conversation.css';
 const Conversation = ({ loggedUser, chat }) => {
     const { currentChat } = ChatState();
 
-    const getLastMessage = useMemo(() => {
-        const truncatedTextLength = 35;
+    const lastMessageContent = useMemo(() => {
+        if (!chat.lastMessage) return '';
 
-        if (chat.lastMessage) {
-            const { sender, text } = chat.lastMessage;
-            const decryptedFullText = encryptionManager.decrypt(text || '', chat?._id);
+        const { sender, text } = chat.lastMessage;
 
-            const truncatedText =
-                decryptedFullText.length > truncatedTextLength
-                    ? decryptedFullText.substring(0, truncatedTextLength) + '...'
-                    : decryptedFullText;
+        const decryptedFullText = encryptionManager.decrypt(text || '', chat?._id);
+        if (decryptedFullText) return `${sender.username} : ${decryptedFullText}`;
 
-            if (truncatedText) return `${sender.username} : ${truncatedText}`;
-            return `${sender.username} : Photo`;
-        }
-        return '';
+        return `${sender.username} : Photo`;
     }, [chat]);
 
     const isSelectedChat = currentChat && currentChat._id === chat._id;
@@ -33,14 +26,16 @@ const Conversation = ({ loggedUser, chat }) => {
     return (
         <div className={`userChat ${isSelectedChat ? 'selectedChat' : ''}`}>
             <img className="conversationImg" src={chatUserProfilePic} alt="" />
-            <div className='chat-details-wrapper'>
+            <div className="chat-details-wrapper">
                 <div className="chatDetails">
                     <span className="userChatName">{currentChatName}</span>
-                    <span className="lastMessage">{getLastMessage}</span>
+                    <span className="lastMessage">{lastMessageContent}</span>
                 </div>
 
-                <div className='right-section'>
-                    {chat.lastMessage && <div className="last-message-time">{moment(chat?.lastMessage?.createdAt).fromNow()}</div>}
+                <div className="right-section">
+                    {chat.lastMessage && (
+                        <div className="last-message-time">{moment(chat?.lastMessage?.createdAt).fromNow()}</div>
+                    )}
                     {chat.unseenCount > 0 && <span className="newMessageBadge">{chat.unseenCount}</span>}
                 </div>
             </div>
