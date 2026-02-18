@@ -227,7 +227,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 8rem;
+    padding-bottom: 11.5rem;
+    background-color: white;
 
     .steps-grid {
         display: grid;
