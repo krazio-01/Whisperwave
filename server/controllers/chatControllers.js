@@ -35,7 +35,7 @@ const fetchChats = async (req, res) => {
         const chats = await Chat.find({ members: userId })
             .populate('members', '-password -emailToken -__v -createdAt -updatedAt')
             .populate('groupAdmin', 'username _id')
-            .populate('lastMessage')
+            .populate('lastMessage', 'text sender createdAt')
             .sort({ updatedAt: -1 });
 
         const populatedChats = await User.populate(chats, {
@@ -46,7 +46,15 @@ const fetchChats = async (req, res) => {
         const secureChats = populatedChats.map((chat) => {
             const chatObj = chat.toObject();
 
-            chatObj.members = chatObj.members.map((member) => ({
+            const refinedLastMessage = chatObj.lastMessage
+                ? {
+                    text: chatObj.lastMessage.text,
+                    sender: chatObj.lastMessage.sender,
+                    createdAt: chatObj.lastMessage.createdAt,
+                }
+                : null;
+
+            const refinedMembers = chatObj.members.map((member) => ({
                 _id: member._id,
                 username: member.username,
                 profilePicture: member.profilePicture,
@@ -59,9 +67,9 @@ const fetchChats = async (req, res) => {
                 chatName: chatObj.chatName,
                 isGroupChat: chatObj.isGroupChat,
                 groupProfilePic: chatObj.groupProfilePic,
-                members: chatObj.members,
+                members: refinedMembers,
                 groupAdmin: chatObj.groupAdmin,
-                lastMessage: chatObj.lastMessage,
+                lastMessage: refinedLastMessage,
                 unseenCount: count,
             };
         });
