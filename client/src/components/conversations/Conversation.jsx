@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { getProfilePic, getCurrentChatName } from '../../utils/chatUtils';
 import { ChatState } from '../../context/ChatProvider';
 import encryptionManager from '../../services/EncryptionManager';
+import moment from 'moment';
 import './conversation.css';
 
 const Conversation = ({ loggedUser, chat }) => {
@@ -32,12 +33,17 @@ const Conversation = ({ loggedUser, chat }) => {
     return (
         <div className={`userChat ${isSelectedChat ? 'selectedChat' : ''}`}>
             <img className="conversationImg" src={chatUserProfilePic} alt="" />
-            <div className="chatDetails">
-                <span className="userChatName">{currentChatName}</span>
-                <span className="lastMessage">{getLastMessage}</span>
-            </div>
+            <div className='chat-details-wrapper'>
+                <div className="chatDetails">
+                    <span className="userChatName">{currentChatName}</span>
+                    <span className="lastMessage">{getLastMessage}</span>
+                </div>
 
-            {chat.unseenCount > 0 && <span className="newMessageBadge">{chat.unseenCount}</span>}
+                <div className='right-section'>
+                    {chat.lastMessage && <div className="last-message-time">{moment(chat?.lastMessage?.createdAt).fromNow()}</div>}
+                    {chat.unseenCount > 0 && <span className="newMessageBadge">{chat.unseenCount}</span>}
+                </div>
+            </div>
         </div>
     );
 };

@@ -1,7 +1,7 @@
 .userChat {
     display: flex;
     align-items: center;
-    padding: 10px 7px;
+    padding: 12px 8px;
     border-radius: 12px;
     width: 100%;
     cursor: pointer;
@@ -14,50 +14,66 @@
         background-color: #2d3436;
         pointer-events: none;
     }
-}
 
-.conversationImg {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    margin-right: 14px;
-    object-fit: cover;
-}
+    .conversationImg {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        margin-right: 14px;
+        object-fit: cover;
+    }
 
-.chatDetails {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
+    .chat-details-wrapper {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        color: #fff;
 
-.userChatName {
-    font-size: 14px;
-    margin: 7px 0;
-    color: #fff;
-}
+        .chatDetails {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 63%;
 
-.lastMessage {
-    padding: 2px 0;
-    font-size: 12px;
-    white-space: nowrap;
-    height: 18px;
-    color: #fff;
-}
+            .userChatName {
+                font-size: 14px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
 
-.newMessageBadge {
-    text-align: center;
-    padding: 2px 0;
-    width: 22px;
-    height: 17px;
-    border-radius: 50%;
-    font-size: 1.2rem;
-    color: #fff;
-    margin: 0 2rem;
-    background: #2d3436;
+            .lastMessage {
+                padding: 2px 0;
+                font-size: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: block;
+            }
+        }
+
+        .right-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+
+            .newMessageBadge {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                font-size: 1.2rem;
+                background: #2d3436;
+            }
+        }
+    }
 }
 
 @media (max-width: 1024px) {
     .lastMessage {
-        height: 16px;
+        height: 16px !important;
     }
 }
