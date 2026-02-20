@@ -55,7 +55,7 @@ const MoreOption = ({ setShowConfirmModal, setShowMoreOption, setShowProfileInfo
                     onClick={item.action}
                     aria-label={item.label}
                 >
-                    {item.id === 'contact' ? <img src={item.icon} /> : <item.icon className="icon" />}
+                    {item.id === 'contact' ? <img src={item.icon} alt='icon' /> : <item.icon className="icon" />}
                     <span>{item.label}</span>
                 </button>
             ))}
