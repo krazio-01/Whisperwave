@@ -23,17 +23,7 @@ const MyProfile = memo(({ style, onBack }) => {
     });
     const [otp, setOtp] = useState('');
 
-    useEffect(() => {
-        if (user && mode === 'VIEW') resetForm();
-    }, [user, mode]);
-
-    useEffect(() => {
-        return () => {
-            if (formData.preview && formData.preview !== user?.profilePicture) URL.revokeObjectURL(formData.preview);
-        };
-    }, [formData.preview, user]);
-
-    const resetForm = () => {
+    const resetForm = useCallback(() => {
         setFormData({
             username: user?.username || '',
             email: user?.email || '',
@@ -42,14 +32,24 @@ const MyProfile = memo(({ style, onBack }) => {
         });
         setOtp('');
         if (fileInputRef.current) fileInputRef.current.value = '';
-    };
+    }, [user]);
 
-    const handleInputChange = (e) => {
+    useEffect(() => {
+        if (user && mode === 'VIEW') resetForm();
+    }, [user, mode, resetForm]);
+
+    useEffect(() => {
+        return () => {
+            if (formData.preview && formData.preview !== user?.profilePicture) URL.revokeObjectURL(formData.preview);
+        };
+    }, [formData.preview, user]);
+
+    const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-    };
+    }, []);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = useCallback((e) => {
         const file = e.target.files[0];
         if (file) {
             setFormData((prev) => ({
@@ -59,20 +59,16 @@ const MyProfile = memo(({ style, onBack }) => {
             }));
             setMode('EDIT');
         }
-    };
+    }, []);
 
-    const getAuthConfig = () => ({
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${user.authToken}`,
+    const updateLocalUser = useCallback(
+        (newData) => {
+            const updatedUser = { ...user, ...newData };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
         },
-    });
-
-    const updateLocalUser = (newData) => {
-        const updatedUser = { ...user, ...newData };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        setUser(updatedUser);
-    };
+        [user, setUser],
+    );
 
     const handleSaveProfile = async () => {
         if (!formData.username || !formData.email) return toast.warning('Fields cannot be empty');
@@ -84,7 +80,14 @@ const MyProfile = memo(({ style, onBack }) => {
             data.append('email', formData.email);
             if (formData.pic) data.append('profilePicture', formData.pic);
 
-            const response = await axios.put('/users/update', data, getAuthConfig());
+            const config = {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${user.authToken}`,
+                },
+            };
+
+            const response = await axios.put('/users/update', data, config);
 
             if (response.data.otpSent) {
                 setMode('OTP');
@@ -118,10 +121,10 @@ const MyProfile = memo(({ style, onBack }) => {
         }
     };
 
-    const handleCancel = () => {
+    const handleCancel = useCallback(() => {
         resetForm();
         setMode('VIEW');
-    };
+    }, [resetForm]);
 
     return (
         <div className="profile-wrapper" style={style}>
@@ -179,7 +182,7 @@ const MyProfile = memo(({ style, onBack }) => {
                         <button className="otp-verify-bn" onClick={handleVerifyOtp} disabled={loading}>
                             {loading ? 'Verifying...' : 'Confirm'}
                         </button>
-                        <button className="btn-cancel" onClick={() => setMode('EDIT')}>
+                        <button className="btn-cancel" onClick={() => setMode('EDIT')} disabled={loading}>
                             Back
                         </button>
                     </div>
@@ -229,7 +232,6 @@ const ChatInfo = memo(({ currentChat, user, onBack, fetchAgain, setFetchAgain })
     const [showEditGroup, setShowEditGroup] = useState(false);
 
     const isGroup = currentChat?.isGroupChat;
-
     const chatImage = useMemo(() => getProfilePic(user, currentChat), [user, currentChat]);
 
     const peerName = useMemo(() => {
@@ -274,7 +276,7 @@ const ChatInfo = memo(({ currentChat, user, onBack, fetchAgain, setFetchAgain })
                         <span className="group-name">{currentChat?.chatName}</span>
                         <div className="userList">
                             <span>Group members</span>
-                            {currentChat?.members.map((u) => (
+                            {currentChat?.members?.map((u) => (
                                 <UserListItem key={u._id} user={u} groupAdmin={currentChat?.groupAdmin?.username} />
                             ))}
                         </div>
