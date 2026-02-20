@@ -10,7 +10,6 @@ import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton
 import { ChatState } from '../../context/ChatProvider';
 import backBtnIcon from '../../Assets/images/backBtn.png';
 import doneIcon from '../../Assets/images/next.png';
-import GroupPicture from '../../Assets/images/uploadPicture.png';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import { HiUserGroup } from 'react-icons/hi';
 import './newgroup.css';
