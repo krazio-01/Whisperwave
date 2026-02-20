@@ -11,35 +11,35 @@ import Login from './pages/login/Login';
 import ChatHome from './pages/home/ChatHome';
 
 const baseURL = window.location.origin.includes("https")
-  ? window.location.origin
-  : process.env.REACT_APP_SERVER_URL;
+    ? window.location.origin
+    : import.meta.env.VITE_SERVER_URL;
 axios.defaults.baseURL = `${baseURL}/api`;
 
 const AppRoute = ({ children }) => (
-  <>
-    <Navbar />
-    {children}
-    <Footer />
-  </>
+    <>
+        <Navbar />
+        {children}
+        <Footer />
+    </>
 );
 
 const routes = [
-  { path: '/', element: <AppRoute><Home /></AppRoute> },
-  { path: '/about', element: <AppRoute><About /></AppRoute> },
-  { path: '/contact', element: <AppRoute><Contact /></AppRoute> },
-  { path: '/login', element: <Login /> },
-  { path: '/register', element: <Register /> },
-  { path: '/home', element: <ChatHome /> },
+    { path: '/', element: <AppRoute><Home /></AppRoute> },
+    { path: '/about', element: <AppRoute><About /></AppRoute> },
+    { path: '/contact', element: <AppRoute><Contact /></AppRoute> },
+    { path: '/login', element: <Login /> },
+    { path: '/register', element: <Register /> },
+    { path: '/home', element: <ChatHome /> },
 ];
 
 function App() {
-  return (
-    <Routes>
-      {routes.map((route, index) => (
-        <Route key={index} path={route.path} element={route.element} />
-      ))}
-    </Routes>
-  );
+    return (
+        <Routes>
+            {routes.map((route, index) => (
+                <Route key={index} path={route.path} element={route.element} />
+            ))}
+        </Routes>
+    );
 }
 
 export default App;

@@ -48,7 +48,7 @@ const ChatProvider = ({ children }) => {
                 setUser,
                 chats,
                 setChats,
-                updateChatList
+                updateChatList,
             }}
         >
             {children}

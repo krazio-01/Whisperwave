@@ -1,7 +1,7 @@
 import Skeleton from "react-loading-skeleton";
 import './listitemskeleton.css';
 
-const ListItemSkeleton = ({count}) => {
+const ListItemSkeleton = ({ count }) => {
     return (
         <div className="list-skeleton">
             <div className="profileSekelton">
