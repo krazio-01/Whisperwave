@@ -2,7 +2,7 @@ import CryptoJS from 'crypto-js';
 
 class EncryptionManager {
     constructor() {
-        this.masterSecret = process.env.REACT_APP_CHAT_SECRET_KEY || 'fallback_key';
+        this.masterSecret = import.meta.env.REACT_APP_CHAT_SECRET_KEY || 'fallback_key';
     }
 
     getDynamicKey(chatId) {
