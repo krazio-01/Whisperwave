@@ -9,7 +9,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
     const [status, setStatus] = useState({
         loading: false,
         hasMore: false,
-        page: 1,
+        nextBucketId: null,
     });
 
     const scrollContainerRef = useRef(null);
@@ -27,11 +27,11 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
     }, [currentChat?.members, typingUsers]);
 
     const fetchMessages = useCallback(
-        async (pageNum, chatId, signal) => {
+        async (targetBucketId, chatId, signal) => {
             try {
                 const { data } = await axios.get(`/messages/${chatId}`, {
                     headers: { Authorization: `Bearer ${user.authToken}` },
-                    params: { page: pageNum, limit: 20 },
+                    params: targetBucketId ? { bucketId: targetBucketId } : {},
                     signal: signal,
                 });
                 return data;
@@ -54,10 +54,14 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
 
         const loadInitial = async () => {
             try {
-                const data = await fetchMessages(1, chatId, controller.signal);
+                const data = await fetchMessages(null, chatId, controller.signal);
                 if (data) {
                     setMessages(data.messages);
-                    setStatus({ loading: false, hasMore: data.hasMore, page: 1 });
+                    setStatus({
+                        loading: false,
+                        hasMore: data.hasMore,
+                        nextBucketId: data.currentBucketId ? data.currentBucketId - 1 : null,
+                    });
                 }
                 socket.emit('chat:join', chatId);
             } catch (e) {
@@ -74,7 +78,9 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
     }, [currentChat._id, fetchMessages, setMessages, socket]);
 
     const handleLoadMore = useCallback(async () => {
-        if (status.loading || !status.hasMore) return;
+        if (chatMeta.current.isLoading || chatMeta.current.hasNoMore || !status.nextBucketId) return;
+
+        chatMeta.current.isLoading = true;
 
         setStatus((prev) => ({ ...prev, loading: true }));
 
@@ -85,22 +91,25 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
         }
 
         try {
-            const nextPage = status.page + 1;
-            const data = await fetchMessages(nextPage, currentChat._id);
+            const data = await fetchMessages(status.nextBucketId, currentChat._id);
 
             if (data) {
-                setMessages((prev) => [...data.messages, ...prev]);
-                setStatus((prev) => ({
-                    ...prev,
-                    hasMore: data.hasMore,
+                setMessages((prevMsgs) => [...data.messages, ...prevMsgs]);
+
+                chatMeta.current.isLoading = false;
+                chatMeta.current.hasNoMore = !data.hasMore;
+
+                setStatus({
                     loading: false,
-                    page: nextPage,
-                }));
+                    hasMore: data.hasMore,
+                    nextBucketId: data.currentBucketId ? data.currentBucketId - 1 : null,
+                });
             }
         } catch (error) {
+            chatMeta.current.isLoading = false;
             setStatus((prev) => ({ ...prev, loading: false }));
         }
-    }, [status.loading, status.hasMore, status.page, currentChat._id, fetchMessages, setMessages]);
+    }, [status.nextBucketId, currentChat._id, fetchMessages, setMessages]);
 
     useEffect(() => {
         const currentSentinel = topSentinelRef.current;

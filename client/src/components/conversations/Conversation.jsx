@@ -13,7 +13,7 @@ const Conversation = ({ loggedUser, chat }) => {
 
         const { sender, text } = chat.lastMessage;
         const decryptedFullText = encryptionManager.decrypt(text || '', chat?._id);
-        const prefix = chat.isGroupChat ? `${sender.username} : ` : '';
+        const prefix = chat.isGroupChat ? `${sender?.username} : ` : '';
 
         if (decryptedFullText) return `${prefix}${decryptedFullText}`;
 
