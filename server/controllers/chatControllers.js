@@ -1,6 +1,5 @@
-const User = require('../models/userModel');
 const Chat = require('../models/chatModel');
-const Message = require('../models/messageModel');
+const MessageBucket = require('../models/messageBucketModel');
 const { uploadImageToCloudinary, deleteManyImages } = require('../controllers/uploadController');
 
 const newChat = async (req, res) => {
@@ -35,15 +34,9 @@ const fetchChats = async (req, res) => {
         const chats = await Chat.find({ members: userId })
             .populate('members', '-password -emailToken -__v -createdAt -updatedAt')
             .populate('groupAdmin', 'username _id')
-            .populate('lastMessage', 'text sender createdAt')
             .sort({ updatedAt: -1 });
 
-        const populatedChats = await User.populate(chats, {
-            path: 'lastMessage.sender',
-            select: 'username profilePicture',
-        });
-
-        const secureChats = populatedChats.map((chat) => {
+        const secureChats = chats.map((chat) => {
             const chatObj = chat.toObject();
 
             const refinedLastMessage = chatObj.lastMessage
@@ -104,22 +97,33 @@ const deleteChat = async (req, res) => {
             }
 
             await Chat.findByIdAndUpdate(chatId, { $pull: { members: req.userId } });
-        } else {
-            const otherUserId = chat.members.find((member) => member.toString() !== req.userId);
-            await Chat.deleteMany({
-                $or: [{ members: [req.userId, otherUserId] }, { members: [otherUserId, req.userId] }],
-            });
         }
 
-        // find and delete images in chat as well
-        const messagesWithImages = await Message.find({ chat: chatId, image: { $exists: true, $ne: '' } });
-        const imageUrls = messagesWithImages.map((message) => message.image);
-        await deleteManyImages(imageUrls, 'messages');
+        await Chat.findByIdAndDelete(chatId);
 
-        // delete messages from database
-        await Message.deleteMany({ chat: chatId });
-        res.status(200).json({ message: 'Chat and messages deleted successfully.' });
+        const bucketsWithImages = await MessageBucket.find({
+            chat: chatId,
+            messages: {
+                $elemMatch: {
+                    image: { $exists: true, $ne: '' },
+                },
+            },
+        }).lean();
+
+        const imageUrls = [];
+        bucketsWithImages.forEach((bucket) => {
+            bucket.messages.forEach((msg) => {
+                if (msg.image && msg.image !== '') imageUrls.push(msg.image);
+            });
+        });
+
+        if (imageUrls.length > 0) await deleteManyImages(imageUrls, 'messages');
+
+        await MessageBucket.deleteMany({ chat: chatId });
+
+        res.status(200).json({ message: 'Chat processed successfully.' });
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 };
