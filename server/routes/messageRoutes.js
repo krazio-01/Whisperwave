@@ -1,5 +1,5 @@
 const express = require("express");
-const { fetchMessages, sendMessage, } = require("../controllers/messageControllers");
+const { fetchMessages, sendMessage } = require("../controllers/messageControllers");
 const { protect } = require("../middlewares/authMiddleware");
 const multer = require('multer');
 
