@@ -1,5 +1,4 @@
-const Message = require('../models/messageModel');
-const User = require('../models/userModel');
+const MessageBucket = require('../models/messageBucketModel');
 const Chat = require('../models/chatModel');
 const { uploadImageToCloudinary } = require('../controllers/uploadController');
 const { onlineUsers, activeChats } = require('../utils/RealtimeTrack');
@@ -7,102 +6,119 @@ const { onlineUsers, activeChats } = require('../utils/RealtimeTrack');
 // getting all messages
 const fetchMessages = async (req, res) => {
     try {
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 20;
-        const skip = (page - 1) * limit;
+        const chatId = req.params.chatId;
+        const targetBucketId = req.query.bucketId ? Number(req.query.bucketId) : null;
 
-        const messages = await Message.find({ chat: req.params.chatId })
-            .populate('sender', 'username profilePicture')
-            .select('-__v -updatedAt')
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(parseInt(limit));
+        let query = { chat: chatId };
+        let fetchLimit = 1;
 
-        const totalMessages = await Message.countDocuments({ chat: req.params.chatId });
+        if (targetBucketId) query.bucketId = targetBucketId;
+        else fetchLimit = 2;
 
-        if (page === 1) {
-            const chat = await Chat.findById(req.params.chatId);
+        const buckets = await MessageBucket.find(query)
+            .sort({ bucketId: -1 })
+            .limit(fetchLimit)
+            .populate('messages.sender', 'username profilePicture');
+
+        if (!targetBucketId) {
+            const chat = await Chat.findById(chatId);
             if (chat) {
                 chat.unseenMessageCounts.set(req.userId.toString(), 0);
                 await chat.save();
             }
         }
 
+        let flatMessages = [];
+        for (const bucket of buckets) flatMessages.push(...bucket.messages);
+
+        const oldestBucket = buckets.length > 0 ? buckets[buckets.length - 1] : null;
+
         res.json({
-            messages: messages.reverse(),
-            hasMore: totalMessages > skip + messages.length,
+            messages: flatMessages,
+            currentBucketId: oldestBucket ? oldestBucket.bucketId : null,
+            hasMore: oldestBucket ? oldestBucket.bucketId > 1 : false,
         });
     } catch (error) {
+        console.log(error);
         res.status(400).send(error.message);
     }
 };
-
-async function createMessageAndSendResponse(newMessage, chatId, res) {
-    var message = await Message.create(newMessage);
-
-    message = await message.populate('sender', 'username profilePicture');
-    message = await message.populate('chat');
-    message = await User.populate(message, {
-        path: 'chat.members',
-        select: 'username email profilePicture',
-    });
-
-    await Chat.findByIdAndUpdate(chatId, { lastMessage: message });
-
-    // Update the unseenMessageCount for the chat
-    const chat = await Chat.findById(chatId);
-
-    if (chat) {
-        chat.members.forEach(async (member) => {
-            const memberId = member.toString();
-            if (memberId !== newMessage.sender.toString()) {
-                const receiverSocketId = onlineUsers.get(memberId);
-
-                // Check if the receiver has the sender's chat open
-                const receiverOpenedChatId = activeChats.get(receiverSocketId);
-                const hasReceiverOpenedSenderChat = receiverOpenedChatId === chatId;
-
-                if (!hasReceiverOpenedSenderChat)
-                    chat.unseenMessageCounts.set(
-                        member.toString(),
-                        (chat.unseenMessageCounts.get(member.toString()) || 0) + 1,
-                    );
-            }
-        });
-
-        await chat.save();
-    }
-
-    res.json(message);
-}
 
 // create new message
 const sendMessage = async (req, res) => {
     const { text, chatId } = req.body;
 
     try {
-        if (req.file) {
-            // image upload
-            const filename = await uploadImageToCloudinary(req.file, 'messages');
-            var newMessage = {
-                sender: req.userId,
-                text: text,
+        if (!text || !chatId) return res.sendStatus(400);
+
+        // image upload
+        let filename = '';
+        if (req.file) filename = await uploadImageToCloudinary(req.file, 'messages');
+
+        const messageData = {
+            sender: req.userId,
+            text: text || '',
+            image: filename,
+            createdAt: new Date(),
+        };
+
+        let latestBucket = await MessageBucket.findOne({ chat: chatId }).sort({ bucketId: -1 });
+
+        if (!latestBucket || latestBucket.messages.length >= 20) {
+            const newBucketId = latestBucket ? latestBucket.bucketId + 1 : 1;
+            latestBucket = await MessageBucket.create({
                 chat: chatId,
-                image: filename,
-            };
-            await createMessageAndSendResponse(newMessage, chatId, res);
+                bucketId: newBucketId,
+                count: 1,
+                messages: [messageData],
+            });
+            await latestBucket.save();
         } else {
-            if (!text || !chatId) {
-                console.log('Invalid data passed into request');
-                return res.sendStatus(400);
-            }
-            var newMessage = {
-                sender: req.userId,
-                text: text,
-                chat: chatId,
-            };
-            await createMessageAndSendResponse(newMessage, chatId, res);
+            latestBucket.messages.push(messageData);
+            latestBucket.count += 1;
+            await latestBucket.save();
         }
+
+        await latestBucket.populate('messages.sender', 'username profilePicture');
+        const messageResponse = latestBucket.messages[latestBucket.messages.length - 1].toObject();
+
+        const populatedChat = await Chat.findById(chatId).populate('members', 'username email profilePicture');
+        messageResponse.chat = populatedChat;
+
+        const leanLastMessage = {
+            text: messageResponse.text,
+            sender: messageResponse.sender,
+            createdAt: messageResponse.createdAt,
+        };
+
+        await Chat.findByIdAndUpdate(chatId, { lastMessage: leanLastMessage });
+
+        // Update the unseenMessageCount for the chat
+        if (populatedChat) {
+            populatedChat.members.forEach(async (member) => {
+                const memberId = member._id.toString();
+                const senderId = messageResponse.sender._id.toString();
+
+                if (memberId !== senderId) {
+                    const receiverSocketId = onlineUsers.get(memberId);
+
+                    // Check if the receiver has the sender's chat open
+                    const receiverOpenedChatId = activeChats.get(receiverSocketId);
+                    const hasReceiverOpenedSenderChat = receiverOpenedChatId === chatId;
+
+                    if (!hasReceiverOpenedSenderChat) {
+                        populatedChat.unseenMessageCounts.set(
+                            memberId,
+                            (populatedChat.unseenMessageCounts.get(memberId) || 0) + 1,
+                        );
+                    }
+                }
+            });
+
+            await populatedChat.save();
+        }
+
+        res.json(messageResponse);
     } catch (error) {
         console.log(error);
         res.status(400).send(error.message);
