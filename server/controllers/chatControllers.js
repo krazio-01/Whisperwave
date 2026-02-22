@@ -85,20 +85,6 @@ const deleteChat = async (req, res) => {
 
         if (!chat) return res.status(404).json({ message: 'Chat not found or you are not a member of this chat.' });
 
-        if (chat.isGroupChat) {
-            if (chat.groupAdmin.toString() === req.userId) {
-                const remainingMembers = chat.members.filter((member) => member.toString() !== req.userId);
-                if (remainingMembers.length > 0) {
-                    const newAdminIndex = Math.floor(Math.random() * remainingMembers.length);
-                    const newAdminId = remainingMembers[newAdminIndex].toString();
-                    chat.groupAdmin = newAdminId;
-                    await chat.save();
-                }
-            }
-
-            await Chat.findByIdAndUpdate(chatId, { $pull: { members: req.userId } });
-        }
-
         await Chat.findByIdAndDelete(chatId);
 
         const bucketsWithImages = await MessageBucket.find({
