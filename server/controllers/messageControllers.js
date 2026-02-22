@@ -2,12 +2,22 @@ const MessageBucket = require('../models/messageBucketModel');
 const Chat = require('../models/chatModel');
 const { uploadImageToCloudinary } = require('../controllers/uploadController');
 const { onlineUsers, activeChats } = require('../utils/RealtimeTrack');
+const redisClient = require('../config/redis');
 
-// getting all messages
 const fetchMessages = async (req, res) => {
     try {
         const chatId = req.params.chatId;
         const targetBucketId = req.query.bucketId ? Number(req.query.bucketId) : null;
+
+        const cacheKey = `messages:${chatId}`;
+
+        if (!targetBucketId) {
+            const cachedData = await redisClient.get(cacheKey);
+            if (cachedData) {
+                Chat.findByIdAndUpdate(chatId, { [`unseenMessageCounts.${req.userId}`]: 0 }).exec();
+                return res.json(JSON.parse(cachedData));
+            }
+        }
 
         let query = { chat: chatId };
         let fetchLimit = 1;
@@ -20,24 +30,22 @@ const fetchMessages = async (req, res) => {
             .limit(fetchLimit)
             .populate('messages.sender', 'username profilePicture');
 
-        if (!targetBucketId) {
-            const chat = await Chat.findById(chatId);
-            if (chat) {
-                chat.unseenMessageCounts.set(req.userId.toString(), 0);
-                await chat.save();
-            }
-        }
+        if (!targetBucketId) await Chat.findByIdAndUpdate(chatId, { [`unseenMessageCounts.${req.userId}`]: 0 });
 
         let flatMessages = [];
         for (const bucket of buckets) flatMessages.push(...bucket.messages);
 
         const oldestBucket = buckets.length > 0 ? buckets[buckets.length - 1] : null;
 
-        res.json({
-            messages: flatMessages,
+        const responseData = {
+            messages: flatMessages.reverse(),
             currentBucketId: oldestBucket ? oldestBucket.bucketId : null,
             hasMore: oldestBucket ? oldestBucket.bucketId > 1 : false,
-        });
+        };
+
+        if (!targetBucketId) await redisClient.setEx(cacheKey, 86400, JSON.stringify(responseData));
+
+        res.json(responseData);
     } catch (error) {
         console.log(error);
         res.status(400).send(error.message);
@@ -81,6 +89,22 @@ const sendMessage = async (req, res) => {
 
         await latestBucket.populate('messages.sender', 'username profilePicture');
         const messageResponse = latestBucket.messages[latestBucket.messages.length - 1].toObject();
+
+        try {
+            const cacheKey = `messages:${chatId}`;
+            const cachedDataString = await redisClient.get(cacheKey);
+
+            if (cachedDataString) {
+                const cachedData = JSON.parse(cachedDataString);
+                cachedData.messages.push(messageResponse);
+
+                if (cachedData.messages.length > 40) cachedData.messages.shift();
+
+                await redisClient.setEx(cacheKey, 86400, JSON.stringify(cachedData));
+            }
+        } catch (redisError) {
+            console.error('Redis Cache Update Failed:', redisError);
+        }
 
         const populatedChat = await Chat.findById(chatId).populate('members', 'username email profilePicture');
         messageResponse.chat = populatedChat;
