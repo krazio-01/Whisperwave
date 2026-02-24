@@ -1,54 +1,70 @@
 const MessageBucket = require('../models/messageBucketModel');
 const Chat = require('../models/chatModel');
+const RedisService = require('../services/redisService');
 const { uploadImageToCloudinary } = require('../controllers/uploadController');
 const { onlineUsers, activeChats } = require('../utils/RealtimeTrack');
-const redisClient = require('../config/redis');
 
+const MESSAGE_KEY_PREFIX = 'messages:';
+const MESSAGE_TTL_SECONDS = 86400; // 24 hours
+const MAX_CACHED_MESSAGES = 40;
+
+// fetch messages
 const fetchMessages = async (req, res) => {
     try {
-        const chatId = req.params.chatId;
+        const { chatId } = req.params;
         const targetBucketId = req.query.bucketId ? Number(req.query.bucketId) : null;
+        const isInitialLoad = !targetBucketId;
 
-        const cacheKey = `messages:${chatId}`;
+        const listKey = `${MESSAGE_KEY_PREFIX}${chatId}`;
+        const metaKey = `${MESSAGE_KEY_PREFIX}meta:${chatId}`;
 
-        if (!targetBucketId) {
-            const cachedData = await redisClient.get(cacheKey);
+        // cache-hit-check
+        if (isInitialLoad) {
+            const cachedData = await RedisService.getListWithMeta(listKey, metaKey);
             if (cachedData) {
-                Chat.findByIdAndUpdate(chatId, { [`unseenMessageCounts.${req.userId}`]: 0 }).exec();
-                return res.json(JSON.parse(cachedData));
+                Chat.updateOne({ _id: chatId }, { [`unseenMessageCounts.${req.userId}`]: 0 }).exec();
+                return res.json({
+                    messages: cachedData.list,
+                    currentBucketId: cachedData.meta.currentBucketId,
+                    hasMore: cachedData.meta.hasMore,
+                });
             }
         }
 
-        let query = { chat: chatId };
-        let fetchLimit = 1;
-
+        const query = { chat: chatId };
         if (targetBucketId) query.bucketId = targetBucketId;
-        else fetchLimit = 2;
 
         const buckets = await MessageBucket.find(query)
             .sort({ bucketId: -1 })
-            .limit(fetchLimit)
-            .populate('messages.sender', 'username profilePicture');
+            .limit(isInitialLoad ? 2 : 1)
+            .populate('messages.sender', 'username profilePicture')
+            .lean();
 
-        if (!targetBucketId) await Chat.findByIdAndUpdate(chatId, { [`unseenMessageCounts.${req.userId}`]: 0 });
-
-        let flatMessages = [];
-        for (const bucket of buckets) flatMessages.push(...bucket.messages);
-
-        const oldestBucket = buckets.length > 0 ? buckets[buckets.length - 1] : null;
+        const flatMessages = buckets.flatMap((bucket) => bucket.messages).reverse();
+        const oldestBucket = buckets[buckets.length - 1];
 
         const responseData = {
-            messages: flatMessages.reverse(),
+            messages: flatMessages,
             currentBucketId: oldestBucket ? oldestBucket.bucketId : null,
             hasMore: oldestBucket ? oldestBucket.bucketId > 1 : false,
         };
 
-        if (!targetBucketId) await redisClient.setEx(cacheKey, 86400, JSON.stringify(responseData));
+        if (isInitialLoad && flatMessages.length > 0) {
+            const metaData = {
+                currentBucketId: responseData.currentBucketId,
+                hasMore: responseData.hasMore,
+            };
 
-        res.json(responseData);
+            // cache-miss-set
+            RedisService.saveListWithMeta(listKey, flatMessages, metaKey, metaData, MESSAGE_TTL_SECONDS);
+
+            Chat.updateOne({ _id: chatId }, { [`unseenMessageCounts.${req.userId}`]: 0 }).catch(console.error);
+        }
+
+        return res.json(responseData);
     } catch (error) {
-        console.log(error);
-        res.status(400).send(error.message);
+        console.error('Fetch Messages Error:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
@@ -57,15 +73,13 @@ const sendMessage = async (req, res) => {
     const { text, chatId } = req.body;
 
     try {
-        if (!text || !chatId) return res.sendStatus(400);
+        if (!text || !chatId) return res.status(400).send('Text and chatId are required');
 
-        // image upload
-        let filename = '';
-        if (req.file) filename = await uploadImageToCloudinary(req.file, 'messages');
+        const filename = req.file ? await uploadImageToCloudinary(req.file, 'messages') : '';
 
         const messageData = {
             sender: req.userId,
-            text: text || '',
+            text,
             image: filename,
             createdAt: new Date(),
         };
@@ -73,14 +87,12 @@ const sendMessage = async (req, res) => {
         let latestBucket = await MessageBucket.findOne({ chat: chatId }).sort({ bucketId: -1 });
 
         if (!latestBucket || latestBucket.messages.length >= 20) {
-            const newBucketId = latestBucket ? latestBucket.bucketId + 1 : 1;
             latestBucket = await MessageBucket.create({
                 chat: chatId,
-                bucketId: newBucketId,
+                bucketId: latestBucket ? latestBucket.bucketId + 1 : 1,
                 count: 1,
                 messages: [messageData],
             });
-            await latestBucket.save();
         } else {
             latestBucket.messages.push(messageData);
             latestBucket.count += 1;
@@ -90,62 +102,46 @@ const sendMessage = async (req, res) => {
         await latestBucket.populate('messages.sender', 'username profilePicture');
         const messageResponse = latestBucket.messages[latestBucket.messages.length - 1].toObject();
 
-        try {
-            const cacheKey = `messages:${chatId}`;
-            const cachedDataString = await redisClient.get(cacheKey);
+        const listKey = `${MESSAGE_KEY_PREFIX}${chatId}`;
+        const metaKey = `${MESSAGE_KEY_PREFIX}meta:${chatId}`;
+        const cacheableMessage = { ...messageResponse };
+        delete cacheableMessage.chat;
 
-            if (cachedDataString) {
-                const cachedData = JSON.parse(cachedDataString);
-                cachedData.messages.push(messageResponse);
-
-                if (cachedData.messages.length > 40) cachedData.messages.shift();
-
-                await redisClient.setEx(cacheKey, 86400, JSON.stringify(cachedData));
-            }
-        } catch (redisError) {
-            console.error('Redis Cache Update Failed:', redisError);
-        }
+        // update message list using sliding-window
+        RedisService.appendToListWithMeta(listKey, cacheableMessage, MAX_CACHED_MESSAGES, metaKey, MESSAGE_TTL_SECONDS);
 
         const populatedChat = await Chat.findById(chatId).populate('members', 'username email profilePicture');
-        messageResponse.chat = populatedChat;
+        if (!populatedChat) return res.status(404).send('Chat not found');
 
-        const leanLastMessage = {
+        messageResponse.chat = populatedChat;
+        populatedChat.lastMessage = {
             text: messageResponse.text,
             sender: messageResponse.sender,
             createdAt: messageResponse.createdAt,
         };
 
-        await Chat.findByIdAndUpdate(chatId, { lastMessage: leanLastMessage });
-
         // Update the unseenMessageCount for the chat
-        if (populatedChat) {
-            populatedChat.members.forEach(async (member) => {
-                const memberId = member._id.toString();
-                const senderId = messageResponse.sender._id.toString();
+        populatedChat.members.forEach((member) => {
+            const memberId = member._id.toString();
+            const senderId = messageResponse.sender._id.toString();
 
-                if (memberId !== senderId) {
-                    const receiverSocketId = onlineUsers.get(memberId);
+            if (memberId !== senderId) {
+                // Check if the receiver has the sender's chat open
+                const receiverSocketId = onlineUsers.get(memberId);
+                const hasReceiverOpenedSenderChat = activeChats.get(receiverSocketId) === chatId;
 
-                    // Check if the receiver has the sender's chat open
-                    const receiverOpenedChatId = activeChats.get(receiverSocketId);
-                    const hasReceiverOpenedSenderChat = receiverOpenedChatId === chatId;
-
-                    if (!hasReceiverOpenedSenderChat) {
-                        populatedChat.unseenMessageCounts.set(
-                            memberId,
-                            (populatedChat.unseenMessageCounts.get(memberId) || 0) + 1,
-                        );
-                    }
+                if (!hasReceiverOpenedSenderChat) {
+                    const currentCount = populatedChat.unseenMessageCounts.get(memberId) || 0;
+                    populatedChat.unseenMessageCounts.set(memberId, currentCount + 1);
                 }
-            });
+            }
+        });
 
-            await populatedChat.save();
-        }
-
+        await populatedChat.save();
         res.json(messageResponse);
     } catch (error) {
-        console.log(error);
-        res.status(400).send(error.message);
+        console.error('sendMessage Error:', error);
+        res.status(500).send('An error occurred while sending the message.');
     }
 };
 
