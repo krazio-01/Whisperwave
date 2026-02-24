@@ -29,7 +29,7 @@ class RedisService {
             const multi = redisClient.multi();
             multi.del(listKey);
 
-            if (stringifiedList.length > 0) multi.rPush(listKey, ...stringifiedList);
+            if (stringifiedList.length > 0) multi.rPush(listKey, stringifiedList);
 
             multi.expire(listKey, ttlSeconds);
             multi.setEx(metaKey, ttlSeconds, stringifiedMeta);
