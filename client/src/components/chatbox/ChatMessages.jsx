@@ -13,13 +13,13 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
     });
 
     const scrollContainerRef = useRef(null);
-    const topSentinelRef = useRef(null);
     const observerRef = useRef(null);
     const chatMeta = useRef({
         prevHeight: 0,
         isInitialLoad: true,
         isPagination: false,
     });
+    const handleLoadMoreRef = useRef(() => { });
 
     const typingMembers = useMemo(() => {
         if (!currentChat?.members || !typingUsers) return [];
@@ -78,7 +78,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
     }, [currentChat._id, fetchMessages, setMessages, socket]);
 
     const handleLoadMore = useCallback(async () => {
-        if (chatMeta.current.isLoading || chatMeta.current.hasNoMore || !status.nextBucketId) return;
+        if (status.loading || !status.hasMore || !status.nextBucketId) return;
 
         chatMeta.current.isLoading = true;
 
@@ -111,19 +111,23 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
         }
     }, [status.nextBucketId, currentChat._id, fetchMessages, setMessages]);
 
-    useEffect(() => {
-        const currentSentinel = topSentinelRef.current;
+    const topSentinelRef = useCallback((node) => {
         if (observerRef.current) observerRef.current.disconnect();
 
-        observerRef.current = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) handleLoadMore();
-            },
-            { root: scrollContainerRef.current, threshold: 0.5 },
-        );
+        if (node) {
+            observerRef.current = new IntersectionObserver(
+                ([entry]) => {
+                    if (entry.isIntersecting) handleLoadMoreRef.current();
+                },
+                { root: scrollContainerRef.current, threshold: 0.5 },
+            );
 
-        if (currentSentinel) observerRef.current.observe(currentSentinel);
-        return () => observerRef.current?.disconnect();
+            observerRef.current.observe(node);
+        }
+    }, []);
+
+    useEffect(() => {
+        handleLoadMoreRef.current = handleLoadMore;
     }, [handleLoadMore]);
 
     useLayoutEffect(() => {
@@ -164,7 +168,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
                         </div>
                     )}
 
-                    {!status.loading && status.page === 1 && !messages.length && (
+                    {!status.loading && !messages.length && (
                         <div className="noMessages">
                             <EmptyState
                                 src="./animations/greet.lottie"
