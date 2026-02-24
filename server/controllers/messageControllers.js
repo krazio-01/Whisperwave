@@ -145,4 +145,26 @@ const sendMessage = async (req, res) => {
     }
 };
 
-module.exports = { fetchMessages, sendMessage };
+const deleteMessage = async (req, res) => {
+    try {
+        const { messageId } = req?.params;
+
+        const updatedBucket = await MessageBucket.findOneAndUpdate(
+            { 'messages._id': messageId },
+            {
+                $pull: { messages: { _id: messageId } },
+                $inc: { count: -1 },
+            },
+            { new: true },
+        );
+
+        if (!updatedBucket)
+            return res.status(404).json({ success: false, message: 'Message not found or already deleted' });
+
+        return res.status(200).json({ success: true, message: 'Message Deleted' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+};
+
+module.exports = { fetchMessages, sendMessage, deleteMessage };
