@@ -14,7 +14,7 @@ router.route("/:chatId").get(protect, fetchMessages);
 // route for sending a message
 router.route("/").post(protect, upload.single('image'), sendMessage);
 
-// route for sending a message
+// route for deleting a message
 router.route("/:messageId").delete(protect, deleteMessage);
 
 module.exports = router;
