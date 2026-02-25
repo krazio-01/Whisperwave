@@ -3,9 +3,12 @@ import { CSSTransition } from 'react-transition-group';
 import { getProfilePic, getCurrentChatName } from '../../utils/chatUtils';
 import { MdVideoCall, MdCall } from 'react-icons/md';
 import MoreOption from '../moreOption/MoreOption';
-import { IoIosArrowBack } from "react-icons/io";
+import { IoIosArrowBack } from 'react-icons/io';
 import dotsIcon from '../../Assets/images/dots.png';
 import useClickOutside from '../../hooks/useClickOutside';
+import ConfirmModal from '../confimModal/ConfirmModal';
+import { toast } from 'react-toastify';
+import axios from 'axios';
 
 const ChatHeader = ({
     user,
@@ -13,12 +16,12 @@ const ChatHeader = ({
     setCurrentChat,
     isUserOnline,
     handleStartCall,
-    fetchAgain,
-    setShowConfirmModal,
+    setFetchAgain,
     setShowProfileInfo,
-    setMessages
+    setMessages,
 }) => {
     const [showMoreOption, setShowMoreOption] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const threeDotsRef = useRef(null);
     const optionsContainerRef = useRef(null);
@@ -27,6 +30,32 @@ const ChatHeader = ({
     const currentChatName = useMemo(() => getCurrentChatName(user, currentChat), [user, currentChat]);
 
     useClickOutside(optionsContainerRef, () => setShowMoreOption(false));
+
+    const executeChatDeletion = async () => {
+        const { _id: chatId, isGroupChat } = currentChat;
+
+        const route = isGroupChat ? '/chat/leave' : '/chat/deleteChat';
+        const method = isGroupChat ? 'PUT' : 'DELETE';
+        const data = isGroupChat ? { chatId, userId: user._id } : { chatId };
+        const successMsg = isGroupChat ? 'Left Group Successfully' : 'Chat Deleted Successfully';
+
+        try {
+            await axios({
+                method,
+                url: route,
+                data,
+                headers: { Authorization: `Bearer ${user.authToken}` },
+            });
+
+            toast.success(successMsg);
+            setCurrentChat(null);
+            setShowConfirmModal(false);
+            setFetchAgain((prev) => !prev);
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Error Occurred');
+            throw error;
+        }
+    };
 
     const renderStatus = () => {
         if (currentChat.isGroupChat) {
@@ -47,7 +76,7 @@ const ChatHeader = ({
                 <div className="closeConversation" onClick={() => setCurrentChat(null)}>
                     <IoIosArrowBack />
                 </div>
-                <div className='details-wrapper' onClick={() => setShowProfileInfo((prev) => !prev)}>
+                <div className="details-wrapper" onClick={() => setShowProfileInfo((prev) => !prev)}>
                     <img className="userImg" src={chatUserProfilePic} alt="User" />
                     <div className="userDetails">
                         <span className="userName">{currentChatName}</span>
@@ -81,7 +110,6 @@ const ChatHeader = ({
                     >
                         <div className="moreOptionDropdown" ref={threeDotsRef}>
                             <MoreOption
-                                fetchAgain={fetchAgain}
                                 setShowConfirmModal={setShowConfirmModal}
                                 setShowMoreOption={setShowMoreOption}
                                 setShowProfileInfo={setShowProfileInfo}
@@ -91,6 +119,18 @@ const ChatHeader = ({
                     </CSSTransition>
                 </div>
             </div>
+
+            {showConfirmModal && (
+                <ConfirmModal
+                    message={
+                        currentChat?.isGroupChat
+                            ? `Are you sure you want to leave "${currentChat?.chatName}"?`
+                            : 'Are you sure you want to delete this conversation?'
+                    }
+                    onConfirm={executeChatDeletion}
+                    onCancel={() => setShowConfirmModal(false)}
+                />
+            )}
         </div>
     );
 };
