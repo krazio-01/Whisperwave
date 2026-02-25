@@ -1,7 +1,7 @@
 const MessageBucket = require('../models/messageBucketModel');
 const Chat = require('../models/chatModel');
 const RedisService = require('../services/redisService');
-const { uploadImageToCloudinary } = require('../controllers/uploadController');
+const { uploadImageToCloudinary, deleteImageFromCloudinary } = require('../controllers/uploadController');
 const { onlineUsers, activeChats } = require('../utils/RealtimeTrack');
 
 const MESSAGE_KEY_PREFIX = 'messages:';
@@ -147,7 +147,18 @@ const sendMessage = async (req, res) => {
 
 const deleteMessage = async (req, res) => {
     try {
-        const { messageId } = req?.params;
+        const { messageId } = req.params;
+
+        const bucket = await MessageBucket.findOne({ 'messages._id': messageId }, { 'messages.$': 1, chat: 1 }).lean();
+
+        if (!bucket || !bucket.messages || bucket.messages.length === 0)
+            return res.status(404).json({ success: false, message: 'Message not found' });
+
+        const targetMessage = bucket.messages[0];
+        const chatId = bucket.chat.toString();
+
+        if (targetMessage.image && targetMessage.image !== '')
+            await deleteImageFromCloudinary(targetMessage.image, 'messages');
 
         const updatedBucket = await MessageBucket.findOneAndUpdate(
             { 'messages._id': messageId },
@@ -158,11 +169,15 @@ const deleteMessage = async (req, res) => {
             { new: true },
         );
 
-        if (!updatedBucket)
-            return res.status(404).json({ success: false, message: 'Message not found or already deleted' });
+        if (!updatedBucket) return res.status(400).json({ success: false, message: 'Failed to update database' });
 
-        return res.status(200).json({ success: true, message: 'Message Deleted' });
+        const listKey = `${MESSAGE_KEY_PREFIX}${chatId}`;
+        const metaKey = `${MESSAGE_KEY_PREFIX}meta:${chatId}`;
+        await RedisService.removeMessage(listKey, metaKey, messageId, MESSAGE_TTL_SECONDS);
+
+        return res.status(200).json({ success: true, message: 'Message deleted successfully' });
     } catch (error) {
+        console.error('Error deleting message:', error);
         return res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 };
