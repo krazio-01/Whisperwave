@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import ChatMenu from '../../components/chatmenu/ChatMenu';
 import ChatBox from '../../components/chatbox/ChatBox';
-import ConfirmModal from '../../components/confimModal/ConfirmModal';
 import { ChatState } from '../../context/ChatProvider';
 import { CircularProgress } from '@mui/material';
 import './chathome.css';
@@ -11,7 +10,6 @@ const ChatHome = () => {
     const { user, currentChat, setUser } = ChatState();
 
     const [fetchAgain, setFetchAgain] = useState(false);
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [socket, setSocket] = useState(null);
 
     const SERVER_URL = useMemo(() => {
@@ -56,22 +54,9 @@ const ChatHome = () => {
                     </div>
 
                     <div className={`chatbox ${currentChat ? 'active' : ''}`}>
-                        <ChatBox
-                            socket={socket}
-                            fetchAgain={fetchAgain}
-                            setFetchAgain={setFetchAgain}
-                            setShowConfirmModal={setShowConfirmModal}
-                        />
+                        <ChatBox socket={socket} fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
                     </div>
                 </>
-            )}
-
-            {showConfirmModal && (
-                <div className="modal-overlay">
-                    <div className="modal">
-                        <ConfirmModal setShowConfirmModal={setShowConfirmModal} setFetchAgain={setFetchAgain} />
-                    </div>
-                </div>
             )}
         </div>
     );
