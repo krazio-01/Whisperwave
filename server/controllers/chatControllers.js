@@ -1,6 +1,7 @@
 const Chat = require('../models/chatModel');
 const MessageBucket = require('../models/messageBucketModel');
 const { uploadImageToCloudinary, deleteManyImages } = require('../controllers/uploadController');
+const RedisService = require('../services/redisService');
 
 const newChat = async (req, res) => {
     const { senderId, selectedReceiverId } = req.body;
@@ -106,6 +107,10 @@ const deleteChat = async (req, res) => {
         if (imageUrls.length > 0) await deleteManyImages(imageUrls, 'messages');
 
         await MessageBucket.deleteMany({ chat: chatId });
+
+        const listKey = `messages:${chatId}`;
+        const metaKey = `messages:meta:${chatId}`;
+        await RedisService.clearChatCache(listKey, metaKey);
 
         res.status(200).json({ message: 'Chat processed successfully.' });
     } catch (error) {
