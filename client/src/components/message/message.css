@@ -2,6 +2,7 @@
     display: flex;
     flex-direction: column;
     margin-top: 20px;
+    position: relative;
 
     &.own {
         align-items: flex-end;
@@ -9,117 +10,223 @@
         .messageText {
             background-color: #292929 !important;
         }
+
+        .message-menu {
+            right: auto !important;
+            left: -136px !important;
+        }
+
+        .message-options-trigger {
+            order: -1;
+            margin-left: 0;
+            margin-right: 5px;
+        }
+    }
+
+    .message-wrapper {
+        position: relative;
+        display: flex;
+        width: fit-content;
+
+        &:hover .message-options-trigger,
+        .message-options-trigger.active {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+    .message-options-trigger {
+        opacity: 0;
+        visibility: hidden;
+        cursor: pointer;
+        padding: 4px 10px;
+        height: fit-content;
+        font-size: 18px;
+        color: white;
+        border-radius: 50%;
+        margin-left: 5px;
+        transition:
+            opacity 0.2s ease,
+            visibility 0.2s ease;
+    }
+
+    .message-menu {
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        background-color: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(7px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        width: fit-content;
+        border-radius: 8px;
+        width: 170px;
+        position: absolute;
+        /* right: 0; */
+        right: -136px;
+        border-radius: 8px;
+        z-index: 100;
+
+        button {
+            display: flex;
+            gap: 1rem;
+            background: transparent;
+            border: none;
+            padding: 1rem 0.5rem;
+            color: white;
+            transition: background-color 300ms ease;
+            cursor: pointer;
+            border-radius: 8px;
+
+            &:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+
+            &:last-child {
+                color: red;
+            }
+        }
     }
 }
 
-.messageTop {
-    display: flex;
+/* css-transition */
+.message-menu-transition-enter {
+    opacity: 0;
+    transform: scale(0.9);
+}
+.message-menu-transition-enter-active {
+    opacity: 1;
+    transform: scale(1);
+    transition:
+        opacity 300ms,
+        transform 300ms;
+}
+.message-menu-transition-exit {
+    opacity: 1;
+    transform: scale(1);
+}
+.message-menu-transition-exit-active {
+    opacity: 0;
+    transform: scale(0.9);
+    transition:
+        opacity 300ms,
+        transform 300ms;
+}
 
-    .typing-more-count {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: #444;
-        color: #fff;
+.message-content-container {
+    .messageTop {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        font-weight: bold;
-        margin-left: -15px;
-        border: 2px solid #292929;
-        position: relative;
-        z-index: 0;
-    }
 
-    .messageUserImg {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-        margin-right: 10px;
-    }
-
-    .messageContent {
-        .messageSenderName {
-            font-size: 1rem;
-            font-weight: 600;
-            color: white;
-            text-transform: capitalize;
-            margin-bottom: 5px;
-        }
-
-        .msgWithImg {
-            display: flex;
-            flex-direction: column;
-            max-width: 32rem;
-            border-radius: 0 1.5rem 1.5rem 1.5rem;
-            overflow: hidden;
-
-            .messageImg {
-                width: 100%;
-                max-height: 30rem;
-                object-fit: cover;
-                cursor: pointer;
-            }
-
-            .msgWithImgText {
-                width: 100%;
-                padding: 10px;
-                color: #fff;
-                line-height: 18px;
-                max-width: 32rem;
-                font-size: 16px;
-                word-wrap: break-word;
-                background-color: #292929;
-            }
-        }
-
-        .messageText {
-            padding: 10px;
-            border-radius: 0 1.5rem 1.5rem 1.5rem;
+        .typing-more-count {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #444;
             color: #fff;
-            font-size: 16px;
-            line-height: 18px;
-            max-width: 42rem;
-            word-wrap: break-word;
-            background-color: #8c7ae6;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        .typing-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 80px;
-            min-height: 38px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-left: -15px;
+            border: 2px solid #292929;
+            position: relative;
+            z-index: 0;
+        }
 
-            .typing-bubble {
-                border-radius: 20px;
-                border-bottom-left-radius: 2px;
+        .messageUserImg {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+
+        .messageContent {
+            .messageSenderName {
+                font-size: 1rem;
+                font-weight: 600;
+                color: white;
+                text-transform: capitalize;
+                margin-bottom: 5px;
+            }
+
+            .msgWithImg {
+                display: flex;
+                flex-direction: column;
+                max-width: 32rem;
+                border-radius: 0 1.5rem 1.5rem 1.5rem;
+                overflow: hidden;
+
+                .messageImg {
+                    width: 100%;
+                    max-height: 30rem;
+                    object-fit: cover;
+                    cursor: pointer;
+                }
+
+                .msgWithImgText {
+                    width: 100%;
+                    padding: 10px;
+                    color: #fff;
+                    line-height: 18px;
+                    max-width: 32rem;
+                    font-size: 16px;
+                    word-wrap: break-word;
+                    background-color: #292929;
+                }
+            }
+
+            .messageText {
+                padding: 10px;
+                border-radius: 0 1.5rem 1.5rem 1.5rem;
+                color: #fff;
+                font-size: 16px;
+                line-height: 18px;
+                max-width: 42rem;
+                word-wrap: break-word;
+                background-color: #8c7ae6;
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+
+            .typing-container {
                 display: flex;
                 align-items: center;
-                gap: 4px;
-                width: fit-content;
-            }
+                justify-content: center;
+                min-width: 80px;
+                min-height: 38px;
 
-            .typing-dot {
-                width: 8px;
-                height: 8px;
-                background-color: #fff;
-                border-radius: 50%;
-                animation: typingBounce 1.4s infinite ease-in-out both;
-            }
+                .typing-bubble {
+                    border-radius: 20px;
+                    border-bottom-left-radius: 2px;
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    width: fit-content;
+                }
 
-            .typing-dot:nth-child(1) {
-                animation-delay: -0.32s;
-            }
+                .typing-dot {
+                    width: 8px;
+                    height: 8px;
+                    background-color: #fff;
+                    border-radius: 50%;
+                    animation: typingBounce 1.4s infinite ease-in-out both;
+                }
 
-            .typing-dot:nth-child(2) {
-                animation-delay: -0.16s;
+                .typing-dot:nth-child(1) {
+                    animation-delay: -0.32s;
+                }
+
+                .typing-dot:nth-child(2) {
+                    animation-delay: -0.16s;
+                }
             }
         }
+    }
+
+    .messageBottom {
+        font-size: 12px;
+        margin-top: 10px;
+        color: #fff;
     }
 }
 
@@ -162,12 +269,6 @@
     color: #fff;
     font-size: 30px;
     cursor: pointer;
-}
-
-.messageBottom {
-    font-size: 12px;
-    margin-top: 10px;
-    color: #fff;
 }
 
 @media (max-width: 1024px) {
