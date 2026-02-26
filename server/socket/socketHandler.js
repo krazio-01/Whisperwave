@@ -33,6 +33,18 @@ const socketHandler = (io) => {
             });
         });
 
+        socket.on('chat:message-deleted', (payload) => {
+            const { members, ...eventData } = payload;
+
+            members.forEach((memberId) => {
+                const memberIdStr = memberId.toString();
+                const receiverSocketId = onlineUsers.get(memberIdStr);
+
+                if (receiverSocketId && receiverSocketId !== socket.id)
+                    socket.to(receiverSocketId).emit('chat:message-deleted', eventData);
+            });
+        });
+
         // --- typing Logic ---
         socket.on('typing:start', (data) => {
             const { chatId, userId } = data;
