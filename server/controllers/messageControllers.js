@@ -156,6 +156,7 @@ const deleteMessage = async (req, res) => {
 
         const targetMessage = bucket.messages[0];
         const chatId = bucket.chat.toString();
+        const messageTime = new Date(targetMessage.createdAt).getTime();
 
         if (targetMessage.image && targetMessage.image !== '')
             await deleteImageFromCloudinary(targetMessage.image, 'messages');
@@ -171,11 +172,50 @@ const deleteMessage = async (req, res) => {
 
         if (!updatedBucket) return res.status(400).json({ success: false, message: 'Failed to update database' });
 
+        const chat = await Chat.findById(chatId);
+        if (chat) {
+            // Check timestamps to accurately decrement unseen counts
+            chat.members.forEach((memberId) => {
+                const mIdStr = memberId.toString();
+                if (mIdStr !== req.userId) {
+                    const userLastReadTimeStr = chat.lastReadAt?.get(mIdStr);
+                    const userLastReadTime = userLastReadTimeStr ? new Date(userLastReadTimeStr).getTime() : 0;
+
+                    if (messageTime > userLastReadTime) {
+                        const currentCount = chat.unseenMessageCounts?.get(mIdStr) || 0;
+                        if (currentCount > 0) chat.unseenMessageCounts.set(mIdStr, currentCount - 1);
+                    }
+                }
+            });
+
+            const latestBucket = await MessageBucket.findOne({ chat: chatId, 'messages.0': { $exists: true } })
+                .sort({ bucketId: -1 })
+                .populate('messages.sender', 'username profilePicture');
+
+            if (latestBucket && latestBucket.messages.length > 0) {
+                const lastMsg = latestBucket.messages[latestBucket.messages.length - 1];
+                chat.lastMessage = {
+                    text: lastMsg.text,
+                    sender: lastMsg.sender,
+                    createdAt: lastMsg.createdAt,
+                };
+            } else {
+                chat.lastMessage = null;
+            }
+
+            await chat.save();
+        }
+
+        // 4. Update Redis Cache
         const listKey = `${MESSAGE_KEY_PREFIX}${chatId}`;
         const metaKey = `${MESSAGE_KEY_PREFIX}meta:${chatId}`;
         await RedisService.removeMessage(listKey, metaKey, messageId, MESSAGE_TTL_SECONDS);
 
-        return res.status(200).json({ success: true, message: 'Message deleted successfully' });
+        return res.status(200).json({
+            success: true,
+            messageCreatedAt: targetMessage.createdAt,
+            newLastMessage: chat.lastMessage,
+        });
     } catch (error) {
         console.error('Error deleting message:', error);
         return res.status(500).json({ success: false, message: 'Internal Server Error' });
