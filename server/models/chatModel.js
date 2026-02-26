@@ -29,6 +29,11 @@ const ChatSchema = new mongoose.Schema(
             of: Number,
             default: {},
         },
+        lastReadAt: {
+            type: Map,
+            of: Date,
+            default: {},
+        },
         groupAdmin: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
