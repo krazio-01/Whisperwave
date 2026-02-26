@@ -4,6 +4,8 @@ import axios from 'axios';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import Message from '../message/Message';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
+import ConfirmModal from '../confimModal/ConfirmModal';
+import { toast } from 'react-toastify';
 
 const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typingUsers }) => {
     const [status, setStatus] = useState({
@@ -11,6 +13,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
         hasMore: false,
         nextBucketId: null,
     });
+    const [messageToDelete, setMessageToDelete] = useState(null);
 
     const scrollContainerRef = useRef(null);
     const observerRef = useRef(null);
@@ -111,6 +114,34 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
         }
     }, [status.nextBucketId, currentChat._id, fetchMessages, setMessages]);
 
+    const executeMessageDeletion = useCallback(async () => {
+        if (!messageToDelete) return;
+
+        try {
+            const { data } = await axios.delete(`/messages/${messageToDelete}`, {
+                headers: { Authorization: `Bearer ${user.authToken}` },
+            });
+
+            const socketPayload = {
+                chatId: currentChat._id,
+                messageId: messageToDelete,
+                messageCreatedAt: data.messageCreatedAt,
+                newLastMessage: data.newLastMessage,
+                members: currentChat.members.map((m) => m._id || m),
+            };
+
+            socket.emit('chat:message-deleted', socketPayload);
+
+            toast.success('Message deleted successfully');
+            setMessages((prevMsgs) => prevMsgs.filter((msg) => msg._id !== messageToDelete));
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Error deleting message');
+            throw error;
+        } finally {
+            setMessageToDelete(null);
+        }
+    }, [messageToDelete, user.authToken, setMessages, currentChat._id, socket]);
+
     const topSentinelRef = useCallback((node) => {
         if (observerRef.current) observerRef.current.disconnect();
 
@@ -197,6 +228,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
                                     own={m.sender._id === user._id}
                                     chatId={currentChat?._id}
                                     isGroupChat={currentChat?.isGroupChat}
+                                    setMessageToDelete={setMessageToDelete}
                                 />
                             </CSSTransition>
                         ))}
@@ -209,6 +241,14 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
                     </TransitionGroup>
                 </div>
             </div>
+
+            {messageToDelete && (
+                <ConfirmModal
+                    message="Are you sure you want to delete this message?"
+                    onConfirm={executeMessageDeletion}
+                    onCancel={() => setMessageToDelete(null)}
+                />
+            )}
         </div>
     );
 };
