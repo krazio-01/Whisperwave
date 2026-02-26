@@ -86,16 +86,24 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
             }
         };
 
+        const handleMessageDelete = (payload) => {
+            setMessages((prevMsg) => {
+                return prevMsg.filter((msg) => msg._id !== payload.messageId);
+            });
+        };
+
         socket.on('user:online-list', handleOnlineUsers);
         socket.on('typing:start', handleTyping);
         socket.on('typing:stop', handleStopTyping);
         socket.on('chat:message-received', handleMessageReceived);
+        socket.on('chat:message-deleted', handleMessageDelete);
 
         return () => {
             socket.off('user:online-list', handleOnlineUsers);
             socket.off('typing:start', handleTyping);
             socket.off('typing:stop', handleStopTyping);
             socket.off('chat:message-received', handleMessageReceived);
+            socket.off('chat:message-deleted', handleMessageDelete);
         };
     }, [socket, user._id]);
 
@@ -110,7 +118,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                             setCurrentChat={setCurrentChat}
                             isUserOnline={isUserOnline}
                             handleStartCall={handleStartCall}
-                            fetchAgain={fetchAgain}
+                            setFetchAgain={setFetchAgain}
                             setShowConfirmModal={setShowConfirmModal}
                             setShowProfileInfo={setShowProfileInfo}
                             setMessages={setMessages}

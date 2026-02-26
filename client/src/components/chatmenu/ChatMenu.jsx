@@ -111,10 +111,37 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             });
         };
 
+        const handleMessageDeleted = ({ messageId, chatId, messageCreatedAt, newLastMessage }) => {
+            setChats((prevChats) =>
+                prevChats.map((chat) => {
+                    if (chat._id !== chatId) return chat;
+
+                    let newUnseenCount = chat.unseenCount || 0;
+
+                    const msgTime = new Date(messageCreatedAt).getTime();
+                    const lastReadTime = chat.lastReadAt?.[user._id]
+                        ? new Date(chat.lastReadAt[user._id]).getTime()
+                        : 0;
+
+                    if (msgTime > lastReadTime && newUnseenCount > 0) newUnseenCount -= 1;
+
+                    const isLastMessage = chat.lastMessage?._id === messageId;
+
+                    return {
+                        ...chat,
+                        unseenCount: newUnseenCount,
+                        lastMessage: isLastMessage ? newLastMessage : chat.lastMessage,
+                    };
+                }),
+            );
+        };
+
         socket.on('chat:message-received', handleMessageReceived);
+        socket.on('chat:message-deleted', handleMessageDeleted);
 
         return () => {
             socket.off('chat:message-received', handleMessageReceived);
+            socket.off('chat:message-deleted', handleMessageDeleted);
         };
     }, [socket, currentChat, setChats]);
 
