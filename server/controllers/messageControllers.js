@@ -18,11 +18,20 @@ const fetchMessages = async (req, res) => {
         const listKey = `${MESSAGE_KEY_PREFIX}${chatId}`;
         const metaKey = `${MESSAGE_KEY_PREFIX}meta:${chatId}`;
 
-        // cache-hit-check
+        // 2. Cache-hit-check
         if (isInitialLoad) {
+            Chat.updateOne(
+                { _id: chatId },
+                {
+                    $set: {
+                        [`lastReadAt.${req.userId}`]: new Date(),
+                        [`unseenMessageCounts.${req.userId}`]: 0,
+                    },
+                },
+            ).catch((err) => console.error('Failed to update read watermark:', err));
+
             const cachedData = await RedisService.getListWithMeta(listKey, metaKey);
             if (cachedData) {
-                Chat.updateOne({ _id: chatId }, { [`unseenMessageCounts.${req.userId}`]: 0 }).exec();
                 return res.json({
                     messages: cachedData.list,
                     currentBucketId: cachedData.meta.currentBucketId,
@@ -57,8 +66,6 @@ const fetchMessages = async (req, res) => {
 
             // cache-miss-set
             RedisService.saveListWithMeta(listKey, flatMessages, metaKey, metaData, MESSAGE_TTL_SECONDS);
-
-            Chat.updateOne({ _id: chatId }, { [`unseenMessageCounts.${req.userId}`]: 0 }).catch(console.error);
         }
 
         return res.json(responseData);
@@ -120,6 +127,9 @@ const sendMessage = async (req, res) => {
             createdAt: messageResponse.createdAt,
         };
 
+        if (!populatedChat.lastReadAt) populatedChat.lastReadAt = new Map();
+        populatedChat.lastReadAt.set(req.userId, messageData.createdAt);
+
         // Update the unseenMessageCount for the chat
         populatedChat.members.forEach((member) => {
             const memberId = member._id.toString();
@@ -131,7 +141,8 @@ const sendMessage = async (req, res) => {
                 const hasReceiverOpenedSenderChat = activeChats.get(receiverSocketId) === chatId;
 
                 if (!hasReceiverOpenedSenderChat) {
-                    const currentCount = populatedChat.unseenMessageCounts.get(memberId) || 0;
+                    const currentCount = populatedChat.unseenMessageCounts?.get(memberId) || 0;
+                    if (!populatedChat.unseenMessageCounts) populatedChat.unseenMessageCounts = new Map();
                     populatedChat.unseenMessageCounts.set(memberId, currentCount + 1);
                 }
             }
