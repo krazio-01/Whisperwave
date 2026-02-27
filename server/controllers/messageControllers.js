@@ -18,9 +18,10 @@ const fetchMessages = async (req, res) => {
         const listKey = `${MESSAGE_KEY_PREFIX}${chatId}`;
         const metaKey = `${MESSAGE_KEY_PREFIX}meta:${chatId}`;
 
-        // 2. Cache-hit-check
+        let readWatermarks = null;
+
         if (isInitialLoad) {
-            Chat.updateOne(
+            const updatedChat = await Chat.findOneAndUpdate(
                 { _id: chatId },
                 {
                     $set: {
@@ -28,14 +29,29 @@ const fetchMessages = async (req, res) => {
                         [`unseenMessageCounts.${req.userId}`]: 0,
                     },
                 },
-            ).catch((err) => console.error('Failed to update read watermark:', err));
+                { new: true, select: 'lastReadAt lastMessage' },
+            ).lean();
 
+            if (updatedChat && updatedChat.lastReadAt) {
+                readWatermarks = {};
+                const latestMessageTime = updatedChat.lastMessage
+                    ? new Date(updatedChat.lastMessage.createdAt).getTime()
+                    : Date.now();
+
+                Object.keys(updatedChat.lastReadAt).forEach((memberId) => {
+                    const exactReadTime = new Date(updatedChat.lastReadAt[memberId]).getTime();
+                    readWatermarks[memberId] = exactReadTime > latestMessageTime ? latestMessageTime : exactReadTime;
+                });
+            }
+
+            // 2. cache-hit-check
             const cachedData = await RedisService.getListWithMeta(listKey, metaKey);
             if (cachedData) {
                 return res.json({
                     messages: cachedData.list,
                     currentBucketId: cachedData.meta.currentBucketId,
                     hasMore: cachedData.meta.hasMore,
+                    readWatermarks,
                 });
             }
         }
@@ -58,14 +74,17 @@ const fetchMessages = async (req, res) => {
             hasMore: oldestBucket ? oldestBucket.bucketId > 1 : false,
         };
 
-        if (isInitialLoad && flatMessages.length > 0) {
-            const metaData = {
-                currentBucketId: responseData.currentBucketId,
-                hasMore: responseData.hasMore,
-            };
+        if (isInitialLoad) {
+            responseData.readWatermarks = readWatermarks;
 
             // cache-miss-set
-            RedisService.saveListWithMeta(listKey, flatMessages, metaKey, metaData, MESSAGE_TTL_SECONDS);
+            if (flatMessages.length > 0) {
+                const metaData = {
+                    currentBucketId: responseData.currentBucketId,
+                    hasMore: responseData.hasMore,
+                };
+                RedisService.saveListWithMeta(listKey, flatMessages, metaKey, metaData, MESSAGE_TTL_SECONDS);
+            }
         }
 
         return res.json(responseData);
@@ -127,6 +146,7 @@ const sendMessage = async (req, res) => {
             createdAt: messageResponse.createdAt,
         };
 
+        const messageTime = messageData.createdAt;
         if (!populatedChat.lastReadAt) populatedChat.lastReadAt = new Map();
         populatedChat.lastReadAt.set(req.userId, messageData.createdAt);
 
@@ -141,6 +161,10 @@ const sendMessage = async (req, res) => {
                 const hasReceiverOpenedSenderChat = activeChats.get(receiverSocketId) === chatId;
 
                 if (!hasReceiverOpenedSenderChat) {
+                    populatedChat.lastReadAt.set(memberId, messageTime);
+                    if (!populatedChat.unseenMessageCounts) populatedChat.unseenMessageCounts = new Map();
+                    populatedChat.unseenMessageCounts.set(memberId, 0);
+                } else {
                     const currentCount = populatedChat.unseenMessageCounts?.get(memberId) || 0;
                     if (!populatedChat.unseenMessageCounts) populatedChat.unseenMessageCounts = new Map();
                     populatedChat.unseenMessageCounts.set(memberId, currentCount + 1);
