@@ -19,7 +19,7 @@ import useClickOutside from '../../hooks/useClickOutside';
 import './chatmenu.css';
 
 const ChatMenu = ({ socket, fetchAgain }) => {
-    const { user, chats, setChats, currentChat, setCurrentChat } = ChatState();
+    const { user, chats, setChats, currentChat, setCurrentChat, updateChatList, updateChatListOnDelete } = ChatState();
 
     const dropdownRef = useRef(null);
     const dropDownParentRef = useRef(null);
@@ -89,51 +89,12 @@ const ChatMenu = ({ socket, fetchAgain }) => {
     useEffect(() => {
         if (!socket) return;
 
-        const handleMessageReceived = (newMessageRecieved) => {
-            setChats((prevChats) => {
-                const chatIndex = prevChats.findIndex((c) => c._id === newMessageRecieved.chat._id);
-
-                if (chatIndex === -1) return prevChats;
-
-                const chatToUpdate = prevChats[chatIndex];
-                const isChatOpen = currentChat && currentChat._id === chatToUpdate._id;
-                const newCount = isChatOpen ? 0 : (chatToUpdate.unseenCount || 0) + 1;
-
-                const updatedChat = {
-                    ...chatToUpdate,
-                    lastMessage: newMessageRecieved,
-                    unseenCount: newCount,
-                    updatedAt: new Date().toISOString(),
-                };
-
-                const otherChats = prevChats.filter((c) => c._id !== chatToUpdate._id);
-                return [updatedChat, ...otherChats];
-            });
+        const handleMessageReceived = (newMessageReceived) => {
+            updateChatList(newMessageReceived);
         };
 
-        const handleMessageDeleted = ({ messageId, chatId, messageCreatedAt, newLastMessage }) => {
-            setChats((prevChats) =>
-                prevChats.map((chat) => {
-                    if (chat._id !== chatId) return chat;
-
-                    let newUnseenCount = chat.unseenCount || 0;
-
-                    const msgTime = new Date(messageCreatedAt).getTime();
-                    const lastReadTime = chat.lastReadAt?.[user._id]
-                        ? new Date(chat.lastReadAt[user._id]).getTime()
-                        : 0;
-
-                    if (msgTime > lastReadTime && newUnseenCount > 0) newUnseenCount -= 1;
-
-                    const isLastMessage = chat.lastMessage?._id === messageId;
-
-                    return {
-                        ...chat,
-                        unseenCount: newUnseenCount,
-                        lastMessage: isLastMessage ? newLastMessage : chat.lastMessage,
-                    };
-                }),
-            );
+        const handleMessageDeleted = (payload) => {
+            updateChatListOnDelete(payload.chatId, payload.newLastMessage, payload.messageCreatedAt);
         };
 
         socket.on('chat:message-received', handleMessageReceived);
@@ -159,7 +120,17 @@ const ChatMenu = ({ socket, fetchAgain }) => {
         if (currentChat && currentChat._id === chat._id) return;
 
         setCurrentChat(chat);
-        setChats((prev) => prev.map((c) => (c._id === chat._id ? { ...c, unseenCount: 0 } : c)));
+        setChats((prev) =>
+            prev.map((c) =>
+                c._id === chat._id
+                    ? {
+                        ...c,
+                        unseenCount: 0,
+                        myLastReadAt: new Date().toISOString(),
+                    }
+                    : c,
+            ),
+        );
     };
 
     return (

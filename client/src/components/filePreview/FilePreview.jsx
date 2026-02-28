@@ -26,9 +26,7 @@ const FilePreview = ({
 
             setLoading(true);
 
-            const encryptedCaption = newMessages
-                ? encryptionManager.encrypt(newMessages, currentChat._id)
-                : "";
+            const encryptedCaption = newMessages ? encryptionManager.encrypt(newMessages, currentChat._id) : '';
 
             const formData = new FormData();
             formData.append('text', encryptedCaption);
@@ -44,8 +42,15 @@ const FilePreview = ({
 
             try {
                 const { data } = await axios.post('/messages', formData, config);
-                setMessages((prevMessages) => [...prevMessages, data]);
-                socket.emit('chat:send-message', data);
+                const messageData = {
+                    ...data.message,
+                    chatId: currentChat._id,
+                };
+                setMessages((prevMessages) => [...prevMessages, messageData]);
+                socket.emit('chat:send-message', {
+                    ...messageData,
+                    members: currentChat.members.map((m) => m._id || m),
+                });
                 setNewMessages('');
                 setSelectedFile(null);
                 setShowPreview(false);

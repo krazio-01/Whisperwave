@@ -71,16 +71,23 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         const handleMessageReceived = (newMessage) => {
             const activeChat = currentChatRef.current;
 
-            if (activeChat && activeChat._id === newMessage.chat._id) {
+            if (activeChat && activeChat._id === newMessage.chatId) {
                 setMessages((prev) => (prev.some((m) => m._id === newMessage._id) ? prev : [...prev, newMessage]));
                 setTypingUsers((prev) => prev.filter((id) => id !== newMessage.sender._id));
+
+                if (newMessage.sender._id !== user._id) {
+                    socket.emit('chat:mark-read', {
+                        chatId: activeChat._id,
+                        userId: user._id,
+                        timestamp: Date.now(),
+                    });
+                }
             }
 
-            // Handle Notification
             if (!document.hasFocus() && Notification.permission === 'granted' && newMessage.sender._id !== user._id) {
-                const decryptedText = encryptionManager.decrypt(newMessage.text, newMessage.chat._id);
+                const decryptedText = encryptionManager.decrypt(newMessage.text, newMessage.chatId);
                 new Notification(newMessage.sender.username, {
-                    body: decryptedText || 'Message Recieved',
+                    body: decryptedText || 'Message Received',
                     icon: getProfilePic(newMessage.sender, null),
                 });
             }
