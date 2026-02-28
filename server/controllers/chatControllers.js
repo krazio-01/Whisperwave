@@ -55,6 +55,7 @@ const fetchChats = async (req, res) => {
             }));
 
             const count = chat.unseenMessageCounts ? chat.unseenMessageCounts.get(userId.toString()) || 0 : 0;
+            const myLastReadTime = chat.lastReadAt ? chat.lastReadAt.get(userId.toString()) : null;
 
             return {
                 _id: chatObj._id,
@@ -65,6 +66,7 @@ const fetchChats = async (req, res) => {
                 groupAdmin: chatObj.groupAdmin,
                 lastMessage: refinedLastMessage,
                 unseenCount: count,
+                myLastReadAt: myLastReadTime,
             };
         });
 

@@ -14,6 +14,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
         nextBucketId: null,
     });
     const [messageToDelete, setMessageToDelete] = useState(null);
+    const [readWatermarks, setReadWatermarks] = useState({});
 
     const scrollContainerRef = useRef(null);
     const observerRef = useRef(null);
@@ -60,6 +61,7 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
                 const data = await fetchMessages(null, chatId, controller.signal);
                 if (data) {
                     setMessages(data.messages);
+                    if (data?.readWatermarks) setReadWatermarks(data.readWatermarks);
                     setStatus({
                         loading: false,
                         hasMore: data.hasMore,
@@ -67,6 +69,11 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
                     });
                 }
                 socket.emit('chat:join', chatId);
+                socket.emit('chat:mark-read', {
+                    chatId: chatId,
+                    userId: user._id,
+                    timestamp: Date.now(),
+                });
             } catch (e) {
                 setStatus((prev) => ({ ...prev, loading: false }));
             }
@@ -74,9 +81,21 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
 
         loadInitial();
 
+        const handleMessagesRead = ({ chatId, userId, timestamp }) => {
+            if (currentChat?._id === chatId) {
+                setReadWatermarks((prev) => ({
+                    ...prev,
+                    [userId]: timestamp,
+                }));
+            }
+        };
+
+        socket.on('chat:message-read', handleMessagesRead);
+
         return () => {
             controller.abort();
             socket.emit('chat:leave', chatId);
+            socket.off('chat:message-read', handleMessagesRead);
         };
     }, [currentChat._id, fetchMessages, setMessages, socket]);
 
@@ -229,6 +248,8 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
                                     chatId={currentChat?._id}
                                     isGroupChat={currentChat?.isGroupChat}
                                     setMessageToDelete={setMessageToDelete}
+                                    readWatermarks={readWatermarks}
+                                    chatMembers={currentChat?.members || []}
                                 />
                             </CSSTransition>
                         ))}
