@@ -11,15 +11,112 @@
             background-color: #292929 !important;
         }
 
+        .messageBottom {
+            justify-content: end;
+        }
+
         .message-menu {
             right: auto !important;
             left: -136px !important;
+        }
+
+        .info-popover {
+            right: auto !important;
+            left: -210px !important;
         }
 
         .message-options-trigger {
             order: -1;
             margin-left: 0;
             margin-right: 5px;
+        }
+
+        .info-popover {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(7px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            width: 200px;
+            position: absolute;
+            right: -210px;
+            bottom: 0;
+            z-index: 100;
+            color: white;
+            max-height: 250px;
+            overflow-y: auto;
+
+            &::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background-color: rgba(255, 255, 255, 0.3);
+                border-radius: 4px;
+            }
+
+            .info-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                padding-bottom: 0.5rem;
+                margin-bottom: 0.8rem;
+                font-weight: 600;
+                font-size: 14px;
+            }
+
+            .info-header svg {
+                cursor: pointer;
+                font-size: 18px;
+                transition: color 0.2s;
+
+                &:hover {
+                    color: #ff4757;
+                }
+            }
+
+            .info-body {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .info-section {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .info-section-title {
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                color: #ccc;
+            }
+
+            .info-user-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+            }
+
+            .info-user-row img {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                object-fit: cover;
+            }
+
+            .empty-info {
+                font-size: 12px;
+                color: #999;
+                font-style: italic;
+            }
         }
     }
 
@@ -60,8 +157,8 @@
         border-radius: 8px;
         width: 170px;
         position: absolute;
-        /* right: 0; */
         right: -136px;
+        bottom: 0;
         border-radius: 8px;
         z-index: 100;
 
