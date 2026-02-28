@@ -121,9 +121,17 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
 
                 const { data } = await axios.post('/messages', payload, config);
 
-                setMessages((prev) => [...prev, data]);
-                updateChatList(data);
-                socket.emit('chat:send-message', data);
+                const messageData = {
+                    ...data.message,
+                    chatId: currentChat._id,
+                };
+
+                setMessages((prev) => [...prev, messageData]);
+                updateChatList(messageData);
+                socket.emit('chat:send-message', {
+                    ...messageData,
+                    members: currentChat.members.map((m) => m._id || m),
+                });
 
                 setNewMessage('');
                 setIsPickerVisible(false);
