@@ -8,7 +8,6 @@ const MESSAGE_KEY_PREFIX = 'messages:';
 const MESSAGE_TTL_SECONDS = 86400; // 24 hours
 const MAX_CACHED_MESSAGES = 40;
 
-// fetch messages
 const fetchMessages = async (req, res) => {
     try {
         const { chatId } = req.params;
@@ -19,33 +18,38 @@ const fetchMessages = async (req, res) => {
         const metaKey = `${MESSAGE_KEY_PREFIX}meta:${chatId}`;
 
         let readWatermarks = null;
+        let cachedData = null;
 
         if (isInitialLoad) {
-            const updatedChat = await Chat.findOneAndUpdate(
-                { _id: chatId },
-                {
-                    $set: {
-                        [`lastReadAt.${req.userId}`]: new Date(),
-                        [`unseenMessageCounts.${req.userId}`]: 0,
+            const [updatedChat, cacheResult] = await Promise.all([
+                Chat.findOneAndUpdate(
+                    { _id: chatId },
+                    {
+                        $set: {
+                            [`lastReadAt.${req.userId}`]: new Date(),
+                            [`unseenMessageCounts.${req.userId}`]: 0,
+                        },
                     },
-                },
-                { new: true, select: 'lastReadAt lastMessage' },
-            ).lean();
+                    { new: true, select: 'lastReadAt lastMessage' },
+                ).lean(),
+                RedisService.getListWithMeta(listKey, metaKey),
+            ]);
+
+            cachedData = cacheResult;
 
             if (updatedChat && updatedChat.lastReadAt) {
                 readWatermarks = {};
-                const latestMessageTime = updatedChat.lastMessage
+                const latestMessageTime = updatedChat.lastMessage?.createdAt
                     ? new Date(updatedChat.lastMessage.createdAt).getTime()
                     : Date.now();
 
-                Object.keys(updatedChat.lastReadAt).forEach((memberId) => {
-                    const exactReadTime = new Date(updatedChat.lastReadAt[memberId]).getTime();
-                    readWatermarks[memberId] = exactReadTime > latestMessageTime ? latestMessageTime : exactReadTime;
+                Object.entries(updatedChat.lastReadAt).forEach(([memberId, readTime]) => {
+                    const exactReadTime = new Date(readTime).getTime();
+                    readWatermarks[memberId] = Math.min(exactReadTime, latestMessageTime);
                 });
             }
 
-            // 2. cache-hit-check
-            const cachedData = await RedisService.getListWithMeta(listKey, metaKey);
+            // cache-hit-check
             if (cachedData) {
                 return res.json({
                     messages: cachedData.list,
@@ -70,7 +74,7 @@ const fetchMessages = async (req, res) => {
 
         const responseData = {
             messages: flatMessages,
-            currentBucketId: oldestBucket ? oldestBucket.bucketId : null,
+            currentBucketId: oldestBucket?.bucketId || null,
             hasMore: oldestBucket ? oldestBucket.bucketId > 1 : false,
         };
 
@@ -83,7 +87,9 @@ const fetchMessages = async (req, res) => {
                     currentBucketId: responseData.currentBucketId,
                     hasMore: responseData.hasMore,
                 };
-                RedisService.saveListWithMeta(listKey, flatMessages, metaKey, metaData, MESSAGE_TTL_SECONDS);
+                RedisService.saveListWithMeta(listKey, flatMessages, metaKey, metaData, MESSAGE_TTL_SECONDS).catch(
+                    (err) => console.error('Redis cache set error:', err),
+                );
             }
         }
 
@@ -94,14 +100,19 @@ const fetchMessages = async (req, res) => {
     }
 };
 
-// create new message
 const sendMessage = async (req, res) => {
     const { text, chatId } = req.body;
+    const file = req.file;
 
     try {
-        if (!text || !chatId) return res.status(400).send('Text and chatId are required');
+        if (!chatId || (!text?.trim() && !file)) return res.status(400).send('Text and chatId are required');
 
-        const filename = req.file ? await uploadImageToCloudinary(req.file, 'messages') : '';
+        const [filename, chatMeta] = await Promise.all([
+            file ? uploadImageToCloudinary(file, 'messages') : Promise.resolve(''),
+            Chat.findById(chatId).select('members unseenMessageCounts lastReadAt').lean(),
+        ]);
+
+        if (!chatMeta) return res.status(404).send('Chat not found');
 
         const messageData = {
             sender: req.userId,
@@ -110,22 +121,27 @@ const sendMessage = async (req, res) => {
             createdAt: new Date(),
         };
 
-        let latestBucket = await MessageBucket.findOne({ chat: chatId }).sort({ bucketId: -1 });
+        let latestBucket = await MessageBucket.findOneAndUpdate(
+            { chat: chatId, count: { $lt: 20 } },
+            { $push: { messages: messageData }, $inc: { count: 1 } },
+            { sort: { bucketId: -1 }, new: true },
+        ).populate('messages.sender', 'username profilePicture');
 
-        if (!latestBucket || latestBucket.messages.length >= 20) {
+        if (!latestBucket) {
+            const maxBucket = await MessageBucket.findOne({ chat: chatId })
+                .sort({ bucketId: -1 })
+                .select('bucketId')
+                .lean();
+
             latestBucket = await MessageBucket.create({
                 chat: chatId,
-                bucketId: latestBucket ? latestBucket.bucketId + 1 : 1,
+                bucketId: maxBucket ? maxBucket.bucketId + 1 : 1,
                 count: 1,
                 messages: [messageData],
             });
-        } else {
-            latestBucket.messages.push(messageData);
-            latestBucket.count += 1;
-            await latestBucket.save();
+            await latestBucket.populate('messages.sender', 'username profilePicture');
         }
 
-        await latestBucket.populate('messages.sender', 'username profilePicture');
         const messageResponse = latestBucket.messages[latestBucket.messages.length - 1].toObject();
 
         const listKey = `${MESSAGE_KEY_PREFIX}${chatId}`;
@@ -134,46 +150,51 @@ const sendMessage = async (req, res) => {
         delete cacheableMessage.chat;
 
         // update message list using sliding-window
-        RedisService.appendToListWithMeta(listKey, cacheableMessage, MAX_CACHED_MESSAGES, metaKey, MESSAGE_TTL_SECONDS);
+        RedisService.appendToListWithMeta(
+            listKey,
+            cacheableMessage,
+            MAX_CACHED_MESSAGES,
+            metaKey,
+            MESSAGE_TTL_SECONDS,
+        ).catch((err) => console.error('Redis append error:', err));
 
-        const populatedChat = await Chat.findById(chatId).populate('members', 'username email profilePicture');
-        if (!populatedChat) return res.status(404).send('Chat not found');
-
-        messageResponse.chat = populatedChat;
-        populatedChat.lastMessage = {
-            text: messageResponse.text,
-            sender: messageResponse.sender,
-            createdAt: messageResponse.createdAt,
+        const updatePayload = {
+            $set: {
+                lastMessage: {
+                    text: messageResponse.text,
+                    sender: messageResponse.sender,
+                    createdAt: messageResponse.createdAt,
+                },
+                [`lastReadAt.${req.userId}`]: messageData.createdAt,
+            },
+            $inc: {},
         };
 
-        const messageTime = messageData.createdAt;
-        if (!populatedChat.lastReadAt) populatedChat.lastReadAt = new Map();
-        populatedChat.lastReadAt.set(req.userId, messageData.createdAt);
-
-        // Update the unseenMessageCount for the chat
-        populatedChat.members.forEach((member) => {
-            const memberId = member._id.toString();
-            const senderId = messageResponse.sender._id.toString();
-
-            if (memberId !== senderId) {
+        // Update the unseenMessageCount and lastReadAt for the chat
+        chatMeta.members.forEach((memberIdObj) => {
+            const memberId = memberIdObj.toString();
+            if (memberId !== req.userId) {
                 // Check if the receiver has the sender's chat open
                 const receiverSocketId = onlineUsers.get(memberId);
                 const hasReceiverOpenedSenderChat = activeChats.get(receiverSocketId) === chatId;
 
-                if (!hasReceiverOpenedSenderChat) {
-                    populatedChat.lastReadAt.set(memberId, messageTime);
-                    if (!populatedChat.unseenMessageCounts) populatedChat.unseenMessageCounts = new Map();
-                    populatedChat.unseenMessageCounts.set(memberId, 0);
+                if (hasReceiverOpenedSenderChat) {
+                    updatePayload.$set[`lastReadAt.${memberId}`] = messageData.createdAt;
+                    updatePayload.$set[`unseenMessageCounts.${memberId}`] = 0;
                 } else {
-                    const currentCount = populatedChat.unseenMessageCounts?.get(memberId) || 0;
-                    if (!populatedChat.unseenMessageCounts) populatedChat.unseenMessageCounts = new Map();
-                    populatedChat.unseenMessageCounts.set(memberId, currentCount + 1);
+                    updatePayload.$inc[`unseenMessageCounts.${memberId}`] = 1;
                 }
             }
         });
 
-        await populatedChat.save();
-        res.json(messageResponse);
+        if (Object.keys(updatePayload.$inc).length === 0) delete updatePayload.$inc;
+
+        await Chat.updateOne({ _id: chatId }, updatePayload);
+
+        res.json({
+            success: true,
+            message: messageResponse,
+        });
     } catch (error) {
         console.error('sendMessage Error:', error);
         res.status(500).send('An error occurred while sending the message.');
@@ -184,17 +205,7 @@ const deleteMessage = async (req, res) => {
     try {
         const { messageId } = req.params;
 
-        const bucket = await MessageBucket.findOne({ 'messages._id': messageId }, { 'messages.$': 1, chat: 1 }).lean();
-
-        if (!bucket || !bucket.messages || bucket.messages.length === 0)
-            return res.status(404).json({ success: false, message: 'Message not found' });
-
-        const targetMessage = bucket.messages[0];
-        const chatId = bucket.chat.toString();
-        const messageTime = new Date(targetMessage.createdAt).getTime();
-
-        if (targetMessage.image && targetMessage.image !== '')
-            await deleteImageFromCloudinary(targetMessage.image, 'messages');
+        if (!messageId) return res.status(400).send('Invalid Request');
 
         const updatedBucket = await MessageBucket.findOneAndUpdate(
             { 'messages._id': messageId },
@@ -202,54 +213,69 @@ const deleteMessage = async (req, res) => {
                 $pull: { messages: { _id: messageId } },
                 $inc: { count: -1 },
             },
-            { new: true },
-        );
+        ).lean();
 
-        if (!updatedBucket) return res.status(400).json({ success: false, message: 'Failed to update database' });
+        if (!updatedBucket) return res.status(404).json({ success: false, message: 'Message not found' });
 
-        const chat = await Chat.findById(chatId);
+        const targetMessage = updatedBucket.messages.find((m) => m._id.toString() === messageId);
+        const chatId = updatedBucket.chat.toString();
+        const messageTime = new Date(targetMessage.createdAt).getTime();
+
+        if (targetMessage.image) {
+            deleteImageFromCloudinary(targetMessage.image, 'messages').catch((err) =>
+                console.error('Cloudinary delete error:', err),
+            );
+        }
+
+        const chat = await Chat.findById(chatId).select('members lastReadAt unseenMessageCounts').lean();
+        let newLastMessage = null;
+
         if (chat) {
-            // Check timestamps to accurately decrement unseen counts
+            const updatePayload = { $set: {}, $inc: {} };
+
+            // unseen count update
             chat.members.forEach((memberId) => {
                 const mIdStr = memberId.toString();
                 if (mIdStr !== req.userId) {
-                    const userLastReadTimeStr = chat.lastReadAt?.get(mIdStr);
-                    const userLastReadTime = userLastReadTimeStr ? new Date(userLastReadTimeStr).getTime() : 0;
-
-                    if (messageTime > userLastReadTime) {
-                        const currentCount = chat.unseenMessageCounts?.get(mIdStr) || 0;
-                        if (currentCount > 0) chat.unseenMessageCounts.set(mIdStr, currentCount - 1);
-                    }
+                    const userLastReadTime = chat.lastReadAt?.[mIdStr]
+                        ? new Date(chat.lastReadAt[mIdStr]).getTime()
+                        : 0;
+                    if (messageTime > userLastReadTime && chat.unseenMessageCounts?.[mIdStr] > 0)
+                        updatePayload.$inc[`unseenMessageCounts.${mIdStr}`] = -1;
                 }
             });
 
-            const latestBucket = await MessageBucket.findOne({ chat: chatId, 'messages.0': { $exists: true } })
+            // re-calculation of last-message if needed
+            const latestBucket = await MessageBucket.findOne({ chat: chatId, count: { $gt: 0 } })
                 .sort({ bucketId: -1 })
-                .populate('messages.sender', 'username profilePicture');
+                .populate('messages.sender', 'username profilePicture')
+                .lean();
 
             if (latestBucket && latestBucket.messages.length > 0) {
                 const lastMsg = latestBucket.messages[latestBucket.messages.length - 1];
-                chat.lastMessage = {
+                newLastMessage = {
                     text: lastMsg.text,
                     sender: lastMsg.sender,
                     createdAt: lastMsg.createdAt,
                 };
-            } else {
-                chat.lastMessage = null;
             }
 
-            await chat.save();
+            updatePayload.$set.lastMessage = newLastMessage;
+            if (Object.keys(updatePayload.$inc).length === 0) delete updatePayload.$inc;
+
+            await Chat.updateOne({ _id: chatId }, updatePayload);
         }
 
-        // 4. Update Redis Cache
         const listKey = `${MESSAGE_KEY_PREFIX}${chatId}`;
         const metaKey = `${MESSAGE_KEY_PREFIX}meta:${chatId}`;
-        await RedisService.removeMessage(listKey, metaKey, messageId, MESSAGE_TTL_SECONDS);
+        RedisService.removeMessage(listKey, metaKey, messageId, MESSAGE_TTL_SECONDS).catch((err) =>
+            console.error('Redis delete error:', err),
+        );
 
         return res.status(200).json({
             success: true,
             messageCreatedAt: targetMessage.createdAt,
-            newLastMessage: chat.lastMessage,
+            newLastMessage: newLastMessage,
         });
     } catch (error) {
         console.error('Error deleting message:', error);
