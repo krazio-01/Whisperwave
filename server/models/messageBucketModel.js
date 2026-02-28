@@ -20,7 +20,6 @@ const MessageBucketSchema = new mongoose.Schema(
                 sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
                 text: { type: String },
                 image: { type: String, default: '' },
-                readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
                 createdAt: { type: Date, default: Date.now },
             },
         ],
