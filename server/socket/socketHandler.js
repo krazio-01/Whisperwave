@@ -24,12 +24,14 @@ const socketHandler = (io) => {
         });
 
         socket.on('chat:send-message', (newMessageReceived) => {
-            const chat = newMessageReceived.chat;
-            if (!chat.members) return;
+            const members = newMessageReceived.members;
+            if (!members || members.length === 0) return;
 
-            chat.members.forEach((user) => {
-                if (user._id === newMessageReceived.sender._id) return;
-                socket.in(user._id).emit('chat:message-received', newMessageReceived);
+            const senderId = newMessageReceived.sender._id || newMessageReceived.sender;
+
+            members.forEach((memberId) => {
+                if (memberId === senderId) return;
+                socket.to(memberId).emit('chat:message-received', newMessageReceived);
             });
         });
 
@@ -43,6 +45,10 @@ const socketHandler = (io) => {
                 if (receiverSocketId && receiverSocketId !== socket.id)
                     socket.to(receiverSocketId).emit('chat:message-deleted', eventData);
             });
+        });
+
+        socket.on('chat:mark-read', ({ chatId, userId, timestamp }) => {
+            socket.to(chatId).emit('chat:message-read', { chatId, userId, timestamp });
         });
 
         // --- typing Logic ---
