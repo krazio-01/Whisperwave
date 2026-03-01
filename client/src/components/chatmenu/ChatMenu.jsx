@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { CSSTransition } from 'react-transition-group';
 import NewChat from '../newChat/NewChat';
@@ -33,6 +33,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
     const [currentUI, setCurrentUI] = useState('chat');
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredUsers, setFilteredUsers] = useState([]);
+    const [typingChats, setTypingChats] = useState({});
 
     useClickOutside(dropDownParentRef, () => setIsDropdownOpen(false));
     useClickOutside(bubbleMenuParentRef, () => setBubbleMenuContainer(false));
@@ -97,12 +98,46 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             updateChatListOnDelete(payload.chatId, payload.newLastMessage, payload.messageCreatedAt);
         };
 
+        const handleTyping = ({ chatId, userId }) => {
+            if (!user || userId === user._id) return;
+
+            setTypingChats((prev) => {
+                const chatTypingUsers = prev[chatId] || [];
+                if (chatTypingUsers.includes(userId)) return prev;
+
+                return { ...prev, [chatId]: [...chatTypingUsers, userId] };
+            });
+        };
+
+        const handleStopTyping = ({ chatId, userId }) => {
+            if (!user || userId === user._id) return;
+
+            setTypingChats((prev) => {
+                const chatTypingUsers = prev[chatId] || [];
+                if (!chatTypingUsers.includes(userId)) return prev;
+
+                const updatedUsers = chatTypingUsers.filter((id) => id !== userId);
+
+                if (updatedUsers.length === 0) {
+                    const newState = { ...prev };
+                    delete newState[chatId];
+                    return newState;
+                }
+
+                return { ...prev, [chatId]: updatedUsers };
+            });
+        };
+
         socket.on('chat:message-received', handleMessageReceived);
         socket.on('chat:message-deleted', handleMessageDeleted);
+        socket.on('typing:start', handleTyping);
+        socket.on('typing:stop', handleStopTyping);
 
         return () => {
             socket.off('chat:message-received', handleMessageReceived);
             socket.off('chat:message-deleted', handleMessageDeleted);
+            socket.off('typing:start', handleTyping);
+            socket.off('typing:stop', handleStopTyping);
         };
     }, [socket, currentChat, setChats]);
 
@@ -116,22 +151,21 @@ const ChatMenu = ({ socket, fetchAgain }) => {
         else setBubbleMenuContainer(!bubbleMenuContainer);
     };
 
-    const handleChatClick = (chat) => {
-        if (currentChat && currentChat._id === chat._id) return;
+    const handleChatClick = useCallback(
+        (chatToOpen) => {
+            setCurrentChat((prevCurrentChat) => {
+                if (prevCurrentChat && prevCurrentChat._id === chatToOpen._id) return prevCurrentChat;
+                return chatToOpen;
+            });
 
-        setCurrentChat(chat);
-        setChats((prev) =>
-            prev.map((c) =>
-                c._id === chat._id
-                    ? {
-                        ...c,
-                        unseenCount: 0,
-                        myLastReadAt: new Date().toISOString(),
-                    }
-                    : c,
-            ),
-        );
-    };
+            setChats((prev) =>
+                prev.map((c) =>
+                    c._id === chatToOpen._id ? { ...c, unseenCount: 0, myLastReadAt: new Date().toISOString() } : c,
+                ),
+            );
+        },
+        [setCurrentChat, setChats],
+    );
 
     return (
         <div className="chatMenuWrapper">
@@ -185,11 +219,14 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                         {loading ? (
                             <ListItemSkeleton count={8} />
                         ) : chatList.length > 0 ? (
-                            chatList.map((chat) => (
-                                <div key={chat._id} onClick={() => handleChatClick(chat)}>
-                                    <Conversation loggedUser={loggedUser} chat={chat} />
-                                </div>
-                            ))
+                            chatList.map((chat) => {
+                                const isSomeoneTyping = !!(typingChats[chat._id] && typingChats[chat._id].length > 0);
+                                return (
+                                    <div key={chat._id} onClick={() => handleChatClick(chat)}>
+                                        <Conversation loggedUser={loggedUser} chat={chat} isTyping={isSomeoneTyping} />
+                                    </div>
+                                );
+                            })
                         ) : (
                             <div className="empty-state-container">
                                 {searchQuery ? (

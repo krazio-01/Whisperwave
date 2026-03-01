@@ -49,13 +49,13 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
 
         if (!isTypingRef.current) {
             isTypingRef.current = true;
-            socket.emit('typing:start', { chatId: currentChat._id, userId: user._id });
+            socket.emit('typing:start', { chatId: currentChat._id, userId: user._id, members: currentChat.members });
         }
 
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
         typingTimeoutRef.current = setTimeout(() => {
-            socket.emit('typing:stop', { chatId: currentChat._id, userId: user._id });
+            socket.emit('typing:stop', { chatId: currentChat._id, userId: user._id, members: currentChat.members });
             isTypingRef.current = false;
         }, 2000);
     };
@@ -96,7 +96,11 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
         async (e) => {
             if (e) e.preventDefault();
 
-            socket.emit('typing:stop', currentChat._id);
+            socket.emit('typing:stop', {
+                chatId: currentChat._id,
+                userId: user._id,
+                members: currentChat.members,
+            });
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             isTypingRef.current = false;
 
