@@ -37,6 +37,10 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
 
     useEffect(() => {
         currentChatRef.current = currentChat;
+        return () => {
+            setTypingUsers([]);
+            setShowProfileInfo(false);
+        }
     }, [currentChat]);
 
     useEffect(() => {
