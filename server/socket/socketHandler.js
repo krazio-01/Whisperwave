@@ -53,13 +53,29 @@ const socketHandler = (io) => {
 
         // --- typing Logic ---
         socket.on('typing:start', (data) => {
-            const { chatId, userId } = data;
-            socket.to(chatId).emit('typing:start', { chatId, userId });
+            const { chatId, userId, members } = data;
+
+            if (members && members.length > 0) {
+                members.forEach((member) => {
+                    const memberId = member._id || member;
+                    if (memberId !== userId) socket.to(memberId).emit('typing:start', { chatId, userId });
+                });
+            } else {
+                socket.to(chatId).emit('typing:start', { chatId, userId });
+            }
         });
 
         socket.on('typing:stop', (data) => {
-            const { chatId, userId } = data;
-            socket.to(chatId).emit('typing:stop', { chatId, userId });
+            const { chatId, userId, members } = data;
+
+            if (members && members.length > 0) {
+                members.forEach((member) => {
+                    const memberId = member._id || member;
+                    if (memberId !== userId) socket.to(memberId).emit('typing:stop', { chatId, userId });
+                });
+            } else {
+                socket.to(chatId).emit('typing:stop', { chatId, userId });
+            }
         });
 
         // --- Call Logic ---
