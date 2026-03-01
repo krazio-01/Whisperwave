@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { getProfilePic, getCurrentChatName } from '../../utils/chatUtils';
 import { ChatState } from '../../context/ChatProvider';
 import encryptionManager from '../../services/EncryptionManager';
 import moment from 'moment';
 import './conversation.css';
 
-const Conversation = ({ loggedUser, chat }) => {
+const Conversation = ({ loggedUser, chat, isTyping }) => {
     const { currentChat } = ChatState();
 
     const lastMessageContent = useMemo(() => {
@@ -30,7 +30,11 @@ const Conversation = ({ loggedUser, chat }) => {
             <div className="chat-details-wrapper">
                 <div className="chatDetails">
                     <span className="userChatName">{currentChatName}</span>
-                    <span className="lastMessage">{lastMessageContent}</span>
+                    {isTyping ? (
+                        <span className="typing">typing...</span>
+                    ) : (
+                        <span className="lastMessage">{lastMessageContent}</span>
+                    )}
                 </div>
 
                 <div className="right-section">
@@ -44,4 +48,4 @@ const Conversation = ({ loggedUser, chat }) => {
     );
 };
 
-export default Conversation;
+export default memo(Conversation);

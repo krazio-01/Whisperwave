@@ -42,8 +42,10 @@
                 text-overflow: ellipsis;
             }
 
-            .lastMessage {
-                padding: 2px 0;
+            .lastMessage,
+            .typing {
+                /* padding: 2px 0; */
+                /* padding-bottom: 2px; */
                 font-size: 12px;
                 white-space: nowrap;
                 overflow: hidden;
