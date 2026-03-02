@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { CSSTransition } from 'react-transition-group';
 import NewChat from '../newChat/NewChat';
@@ -26,47 +26,46 @@ const ChatMenu = ({ socket, fetchAgain }) => {
     const bubbleMenuRef = useRef(null);
     const bubbleMenuParentRef = useRef(null);
 
-    const [loggedUser, setLoggedUser] = useState(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [bubbleMenuContainer, setBubbleMenuContainer] = useState(false);
     const [loading, setLoading] = useState(true);
     const [currentUI, setCurrentUI] = useState('chat');
     const [searchQuery, setSearchQuery] = useState('');
-    const [filteredUsers, setFilteredUsers] = useState([]);
     const [typingChats, setTypingChats] = useState({});
 
     useClickOutside(dropDownParentRef, () => setIsDropdownOpen(false));
     useClickOutside(bubbleMenuParentRef, () => setBubbleMenuContainer(false));
 
-    const handleSearchInputChange = (event) => {
-        const { value } = event.target;
-        setSearchQuery(value);
+    const chatList = useMemo(() => {
+        if (!searchQuery.trim() || !user) return chats;
 
-        if (!loggedUser) return;
-
-        const searchResults = chats.filter((chat) => {
-            if (chat.isGroupChat) return chat.chatName.toLowerCase().includes(value.toLowerCase());
-            else {
-                const otherMember = chat.members.find((member) => member._id !== loggedUser._id);
-                return otherMember ? otherMember.username.toLowerCase().includes(value.toLowerCase()) : false;
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        return chats.filter((chat) => {
+            if (chat.isGroupChat) {
+                return chat.chatName.toLowerCase().includes(lowerCaseQuery);
+            } else {
+                const otherMember = chat.members.find((member) => member._id !== user._id);
+                return otherMember ? otherMember.username.toLowerCase().includes(lowerCaseQuery) : false;
             }
         });
-        setFilteredUsers(searchResults);
-    };
+    }, [chats, searchQuery, user]);
 
-    const chatList = searchQuery.trim() === '' ? chats : filteredUsers;
+    const handleSearchInputChange = useCallback((event) => {
+        setSearchQuery(event.target.value);
+    }, []);
 
-    const handleLogout = () => {
+    const handleLogout = useCallback(() => {
         setIsDropdownOpen(false);
         setCurrentUI('chat');
         localStorage.removeItem('user');
         window.location.href = '/';
-    };
+    }, []);
 
-    const fetchChats = async () => {
+    const fetchChats = useCallback(async () => {
+        if (!user?.authToken) return;
+
         try {
             setLoading(true);
-
             const config = {
                 headers: {
                     Authorization: `Bearer ${user.authToken}`,
@@ -74,18 +73,16 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             };
             const { data } = await axios.get('/chat/fetchChats', config);
             setChats(data);
-            setLoading(false);
         } catch (error) {
             console.error('Error fetching chats:', error);
+        } finally {
             setLoading(false);
         }
-    };
+    }, [user?.authToken, setChats]);
 
     useEffect(() => {
-        setLoggedUser(JSON.parse(localStorage.getItem('user')));
         fetchChats();
-        // eslint-disable-next-line
-    }, [fetchAgain]);
+    }, [fetchAgain, fetchChats]);
 
     useEffect(() => {
         if (!socket) return;
@@ -104,7 +101,6 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             setTypingChats((prev) => {
                 const chatTypingUsers = prev[chatId] || [];
                 if (chatTypingUsers.includes(userId)) return prev;
-
                 return { ...prev, [chatId]: [...chatTypingUsers, userId] };
             });
         };
@@ -137,7 +133,6 @@ const ChatMenu = ({ socket, fetchAgain }) => {
 
         const handleChatRemoved = ({ chatId }) => {
             setChats((prev) => prev.filter((c) => c._id !== chatId));
-
             setCurrentChat((prevCurrentChat) => {
                 if (prevCurrentChat && prevCurrentChat._id === chatId) return null;
                 return prevCurrentChat;
@@ -159,17 +154,20 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             socket.off('chat:new-received', handleNewChatReceived);
             socket.off('chat:removed', handleChatRemoved);
         };
-    }, [socket, currentChat, setChats]);
+    }, [socket, currentChat, setChats, updateChatList, updateChatListOnDelete, user]);
 
-    const handleAddConversation = (newChat) => {
-        setChats((prevChat) => [newChat, ...prevChat]);
-    };
+    const handleAddConversation = useCallback(
+        (newChat) => {
+            setChats((prevChat) => [newChat, ...prevChat]);
+        },
+        [setChats],
+    );
 
-    const handleUiChange = (uiName) => {
+    const handleUiChange = useCallback((uiName) => {
         setCurrentUI(uiName);
-        if (uiName === 'profile') setIsDropdownOpen(!isDropdownOpen);
-        else setBubbleMenuContainer(!bubbleMenuContainer);
-    };
+        if (uiName === 'profile') setIsDropdownOpen((prev) => !prev);
+        else setBubbleMenuContainer((prev) => !prev);
+    }, []);
 
     const handleChatClick = useCallback(
         (chatToOpen) => {
@@ -199,7 +197,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                                 alt="profile"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    setIsDropdownOpen(!isDropdownOpen);
+                                    setIsDropdownOpen((prev) => !prev);
                                 }}
                             />
 
@@ -243,7 +241,12 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                                 const isSomeoneTyping = !!(typingChats[chat._id] && typingChats[chat._id].length > 0);
                                 return (
                                     <div key={chat._id} onClick={() => handleChatClick(chat)}>
-                                        <Conversation loggedUser={loggedUser} chat={chat} isTyping={isSomeoneTyping} />
+                                        <Conversation
+                                            loggedUser={user}
+                                            chat={chat}
+                                            isTyping={isSomeoneTyping}
+                                            currentChat={currentChat}
+                                        />
                                     </div>
                                 );
                             })
@@ -271,9 +274,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                         <button
                             type="button"
                             className="newChatButton"
-                            onClick={() => {
-                                setBubbleMenuContainer(!bubbleMenuContainer);
-                            }}
+                            onClick={() => setBubbleMenuContainer((prev) => !prev)}
                         >
                             <img src={pen} alt="New Chat" />
                         </button>
