@@ -19,6 +19,7 @@ const ChatHeader = ({
     setFetchAgain,
     setShowProfileInfo,
     setMessages,
+    socket
 }) => {
     const [showMoreOption, setShowMoreOption] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -32,7 +33,7 @@ const ChatHeader = ({
     useClickOutside(optionsContainerRef, () => setShowMoreOption(false));
 
     const executeChatDeletion = async () => {
-        const { _id: chatId, isGroupChat } = currentChat;
+        const { _id: chatId, isGroupChat, members } = currentChat;
 
         const route = isGroupChat ? '/chat/leave' : '/chat/deleteChat';
         const method = isGroupChat ? 'PUT' : 'DELETE';
@@ -45,6 +46,12 @@ const ChatHeader = ({
                 url: route,
                 data,
                 headers: { Authorization: `Bearer ${user.authToken}` },
+            });
+
+            socket.emit('chat:deleted', {
+                chatId,
+                members,
+                senderId: user._id
             });
 
             toast.success(successMsg);

@@ -133,6 +133,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                             setShowConfirmModal={setShowConfirmModal}
                             setShowProfileInfo={setShowProfileInfo}
                             setMessages={setMessages}
+                            socket={socket}
                         />
 
                         <ChatMessages

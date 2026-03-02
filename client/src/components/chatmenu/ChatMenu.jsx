@@ -135,11 +135,21 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             });
         };
 
+        const handleChatRemoved = ({ chatId }) => {
+            setChats((prev) => prev.filter((c) => c._id !== chatId));
+
+            setCurrentChat((prevCurrentChat) => {
+                if (prevCurrentChat && prevCurrentChat._id === chatId) return null;
+                return prevCurrentChat;
+            });
+        };
+
         socket.on('chat:message-received', handleMessageReceived);
         socket.on('chat:message-deleted', handleMessageDeleted);
         socket.on('typing:start', handleTyping);
         socket.on('typing:stop', handleStopTyping);
         socket.on('chat:new-received', handleNewChatReceived);
+        socket.on('chat:removed', handleChatRemoved);
 
         return () => {
             socket.off('chat:message-received', handleMessageReceived);
@@ -147,6 +157,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             socket.off('typing:start', handleTyping);
             socket.off('typing:stop', handleStopTyping);
             socket.off('chat:new-received', handleNewChatReceived);
+            socket.off('chat:removed', handleChatRemoved);
         };
     }, [socket, currentChat, setChats]);
 
