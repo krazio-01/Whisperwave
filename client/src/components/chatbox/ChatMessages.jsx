@@ -7,7 +7,7 @@ import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import ConfirmModal from '../confimModal/ConfirmModal';
 import { toast } from 'react-toastify';
 
-const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typingUsers }) => {
+const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typingUsers, updateChatListOnDelete }) => {
     const [status, setStatus] = useState({
         loading: false,
         hasMore: false,
@@ -148,6 +148,8 @@ const ChatMessages = ({ currentChat, user, socket, messages, setMessages, typing
                 newLastMessage: data.newLastMessage,
                 members: currentChat.members.map((m) => m._id || m),
             };
+
+            updateChatListOnDelete(currentChat._id, data?.newLastMessage, data.messageCreatedAt);
 
             socket.emit('chat:message-deleted', socketPayload);
 

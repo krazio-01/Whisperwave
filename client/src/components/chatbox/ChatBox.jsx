@@ -13,7 +13,7 @@ import encryptionManager from '../../services/EncryptionManager';
 import './chatbox.css';
 
 const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => {
-    const { currentChat, setCurrentChat, user } = ChatState();
+    const { currentChat, setCurrentChat, user, updateChatListOnDelete } = ChatState();
 
     const profileRef = useRef(null);
     const currentChatRef = useRef(currentChat);
@@ -143,6 +143,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                             messages={messages}
                             setMessages={setMessages}
                             typingUsers={typingUsers}
+                            updateChatListOnDelete={updateChatListOnDelete}
                         />
 
                         <ChatInput currentChat={currentChat} user={user} socket={socket} setMessages={setMessages} />

@@ -19,7 +19,7 @@ const ChatHeader = ({
     setFetchAgain,
     setShowProfileInfo,
     setMessages,
-    socket
+    socket,
 }) => {
     const [showMoreOption, setShowMoreOption] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -51,7 +51,7 @@ const ChatHeader = ({
             socket.emit('chat:deleted', {
                 chatId,
                 members,
-                senderId: user._id
+                senderId: user._id,
             });
 
             toast.success(successMsg);
