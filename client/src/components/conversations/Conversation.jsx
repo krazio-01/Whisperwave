@@ -1,13 +1,10 @@
 import { useMemo, memo } from 'react';
 import { getProfilePic, getCurrentChatName } from '../../utils/chatUtils';
-import { ChatState } from '../../context/ChatProvider';
 import encryptionManager from '../../services/EncryptionManager';
 import moment from 'moment';
 import './conversation.css';
 
-const Conversation = ({ loggedUser, chat, isTyping }) => {
-    const { currentChat } = ChatState();
-
+const Conversation = ({ loggedUser, chat, isTyping, currentChat }) => {
     const lastMessageContent = useMemo(() => {
         if (!chat.lastMessage) return '';
 
