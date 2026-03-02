@@ -35,6 +35,16 @@ const socketHandler = (io) => {
             });
         });
 
+        socket.on('chat:deleted', ({ chatId, members, senderId }) => {
+            if (!members) return;
+
+            members.forEach((member) => {
+                const memberId = member._id || member;
+                if (memberId.toString() !== senderId.toString() && memberId.toString() !== socket.id)
+                    socket.to(memberId).emit('chat:removed', { chatId });
+            });
+        });
+
         socket.on('chat:send-message', (newMessageReceived) => {
             const members = newMessageReceived.members;
             if (!members || members.length === 0) return;
