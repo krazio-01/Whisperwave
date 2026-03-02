@@ -407,6 +407,7 @@
         sans-serif;
     line-height: 130%;
     letter-spacing: 0.01em;
+    transition: height 300ms ease;
 }
 
 .chatMessageInput:is(:focus, :valid) {

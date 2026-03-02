@@ -33,11 +33,23 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
         const textarea = inputRef.current;
         if (!textarea) return;
 
-        textarea.style.height = BASE_HEIGHT;
-        const scrollHeight = textarea.scrollHeight;
-        const clientHeight = textarea.clientHeight;
+        const currentHeight = textarea.clientHeight;
 
-        if (scrollHeight > clientHeight) textarea.style.height = `${scrollHeight}px`;
+        textarea.style.transition = 'none';
+        textarea.style.height = BASE_HEIGHT;
+        const targetHeight = textarea.scrollHeight;
+
+        if (currentHeight === targetHeight) {
+            textarea.style.height = `${currentHeight}px`;
+            textarea.style.transition = '';
+            return;
+        }
+
+        textarea.style.height = `${currentHeight}px`;
+        void textarea.offsetHeight;
+
+        textarea.style.transition = '';
+        textarea.style.height = `${targetHeight}px`;
     }, []);
 
     const handleChange = (e) => {
