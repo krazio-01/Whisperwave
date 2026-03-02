@@ -23,6 +23,18 @@ const socketHandler = (io) => {
             activeChats.delete(socket.id);
         });
 
+        socket.on('chat:new', (newChatData) => {
+            if (!newChatData || !newChatData.members) return;
+
+            const senderId = newChatData.isGroupChat ? newChatData.groupAdmin._id : newChatData.members[0]._id;
+
+            newChatData.members.forEach((member) => {
+                const memberId = member._id || member;
+                if (memberId.toString() !== senderId.toString() && memberId.toString() !== socket.id)
+                    socket.to(memberId).emit('chat:new-received', newChatData);
+            });
+        });
+
         socket.on('chat:send-message', (newMessageReceived) => {
             const members = newMessageReceived.members;
             if (!members || members.length === 0) return;
