@@ -12,7 +12,7 @@ import sendIcon from '../../Assets/images/send.png';
 import encryptionManager from '../../services/EncryptionManager';
 import { ChatState } from '../../context/ChatProvider';
 
-const BASE_HEIGHT = '4.5rem';
+const BASE_HEIGHT = 'auto';
 
 const ChatInput = ({ currentChat, user, socket, setMessages }) => {
     const { updateChatList } = ChatState();
