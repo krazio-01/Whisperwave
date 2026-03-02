@@ -128,16 +128,25 @@ const ChatMenu = ({ socket, fetchAgain }) => {
             });
         };
 
+        const handleNewChatReceived = (newChat) => {
+            setChats((prev) => {
+                if (prev.some((c) => c._id === newChat._id)) return prev;
+                return [newChat, ...prev];
+            });
+        };
+
         socket.on('chat:message-received', handleMessageReceived);
         socket.on('chat:message-deleted', handleMessageDeleted);
         socket.on('typing:start', handleTyping);
         socket.on('typing:stop', handleStopTyping);
+        socket.on('chat:new-received', handleNewChatReceived);
 
         return () => {
             socket.off('chat:message-received', handleMessageReceived);
             socket.off('chat:message-deleted', handleMessageDeleted);
             socket.off('typing:start', handleTyping);
             socket.off('typing:stop', handleStopTyping);
+            socket.off('chat:new-received', handleNewChatReceived);
         };
     }, [socket, currentChat, setChats]);
 
@@ -278,9 +287,9 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                     </div>
                 </>
             ) : currentUI === 'message' ? (
-                <NewChat setCurrentUI={setCurrentUI} handleAddConversation={handleAddConversation} />
+                <NewChat setCurrentUI={setCurrentUI} handleAddConversation={handleAddConversation} socket={socket} />
             ) : currentUI === 'group' ? (
-                <NewGroup setCurrentUI={setCurrentUI} />
+                <NewGroup setCurrentUI={setCurrentUI} socket={socket} />
             ) : currentUI === 'profile' ? (
                 <ProfileInfo style={{ width: '100%' }} currentUI={currentUI} setCurrentUI={setCurrentUI} />
             ) : null}

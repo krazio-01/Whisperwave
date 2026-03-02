@@ -14,7 +14,7 @@ import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import { HiUserGroup } from 'react-icons/hi';
 import './newgroup.css';
 
-const NewGroup = ({ setCurrentUI }) => {
+const NewGroup = ({ setCurrentUI, socket }) => {
     const [initialLoading, setInitialLoading] = useState(false);
     const [createGroupLoading, setCeateGroupLoading] = useState(false);
     const [step, setStep] = useState(1);
@@ -116,6 +116,7 @@ const NewGroup = ({ setCurrentUI }) => {
 
             const { data } = await axios.post(`/chat/group`, formData, config);
             setChats([data, ...chats]);
+            socket.emit('chat:new', data);
             setCurrentUI('chat');
             toast.success('New Group Chat Created!');
         } catch (error) {

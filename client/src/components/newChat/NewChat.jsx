@@ -8,7 +8,7 @@ import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import { toast } from 'react-toastify';
 import './newchat.css';
 
-const NewChat = ({ setCurrentUI, handleAddConversation }) => {
+const NewChat = ({ setCurrentUI, handleAddConversation, socket }) => {
     const [searchLoading, setSearchLoading] = useState(false);
     const [chatLoading, setChatLoading] = useState(false);
     const [username, setUsername] = useState('');
@@ -51,8 +51,9 @@ const NewChat = ({ setCurrentUI, handleAddConversation }) => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.authToken}` } };
             setChatLoading(true);
-            const response = await axios.post('/chat/newChat', { senderId, selectedReceiverId }, config);
-            handleAddConversation(response.data);
+            const { data } = await axios.post('/chat/newChat', { senderId, selectedReceiverId }, config);
+            handleAddConversation(data);
+            socket.emit('chat:new', data);
             setCurrentUI('chat');
         } catch (error) {
             if (error.response && error.response.status === 400)
