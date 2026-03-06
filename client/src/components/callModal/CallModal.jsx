@@ -1,5 +1,5 @@
 import { MdCallEnd, MdCall, MdMic, MdMicOff, MdVideocam, MdVideocamOff } from 'react-icons/md';
-import './callModal.css';
+import './CallModal.css';
 
 const CallModal = ({ user, call, toggleMedia, endCall, acceptCall }) => {
     const { status, type, payload, local, remote } = call;
