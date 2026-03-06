@@ -1,4 +1,5 @@
 import { MdCallEnd, MdCall, MdMic, MdMicOff, MdVideocam, MdVideocamOff } from 'react-icons/md';
+import { createPortal } from 'react-dom';
 import './CallModal.css';
 
 const CallModal = ({ user, call, toggleMedia, endCall, acceptCall }) => {
@@ -12,7 +13,7 @@ const CallModal = ({ user, call, toggleMedia, endCall, acceptCall }) => {
 
     if (status === 'idle') return null;
 
-    return (
+    return createPortal(
         <div className="call-modal-overlay">
             {/* incoming call*/}
             {status === 'incoming' && (
@@ -137,7 +138,8 @@ const CallModal = ({ user, call, toggleMedia, endCall, acceptCall }) => {
                     </div>
                 </div>
             )}
-        </div>
+        </div>,
+        document.body,
     );
 };
 
