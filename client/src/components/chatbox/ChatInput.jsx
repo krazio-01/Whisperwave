@@ -11,6 +11,7 @@ import previewClose from '../../Assets/images/previewClose.png';
 import sendIcon from '../../Assets/images/send.png';
 import encryptionManager from '../../services/EncryptionManager';
 import { ChatState } from '../../context/ChatProvider';
+import useClickOutside from '../../hooks/useClickOutside';
 
 const BASE_HEIGHT = 'auto';
 
@@ -28,6 +29,8 @@ const ChatInput = ({ currentChat, user, socket, setMessages }) => {
     const inputRef = useRef(null);
     const pickerRef = useRef(null);
     const imagePreviewRef = useRef(null);
+
+    useClickOutside(pickerRef, () => setIsPickerVisible(false));
 
     const adjustTextareaHeight = useCallback(() => {
         const textarea = inputRef.current;
