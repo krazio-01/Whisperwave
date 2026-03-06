@@ -13,7 +13,7 @@ import encryptionManager from '../../services/EncryptionManager';
 import './chatbox.css';
 
 const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => {
-    const { currentChat, setCurrentChat, user, updateChatListOnDelete } = ChatState();
+    const { currentChat, setCurrentChat, user, updateChatListOnDelete, updateChatList } = ChatState();
 
     const profileRef = useRef(null);
     const currentChatRef = useRef(currentChat);
@@ -40,7 +40,7 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         return () => {
             setTypingUsers([]);
             setShowProfileInfo(false);
-        }
+        };
     }, [currentChat]);
 
     useEffect(() => {
@@ -146,7 +146,13 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
                             updateChatListOnDelete={updateChatListOnDelete}
                         />
 
-                        <ChatInput currentChat={currentChat} user={user} socket={socket} setMessages={setMessages} />
+                        <ChatInput
+                            currentChat={currentChat}
+                            user={user}
+                            socket={socket}
+                            setMessages={setMessages}
+                            updateChatList={updateChatList}
+                        />
                     </>
                 ) : (
                     <div className="noConversation-wrapper">

@@ -10,14 +10,11 @@ import fileSelection from '../../Assets/images/fileSelection.png';
 import previewClose from '../../Assets/images/previewClose.png';
 import sendIcon from '../../Assets/images/send.png';
 import encryptionManager from '../../services/EncryptionManager';
-import { ChatState } from '../../context/ChatProvider';
 import useClickOutside from '../../hooks/useClickOutside';
 
 const BASE_HEIGHT = 'auto';
 
-const ChatInput = ({ currentChat, user, socket, setMessages }) => {
-    const { updateChatList } = ChatState();
-
+const ChatInput = ({ currentChat, user, socket, setMessages, updateChatList }) => {
     const [newMessage, setNewMessage] = useState('');
     const [msgSendLoading, setMsgSendLoading] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
