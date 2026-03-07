@@ -8,6 +8,8 @@
     flex: 2;
     background: #292929;
     margin-right: 1px;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .chatbox {
@@ -17,7 +19,7 @@
     background-size: cover;
     background-position: center;
     filter: blur(0px);
-    /* background: radial-gradient(circle at 50% 40%, #1e1e26 0%, #121214 100%); */
+    min-width: 0;
 }
 
 .modal-overlay {
