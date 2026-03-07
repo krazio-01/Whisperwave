@@ -37,11 +37,14 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
 
     useEffect(() => {
         currentChatRef.current = currentChat;
+    }, [currentChat]);
+
+    useEffect(() => {
         return () => {
             setTypingUsers([]);
             setShowProfileInfo(false);
         };
-    }, [currentChat]);
+    }, [currentChat?._id]);
 
     useEffect(() => {
         if (Notification.permission !== 'granted' && Notification.permission !== 'denied')
