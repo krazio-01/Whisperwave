@@ -51,6 +51,7 @@ const fetchMessages = async (req, res) => {
 
             // cache-hit-check
             if (cachedData) {
+                res.set('X-Cache', 'HIT');
                 return res.json({
                     messages: cachedData.list,
                     currentBucketId: cachedData.meta.currentBucketId,
@@ -62,6 +63,8 @@ const fetchMessages = async (req, res) => {
 
         const query = { chat: chatId };
         if (targetBucketId) query.bucketId = targetBucketId;
+
+        res.set('X-Cache', 'MISS');
 
         const buckets = await MessageBucket.find(query)
             .sort({ bucketId: -1 })
