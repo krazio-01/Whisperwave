@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { CSSTransition } from 'react-transition-group';
 import ProfileInfo from '../miscellaneous/profileInfo/Profile';
-import CallModal from '../callModal/callModal';
+import CallModal from '../callModal/CallModal';
 import ChatHeader from './ChatHeader';
 import ChatInput from './ChatInput';
 import ChatMessages from './ChatMessages';
