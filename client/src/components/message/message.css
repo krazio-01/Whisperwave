@@ -381,6 +381,17 @@
         font-size: 14px;
         max-width: 37rem;
     }
+
+    .message-menu {
+        right: 0 !important;
+    }
+
+    .message.own {
+        .message-menu,
+        .info-popover {
+            left: auto !important;
+        }
+    }
 }
 
 @media (max-width: 768px) {
