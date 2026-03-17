@@ -1,5 +1,8 @@
 const express = require('express');
+
 const dotenv = require('dotenv');
+dotenv.config();
+
 const cors = require('cors');
 const path = require('path');
 const { Server } = require('socket.io');
@@ -11,8 +14,6 @@ const userRoute = require('./routes/userRoutes');
 const messageRoute = require('./routes/messageRoutes');
 const chatRoute = require('./routes/chatRoutes');
 
-// Config
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8800;
 
