@@ -97,20 +97,12 @@ const updateUserProfile = async (req, res) => {
             user.emailOtp = otp;
             user.otpExpire = Date.now() + 10 * 60 * 1000; // 10 Minutes
 
-            const subject = 'Verify Email Change';
-            const html = `
-                <div style="font-family: sans-serif; padding: 20px;">
-                    <h2>Change Email Request</h2>
-                    <p>Hello ${user.username},</p>
-                    <p>You requested to change your email to <b>${email}</b>.</p>
-                    <p>Use the code below to verify this change:</p>
-                    <h1 style="color: #8b5cf6; letter-spacing: 5px;">${otp}</h1>
-                    <p>This code expires in 10 minutes.</p>
-                </div>
-            `;
-
             try {
-                await sendEmail(email, subject, null, html);
+                await sendEmail(email, 'Verify Email Change', 'otpEmail.ejs', {
+                    username: user.username,
+                    newEmail: email,
+                    otp: otp
+                });
                 responseUpdates.otpSent = true;
             } catch (emailErr) {
                 console.error('Email send failed:', emailErr);
