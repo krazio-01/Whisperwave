@@ -26,7 +26,7 @@ app.use(cors({ origin: process.env.FRONTEND_URL }));
 
 // View Engine
 app.set('view engine', 'ejs');
-app.set('views', [path.join(__dirname, 'views'), path.join(__dirname, 'templates')]);
+app.set('views', path.join(__dirname, 'views'));
 
 // API Routes
 app.use('/api/auth', authRoute);
