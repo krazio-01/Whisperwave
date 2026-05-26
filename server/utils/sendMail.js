@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
+const ejs = require('ejs');
+const path = require('path');
 
-const sendEmail = async (userEmail, subject, text, html) => {
+const deliverSmtpEmail = async (userEmail, subject, text, html) => {
     try {
         const transporter = nodemailer.createTransport({
             host: process.env.BREVO_HOST,
@@ -16,17 +18,31 @@ const sendEmail = async (userEmail, subject, text, html) => {
             from: `"Whisperwave" <${process.env.MAIL_FROM}>`,
             to: userEmail,
             subject: subject,
+            text: text,
+            html: html,
         };
 
-        if (text) mail_configs.text = text;
-        if (html) mail_configs.html = html;
-
-        const info = await transporter.sendMail(mail_configs);
-
-        return info;
-    }
-    catch (error) {
+        await transporter.sendMail(mail_configs);
+    } catch (error) {
         console.error('Error sending email:', error);
+        throw error;
+    }
+};
+
+const sendEmail = async (to, subject, templateFilename, variables = {}) => {
+    try {
+        const templatePath = path.join(__dirname, '../templates', templateFilename);
+
+        const templateData = {
+            ...variables,
+            year: new Date().getFullYear().toString(),
+        };
+
+        const htmlContent = await ejs.renderFile(templatePath, templateData);
+
+        await deliverSmtpEmail(to, subject, '', htmlContent);
+    } catch (error) {
+        console.error(`Failed to process email template ${templateFilename}:`, error);
         throw error;
     }
 };
