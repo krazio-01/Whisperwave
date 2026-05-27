@@ -9,6 +9,8 @@ import Contact from './components/contact/Contact';
 import Register from './pages/register/Register';
 import Login from './pages/login/Login';
 import ChatHome from './pages/home/ChatHome';
+import ForgotPassword from './pages/forgotPassword/ForgotPassword';
+import ResetPassword from './pages/resetPassword/ResetPassword';
 
 const baseURL = window.location.origin.includes("https")
     ? window.location.origin
@@ -30,6 +32,8 @@ const routes = [
     { path: '/login', element: <Login /> },
     { path: '/register', element: <Register /> },
     { path: '/home', element: <ChatHome /> },
+    { path: '/forgot-password', element: <ForgotPassword /> },
+    { path: '/reset-password/:token', element: <ResetPassword /> },
 ];
 
 function App() {

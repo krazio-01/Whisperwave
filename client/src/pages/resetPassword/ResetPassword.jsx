@@ -1,16 +1,16 @@
 import { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CircularProgress } from '@mui/material';
 import Mascot from '../../components/miscellaneous/mascot/Mascot';
-import './login.css';
+import '../login/login.css';
 
-const Login = () => {
-    const email = useRef();
+const ResetPassword = () => {
+    const { token } = useParams();
     const password = useRef();
-
+    const confirmPassword = useRef();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
@@ -18,21 +18,27 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (password.current.value !== confirmPassword.current.value) return toast.error('Passwords do not match!');
+
+        if (password.current.value.length < 6) return toast.error('Password must be at least 6 characters');
+
         setLoading(true);
 
         try {
-            const response = await axios.post('/auth/login', {
-                email: email.current.value,
-                password: password.current.value,
+            const response = await axios.put(`/auth/reset-password/${token}`, {
+                newPassword: password.current.value,
             });
 
             if (response.status === 200) {
-                localStorage.setItem('user', JSON.stringify(response.data));
-                toast.success('Login successful!');
-                navigate('/home');
-            } else toast.error('Invalid credentials!');
+                toast.success('Password updated successfully!');
+                navigate('/login');
+            }
         } catch (err) {
-            if (err.response && err.response.data && err.response.data.Error) toast.error(err.response.data.Error);
+            console.log('md-err: ', err);
+            if (err.response && err.response.data && err.response.data.message) toast.error(err.response.data.message);
+            else toast.error('Invalid or expired token!');
+
             setLoading(false);
         }
     };
@@ -52,42 +58,36 @@ const Login = () => {
                             <label>WhisperWave</label>
                         </Link>
                     </div>
-                    <span className="title">Welcome Back!</span>
+                    <span className="title">Create New Password</span>
 
                     <form onSubmit={handleSubmit} className="loginForm">
                         <input
                             className="loginInput"
-                            type="email"
-                            ref={email}
-                            placeholder="Email"
-                            onFocus={() => setMascotAction('looking')}
+                            type="password"
+                            ref={password}
+                            placeholder="New Password"
+                            required
+                            onFocus={() => setMascotAction('hiding')}
                             onBlur={() => setMascotAction('idle')}
                         />
                         <input
                             className="loginInput"
                             type="password"
-                            ref={password}
-                            placeholder="Password"
+                            ref={confirmPassword}
+                            placeholder="Confirm New Password"
+                            required
                             onFocus={() => setMascotAction('hiding')}
                             onBlur={() => setMascotAction('idle')}
                         />
 
-                        <div className="forgot-pass-link">
-                            <Link to="/forgot-password">Forgot password?</Link>
-                        </div>
-
                         <button disabled={loading} type="submit" className="loginBtn">
-                            {loading ? <CircularProgress size={28} color="inherit" /> : <span>Login</span>}
+                            {loading ? <CircularProgress size={28} color="inherit" /> : <span>Update Password</span>}
                         </button>
                     </form>
-
-                    <p>
-                        Don't have an account? &nbsp; <Link to="/register">Register</Link>
-                    </p>
                 </div>
             </div>
         </div>
     );
 };
 
-export default Login;
+export default ResetPassword;
