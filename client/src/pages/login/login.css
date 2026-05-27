@@ -95,6 +95,19 @@
         width: 90%;
         gap: 22px;
 
+        .forgot-password-message {
+            font-size: 15px;
+            color: #52525b;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .redirection-link {
+            width: 100%;
+            text-decoration: none;
+        }
+
         .forgot-pass-link {
             width: 100%;
             text-align: left;
