@@ -28,6 +28,8 @@ const UserSchema = new mongoose.Schema(
         emailOtp: { type: String, default: null },
         otpExpire: { type: Date, default: null },
         profilePicture: { type: String, default: '' },
+        resetPasswordToken: { type: String, default: null },
+        resetPasswordExpire: { type: Date, default: null },
     },
     { timestamps: true },
 );
