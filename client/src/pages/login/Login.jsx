@@ -21,7 +21,6 @@ const Login = () => {
         setLoading(true);
 
         try {
-            // Send a login request to the backend API using Axios
             const response = await axios.post('/auth/login', {
                 email: email.current.value,
                 password: password.current.value,
@@ -72,6 +71,11 @@ const Login = () => {
                             onFocus={() => setMascotAction('hiding')}
                             onBlur={() => setMascotAction('idle')}
                         />
+
+                        <div className="forgot-pass-link">
+                            <Link to="/forgot-password">Forgot password?</Link>
+                        </div>
+
                         <button disabled={loading} type="submit" className="loginBtn">
                             {loading ? <CircularProgress size={28} color="inherit" /> : <span>Login</span>}
                         </button>
