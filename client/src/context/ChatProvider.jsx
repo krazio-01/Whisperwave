@@ -17,10 +17,6 @@ const ChatProvider = ({ children }) => {
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
         setUser(user);
-
-        if (user) navigate('/home');
-        else navigate('/');
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const updateChatList = useCallback(
