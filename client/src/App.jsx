@@ -6,11 +6,11 @@ import Footer from './components/footer/Footer';
 import Home from './components/home/Home';
 import About from './components/about/About';
 import Contact from './components/contact/Contact';
-import Register from './pages/register/Register';
-import Login from './pages/login/Login';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 import ChatHome from './pages/home/ChatHome';
-import ForgotPassword from './pages/forgotPassword/ForgotPassword';
-import ResetPassword from './pages/resetPassword/ResetPassword';
 
 axios.defaults.baseURL = import.meta.env.DEV ? `${import.meta.env.VITE_SERVER_URL}/api` : '/api';
 

@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CircularProgress } from '@mui/material';
 import Mascot from '../../components/miscellaneous/mascot/Mascot';
-import './register.css';
+import './auth.css';
 
 const Register = () => {
     const username = useRef();
@@ -66,14 +66,14 @@ const Register = () => {
     };
 
     return (
-        <div className="containerRegister">
-            <div className="register-div">
-                <div className="regCircle rOne"></div>
-                <div className="regCircle rTwo"></div>
-                <div className="regCircle rThree"></div>
-                <div className="shadow"></div>
+        <div className="auth-container">
+            <div className="auth-wrapper">
+                <div className="auth-circle shape-top-right"></div>
+                <div className="auth-circle shape-left-mid"></div>
+                <div className="auth-circle shape-right-mid shape-large"></div>
+                <div className="auth-shadow"></div>
 
-                <div className="registerBox">
+                <div className="auth-box">
                     <Mascot action={mascotAction} />
 
                     <div className="logo">
@@ -83,7 +83,7 @@ const Register = () => {
                     </div>
                     <span className="title">Create Account</span>
 
-                    <form onSubmit={handleSubmit} className="registerForm">
+                    <form onSubmit={handleSubmit} className="auth-form">
                         <div className="uploadAvatar" data-tooltip="Upload Profile Photo">
                             <input
                                 style={{ display: 'none' }}
@@ -102,43 +102,47 @@ const Register = () => {
                         </div>
 
                         <input
-                            className="registerInput"
+                            className="auth-input"
                             type="text"
                             ref={username}
                             placeholder="Username"
                             onFocus={() => setMascotAction('looking')}
                             onBlur={() => setMascotAction('idle')}
+                            required
                         />
 
                         <input
-                            className="registerInput"
+                            className="auth-input"
                             type="email"
                             ref={email}
                             placeholder="Email"
                             onFocus={() => setMascotAction('looking')}
                             onBlur={() => setMascotAction('idle')}
+                            required
                         />
 
                         <input
-                            className="registerInput"
+                            className="auth-input"
                             type="password"
                             ref={password}
                             minLength="1"
                             placeholder="Password"
                             onFocus={() => setMascotAction('hiding')}
                             onBlur={() => setMascotAction('idle')}
+                            required
                         />
 
                         <input
-                            className="registerInput"
+                            className="auth-input"
                             type="password"
                             ref={confirmPass}
                             placeholder="Confirm Password"
                             onFocus={() => setMascotAction('hiding')}
                             onBlur={() => setMascotAction('idle')}
+                            required
                         />
 
-                        <button disabled={loading} type="submit" className="regBtn">
+                        <button disabled={loading} type="submit" className="auth-btn">
                             {loading ? <CircularProgress size={28} color="inherit" /> : <span>Register</span>}
                         </button>
                     </form>

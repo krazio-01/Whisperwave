@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CircularProgress } from '@mui/material';
 import Mascot from '../../components/miscellaneous/mascot/Mascot';
-import '../login/login.css';
+import './auth.css';
 
 const ResetPassword = () => {
     const { token } = useParams();
@@ -44,13 +44,13 @@ const ResetPassword = () => {
     };
 
     return (
-        <div className="containerLogin">
-            <div className="login-div">
-                <div className="loginCircle lOne"></div>
-                <div className="loginCircle lTwo"></div>
-                <div className="loginShadow"></div>
+        <div className="auth-container">
+            <div className="auth-wrapper compact-form">
+                <div className="auth-circle shape-right-mid"></div>
+                <div className="auth-circle shape-left-mid"></div>
+                <div className="auth-shadow"></div>
 
-                <div className="loginBox">
+                <div className="auth-box">
                     <Mascot action={mascotAction} />
 
                     <div className="logo">
@@ -60,9 +60,9 @@ const ResetPassword = () => {
                     </div>
                     <span className="title">Create New Password</span>
 
-                    <form onSubmit={handleSubmit} className="loginForm">
+                    <form onSubmit={handleSubmit} className="auth-form">
                         <input
-                            className="loginInput"
+                            className="auth-input"
                             type="password"
                             ref={password}
                             placeholder="New Password"
@@ -71,7 +71,7 @@ const ResetPassword = () => {
                             onBlur={() => setMascotAction('idle')}
                         />
                         <input
-                            className="loginInput"
+                            className="auth-input"
                             type="password"
                             ref={confirmPassword}
                             placeholder="Confirm New Password"
@@ -80,7 +80,7 @@ const ResetPassword = () => {
                             onBlur={() => setMascotAction('idle')}
                         />
 
-                        <button disabled={loading} type="submit" className="loginBtn">
+                        <button disabled={loading} type="submit" className="auth-btn">
                             {loading ? <CircularProgress size={28} color="inherit" /> : <span>Update Password</span>}
                         </button>
                     </form>
