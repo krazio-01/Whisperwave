@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CircularProgress } from '@mui/material';
 import Mascot from '../../components/miscellaneous/mascot/Mascot';
-import '../login/login.css';
+import './auth.css';
 
 const ForgotPassword = () => {
     const email = useRef();
@@ -39,13 +39,13 @@ const ForgotPassword = () => {
     };
 
     return (
-        <div className="containerLogin">
-            <div className="login-div">
-                <div className="loginCircle lOne"></div>
-                <div className="loginCircle lTwo"></div>
-                <div className="loginShadow"></div>
+        <div className="auth-container">
+            <div className="auth-wrapper compact-form">
+                <div className="auth-circle shape-right-mid"></div>
+                <div className="auth-circle shape-left-mid"></div>
+                <div className="auth-shadow"></div>
 
-                <div className="loginBox">
+                <div className="auth-box">
                     <Mascot action={isEmailSent ? 'idle' : mascotAction} />
 
                     <div className="logo">
@@ -56,21 +56,21 @@ const ForgotPassword = () => {
                     <span className="title">Account Recovery</span>
 
                     {isEmailSent ? (
-                        <div className="loginForm">
+                        <div className="auth-form">
                             <p className='forgot-password-message'>
                                 If an account exists for that email, we have sent password reset instructions. Please
                                 check your inbox and spam folder.{' '}
                             </p>
 
                             <Link className='redirection-link' to="/login">
-                                <button className="loginBtn">Back to Login</button>
+                                <button className="auth-btn">Back to Login</button>
                             </Link>
                         </div>
                     ) : (
                         <>
-                            <form onSubmit={handleSubmit} className="loginForm">
+                            <form onSubmit={handleSubmit} className="auth-form">
                                 <input
-                                    className="loginInput"
+                                    className="auth-input"
                                     type="email"
                                     ref={email}
                                     placeholder="Enter your registered email"
@@ -79,7 +79,7 @@ const ForgotPassword = () => {
                                     onBlur={() => setMascotAction('idle')}
                                 />
 
-                                <button disabled={loading} type="submit" className="loginBtn">
+                                <button disabled={loading} type="submit" className="auth-btn">
                                     {loading ? (
                                         <CircularProgress size={28} color="inherit" />
                                     ) : (
