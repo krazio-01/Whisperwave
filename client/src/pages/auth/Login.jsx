@@ -29,7 +29,7 @@ const Login = () => {
             if (response.status === 200) {
                 localStorage.setItem('user', JSON.stringify(response.data));
                 toast.success('Login successful!');
-                navigate('/home');
+                navigate('/chat');
             } else toast.error('Invalid credentials!');
         } catch (err) {
             if (err.response && err.response.data && err.response.data.Error) toast.error(err.response.data.Error);
