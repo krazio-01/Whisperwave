@@ -11,6 +11,7 @@ import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import ChatHome from './pages/chat/ChatHome';
+import NotFound from './pages/notFound/NotFound';
 
 axios.defaults.baseURL = import.meta.env.DEV ? `${import.meta.env.VITE_SERVER_URL}/api` : '/api';
 
@@ -58,6 +59,10 @@ const routeConfig = [
         element: <RouteGuard isPrivate />,
         children: [{ path: '/chat', element: <ChatHome /> }],
     },
+    {
+        path: '*',
+        element: <NotFound />
+    }
 ];
 
 function App() {

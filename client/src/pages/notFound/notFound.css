@@ -1,0 +1,112 @@
+.not-found-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100svh;
+    width: 100%;
+    overflow: hidden;
+
+    .not-found-box {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 5rem 3rem;
+        width: 100%;
+        text-align: center;
+
+        .not-found-header {
+            .not-found-title {
+                font-size: 10rem;
+                font-weight: 800;
+                margin-bottom: 0.5rem;
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.2));
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                text-shadow: 0 4px 20px rgba(255, 255, 255, 0.05);
+            }
+        }
+    }
+
+    .not-found-content {
+        max-width: 50%;
+
+        .not-found-subtitle {
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .not-found-text {
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 3rem;
+            font-size: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .not-found-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.2rem;
+            width: 100%;
+
+            .not-found-link {
+                text-decoration: none;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+
+            .not-found-btn {
+                width: 70%;
+                padding: 16px 28px;
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.03);
+                color: rgba(255, 255, 255, 0.85);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                cursor: pointer;
+                font-size: 1.3rem;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            }
+
+            .not-found-btn:hover {
+                transform: translateY(-2px);
+                background: rgba(255, 255, 255, 0.08);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+                border-color: rgba(255, 255, 255, 0.3);
+                color: #ffffff;
+            }
+        }
+    }
+}
+
+@media (max-width: 600px) {
+    .not-found-container {
+        .not-found-box {
+            width: 90%;
+            padding: 3rem 1.5rem;
+        }
+
+        .not-found-header {
+            .not-found-title {
+                font-size: 5rem;
+            }
+        }
+
+        .not-found-content {
+            max-width: 100%;
+        }
+    }
+}
