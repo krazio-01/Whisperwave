@@ -3,14 +3,14 @@ import { useRoutes, Navigate, Outlet } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from './components/navbar/Navbar';
 import Footer from './components/footer/Footer';
-import Home from './components/home/Home';
-import About from './components/about/About';
-import Contact from './components/contact/Contact';
+import Home from './pages/home/Home';
+import About from './pages/about/About';
+import Contact from './pages/contact/Contact';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
-import ChatHome from './pages/home/ChatHome';
+import ChatHome from './pages/chat/ChatHome';
 
 axios.defaults.baseURL = import.meta.env.DEV ? `${import.meta.env.VITE_SERVER_URL}/api` : '/api';
 
@@ -31,7 +31,7 @@ const RouteGuard = ({ isPrivate, isPublic }) => {
     const isLoggedIn = checkIsLoggedIn();
 
     if (isPrivate && !isLoggedIn) return <Navigate to="/login" replace />;
-    if (isPublic && isLoggedIn) return <Navigate to="/home" replace />;
+    if (isPublic && isLoggedIn) return <Navigate to="/chat" replace />;
 
     return <Outlet />;
 };
@@ -56,7 +56,7 @@ const routeConfig = [
     },
     {
         element: <RouteGuard isPrivate />,
-        children: [{ path: '/home', element: <ChatHome /> }],
+        children: [{ path: '/chat', element: <ChatHome /> }],
     },
 ];
 
