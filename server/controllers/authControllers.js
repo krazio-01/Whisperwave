@@ -125,7 +125,7 @@ const verifyEmail = async (req, res) => {
             });
         }
 
-        user.emailToken = null;
+        user.emailToken = undefined;
         user.emailTokenExpire = undefined;
         user.isVerified = true;
         await user.save();
