@@ -30,13 +30,13 @@ const UserSchema = new mongoose.Schema(
         emailToken: { type: String },
         emailTokenExpire: { type: Date },
 
-        resetPasswordToken: { type: String, default: null },
-        resetPasswordExpire: { type: Date, default: null },
+        resetPasswordToken: { type: String },
+        resetPasswordExpire: { type: Date },
 
-        emailOtp: { type: String, default: null },
-        otpExpire: { type: Date, default: null },
-        tempEmail: { type: String, default: null },
-        lastUsernameChange: { type: Date, default: null },
+        emailOtp: { type: String },
+        otpExpire: { type: Date },
+        tempEmail: { type: String },
+        lastUsernameChange: { type: Date },
     },
     { timestamps: true },
 );
