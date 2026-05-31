@@ -4,32 +4,38 @@ const UserSchema = new mongoose.Schema(
     {
         username: {
             type: String,
-            require: true,
+            required: true,
             min: 3,
             max: 20,
             unique: true,
         },
-        lastUsernameChange: { type: Date, default: null },
         email: {
             type: String,
             required: true,
             max: 25,
             unique: true,
         },
-        tempEmail: { type: String, default: null },
+        profilePicture: {
+            type: String,
+            default: '',
+        },
+
         password: {
             type: String,
             required: true,
             min: 1,
         },
-        confirm_password: { type: String, min: 1 },
+
         isVerified: { type: Boolean, default: false },
         emailToken: { type: String },
-        emailOtp: { type: String, default: null },
-        otpExpire: { type: Date, default: null },
-        profilePicture: { type: String, default: '' },
+
         resetPasswordToken: { type: String, default: null },
         resetPasswordExpire: { type: Date, default: null },
+
+        emailOtp: { type: String, default: null },
+        otpExpire: { type: Date, default: null },
+        tempEmail: { type: String, default: null },
+        lastUsernameChange: { type: Date, default: null },
     },
     { timestamps: true },
 );
