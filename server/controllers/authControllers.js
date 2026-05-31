@@ -5,6 +5,10 @@ const sendEmail = require('../utils/sendMail');
 const { uploadImageToCloudinary } = require('../controllers/uploadController');
 const generateAuthToken = require('../config/generateAuthToken');
 
+const EMAIL_VERIFICATION_TTL = 24 * 60 * 60 * 1000; // 24H
+const PASSWORD_RESET_TTL = 15 * 60 * 1000;      // 15 minutes
+const PASSWORD_RESET_COOLDOWN = 2 * 60 * 1000;   // 2 minutes
+
 const registerUser = async (req, res) => {
     const { username, email, password, confirmPass } = req.body;
 
@@ -21,25 +25,22 @@ const registerUser = async (req, res) => {
     let usernameExist = await User.findOne({ username: username });
     if (usernameExist) return res.status(400).json({ Error: 'This username is already taken!' });
 
-    // create salt for hashing of password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // uploading profile picture of the user
     let imageUrl;
     if (req.file) imageUrl = await uploadImageToCloudinary(req.file, 'person');
     else imageUrl = 'https://res.cloudinary.com/krazio/image/upload/v1691851513/whisperwave/person/noAvatar_fr72mb.png';
 
-    // create new user
     const newUser = new User({
         username: username,
         email: email,
         password: hashedPassword,
         emailToken: crypto.randomBytes(32).toString('hex'),
+        emailTokenExpire: new Date(Date.now() + EMAIL_VERIFICATION_TTL),
         profilePicture: imageUrl,
     });
 
-    // save user and respond
     try {
         const user = await newUser.save();
 
@@ -47,9 +48,6 @@ const registerUser = async (req, res) => {
         else res.status(400).json({ Error: 'Something went wrong', success: false });
 
         const to = user.email;
-        let subject = null,
-            text = null,
-            html = null;
 
         // send verification mail to the user
         await sendEmail(to, 'Account Verification', 'verifyEmail.ejs', {
@@ -79,8 +77,26 @@ const loginUser = async (req, res) => {
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) return res.status(400).json({ Error: 'Invalid credentials!' });
 
-        if (!user.isVerified && user.emailToken !== null)
-            return res.status(400).json({ Error: 'Please verify your account first to login' });
+        if (!user.isVerified) {
+            const now = new Date();
+
+            if (!user.emailTokenExpire || user.emailTokenExpire < now) {
+                user.emailToken = crypto.randomBytes(32).toString('hex');
+                user.emailTokenExpire = new Date(Date.now() + EMAIL_VERIFICATION_TTL);
+                await user.save();
+
+                await sendEmail(user.email, 'Account Verification', 'verifyEmail.ejs', {
+                    username: user.username,
+                    verifyLink: `${process.env.BASE_URL}/api/auth/${user._id}/verify/${user.emailToken}`,
+                });
+
+                return res.status(400).json({
+                    Error: 'Account not verified. A fresh activation link has been sent to your inbox!'
+                });
+            }
+
+            return res.status(400).json({ Error: 'Please check your inbox to verify your account first!.' });
+        }
 
         res.status(200).json({
             _id: user._id,
@@ -103,7 +119,14 @@ const verifyEmail = async (req, res) => {
         const user = await User.findOne({ emailToken: token });
         if (!user) return res.status(404).render('emailVerification', { message: 'Your account is already verified' });
 
+        if (user.emailTokenExpire && user.emailTokenExpire < new Date()) {
+            return res.status(400).render('emailVerification', {
+                message: 'This verification link has expired. Log in to get a new one.'
+            });
+        }
+
         user.emailToken = null;
+        user.emailTokenExpire = undefined;
         user.isVerified = true;
         await user.save();
 
@@ -118,22 +141,18 @@ const verifyEmail = async (req, res) => {
 
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
-
     const SUCCESS_MESSAGE = 'If this email is registered, a reset link has been sent.';
 
     try {
         const user = await User.findOne({ email });
         if (!user) return res.status(200).json({ message: SUCCESS_MESSAGE });
 
-        const LinkTTL = 15 * 60 * 1000; // 15 minutes
         if (user.resetPasswordExpire && user.resetPasswordExpire > Date.now()) {
             const timeRemaining = user.resetPasswordExpire - Date.now();
-            const timePassed = LinkTTL - timeRemaining;
+            const timePassed = PASSWORD_RESET_TTL - timeRemaining;
 
-            const cooldownPeriod = 2 * 60 * 1000; // 2 minutes
-
-            if (timePassed < cooldownPeriod) {
-                const waitTime = Math.ceil((cooldownPeriod - timePassed) / 1000);
+            if (timePassed < PASSWORD_RESET_COOLDOWN) {
+                const waitTime = Math.ceil((PASSWORD_RESET_COOLDOWN - timePassed) / 1000);
                 return res.status(429).json({
                     message: `Please wait ${waitTime} seconds before requesting another link.`,
                 });
@@ -143,7 +162,7 @@ const forgotPassword = async (req, res) => {
         const resetToken = crypto.randomBytes(32).toString('hex');
 
         user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-        user.resetPasswordExpire = Date.now() + LinkTTL;
+        user.resetPasswordExpire = Date.now() + PASSWORD_RESET_TTL;
 
         await user.save();
 
