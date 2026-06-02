@@ -13,7 +13,7 @@ const ChatHome = () => {
     const [socket, setSocket] = useState(null);
 
     const SERVER_URL = useMemo(() => {
-        return window.location.origin.includes('https') ? window.location.origin : import.meta.env.VITE_SERVER_URL;
+        return import.meta.env.DEV ? import.meta.env.VITE_SERVER_URL : window.location.origin;
     }, []);
 
     useEffect(() => {
