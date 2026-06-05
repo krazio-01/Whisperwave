@@ -292,7 +292,7 @@ const ChatInfo = memo(({ currentChat, user, onBack, fetchAgain, setFetchAgain })
 const Profile = ({ style, currentUI, setCurrentUI, setShowProfileInfo, fetchAgain, setFetchAgain }) => {
     const { user, currentChat } = ChatState();
 
-    const handleBackToChat = useCallback(() => setCurrentUI('chat'), [setCurrentUI]);
+    const handleBackToChat = useCallback(() => window.history.back(), [setCurrentUI]);
     const handleCloseProfile = useCallback(() => setShowProfileInfo(false), [setShowProfileInfo]);
 
     return (

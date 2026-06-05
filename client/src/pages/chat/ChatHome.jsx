@@ -4,10 +4,11 @@ import ChatMenu from '../../components/chatmenu/ChatMenu';
 import ChatBox from '../../components/chatbox/ChatBox';
 import { ChatState } from '../../context/ChatProvider';
 import { CircularProgress } from '@mui/material';
+import useBackNvigation from '../../hooks/useBackNvigation';
 import './chathome.css';
 
 const ChatHome = () => {
-    const { user, currentChat, setUser } = ChatState();
+    const { user, currentChat, setCurrentChat, setUser } = ChatState();
 
     const [fetchAgain, setFetchAgain] = useState(false);
     const [socket, setSocket] = useState(null);
@@ -15,6 +16,8 @@ const ChatHome = () => {
     const SERVER_URL = useMemo(() => {
         return import.meta.env.DEV ? import.meta.env.VITE_SERVER_URL : window.location.origin;
     }, []);
+
+    useBackNvigation(!!currentChat, () => setCurrentChat(null));
 
     useEffect(() => {
         const loggedInUser = JSON.parse(localStorage.getItem('user'));

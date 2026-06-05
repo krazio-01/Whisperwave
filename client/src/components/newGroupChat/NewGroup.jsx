@@ -14,7 +14,7 @@ import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import { HiUserGroup } from 'react-icons/hi';
 import './newgroup.css';
 
-const NewGroup = ({ setCurrentUI, socket }) => {
+const NewGroup = ({ socket }) => {
     const [initialLoading, setInitialLoading] = useState(false);
     const [createGroupLoading, setCeateGroupLoading] = useState(false);
     const [step, setStep] = useState(1);
@@ -117,14 +117,14 @@ const NewGroup = ({ setCurrentUI, socket }) => {
             const { data } = await axios.post(`/chat/group`, formData, config);
             setChats([data, ...chats]);
             socket.emit('chat:new', data);
-            setCurrentUI('chat');
+            window.history.back();
             toast.success('New Group Chat Created!');
         } catch (error) {
             toast.error(error?.response?.data || 'Failed to Create the Chat!');
         } finally {
             setCeateGroupLoading(false);
         }
-    }, [groupChatName, selectedUsers, selectedFile, user.authToken, chats, setChats, setCurrentUI]);
+    }, [groupChatName, selectedUsers, selectedFile, user.authToken, chats, setChats]);
 
     const handleSearchChange = (e) => {
         const val = e.target.value;
@@ -150,7 +150,7 @@ const NewGroup = ({ setCurrentUI, socket }) => {
                         className="backButtonGroup"
                         src={backBtnIcon}
                         alt="Back"
-                        onClick={() => setCurrentUI('chat')}
+                        onClick={() => window.history.back()}
                     />
                     <span>Add Members</span>
                 </div>

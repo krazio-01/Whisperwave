@@ -8,7 +8,7 @@ import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import { toast } from 'react-toastify';
 import './newchat.css';
 
-const NewChat = ({ setCurrentUI, handleAddConversation, socket }) => {
+const NewChat = ({ handleAddConversation, socket }) => {
     const [searchLoading, setSearchLoading] = useState(false);
     const [chatLoading, setChatLoading] = useState(false);
     const [username, setUsername] = useState('');
@@ -54,7 +54,7 @@ const NewChat = ({ setCurrentUI, handleAddConversation, socket }) => {
             const { data } = await axios.post('/chat/newChat', { senderId, selectedReceiverId }, config);
             handleAddConversation(data);
             socket.emit('chat:new', data);
-            setCurrentUI('chat');
+            window.history.back();
         } catch (error) {
             if (error.response && error.response.status === 400)
                 toast.success(error.response.data, { autoClose: 2000, theme: 'dark' });
@@ -123,7 +123,7 @@ const NewChat = ({ setCurrentUI, handleAddConversation, socket }) => {
     return (
         <div className="newChat">
             <div className="newChatTop">
-                <img className="backButtonMessage" src={backBtn} alt="Back" onClick={() => setCurrentUI('chat')} />
+                <img className="backButtonMessage" src={backBtn} alt="Back" onClick={() => window.history.back()} />
                 <div className="searchUserForMessage">
                     <FaSearch className="searchIcon" />
                     <input

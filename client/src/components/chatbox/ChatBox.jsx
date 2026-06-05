@@ -10,6 +10,7 @@ import useWebRTC from '../../hooks/useWebRTC';
 import { getProfilePic } from '../../utils/chatUtils';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import encryptionManager from '../../services/EncryptionManager';
+import useBackNvigation from '../../hooks/useBackNvigation';
 import './chatbox.css';
 
 const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => {
@@ -28,6 +29,8 @@ const ChatBox = ({ socket, fetchAgain, setFetchAgain, setShowConfirmModal }) => 
         user,
         currentChat,
     );
+
+    useBackNvigation(showProfileInfo, () => setShowProfileInfo(false));
 
     const isUserOnline = useMemo(() => {
         if (!currentChat || currentChat?.isGroupChat) return false;

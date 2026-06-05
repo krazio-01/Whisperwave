@@ -16,6 +16,7 @@ import { IoPersonAddSharp } from 'react-icons/io5';
 import { FaUserGroup } from 'react-icons/fa6';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
 import useClickOutside from '../../hooks/useClickOutside';
+import useBackNvigation from '../../hooks/useBackNvigation';
 import './chatmenu.css';
 
 const ChatMenu = ({ socket, fetchAgain }) => {
@@ -35,6 +36,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
 
     useClickOutside(dropDownParentRef, () => setIsDropdownOpen(false));
     useClickOutside(bubbleMenuParentRef, () => setBubbleMenuContainer(false));
+    useBackNvigation(currentUI !== 'chat', () => setCurrentUI('chat'));
 
     const chatList = useMemo(() => {
         if (!searchQuery.trim() || !user) return chats;
@@ -299,9 +301,9 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                     </div>
                 </>
             ) : currentUI === 'message' ? (
-                <NewChat setCurrentUI={setCurrentUI} handleAddConversation={handleAddConversation} socket={socket} />
+                <NewChat handleAddConversation={handleAddConversation} socket={socket} />
             ) : currentUI === 'group' ? (
-                <NewGroup setCurrentUI={setCurrentUI} socket={socket} />
+                <NewGroup socket={socket} />
             ) : currentUI === 'profile' ? (
                 <ProfileInfo style={{ width: '100%' }} currentUI={currentUI} setCurrentUI={setCurrentUI} />
             ) : null}

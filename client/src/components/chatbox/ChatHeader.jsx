@@ -80,7 +80,7 @@ const ChatHeader = ({
     return (
         <div className="chatBoxTop">
             <div className="left-section">
-                <div className="closeConversation" onClick={() => setCurrentChat(null)}>
+                <div className="closeConversation" onClick={() => window.history.back()}>
                     <IoIosArrowBack />
                 </div>
                 <div className="details-wrapper" onClick={() => setShowProfileInfo((prev) => !prev)}>
