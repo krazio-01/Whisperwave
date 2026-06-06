@@ -13,6 +13,7 @@ const authRoute = require('./routes/authRoutes');
 const userRoute = require('./routes/userRoutes');
 const messageRoute = require('./routes/messageRoutes');
 const chatRoute = require('./routes/chatRoutes');
+const helmet = require('helmet');
 
 const app = express();
 const PORT = process.env.PORT || 8800;
@@ -21,6 +22,7 @@ const PORT = process.env.PORT || 8800;
 connectDB();
 
 // Middleware
+app.use(helmet());
 app.use(express.json());
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 
