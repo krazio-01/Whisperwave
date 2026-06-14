@@ -22,7 +22,17 @@ const PORT = process.env.PORT || 8800;
 connectDB();
 
 // Middleware
-app.use(helmet());
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                'connect-src': ["'self'", process.env.FRONTEND_URL, 'ws:', 'wss:'],
+                'img-src': ["'self'", 'data:', 'https:'],
+            },
+        },
+    }),
+);
 app.use(express.json());
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 
