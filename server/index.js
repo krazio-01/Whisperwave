@@ -27,7 +27,15 @@ app.use(
         contentSecurityPolicy: {
             directives: {
                 ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                'connect-src': ["'self'", process.env.FRONTEND_URL, 'ws:', 'wss:'],
+                'connect-src': [
+                    "'self'",
+                    process.env.FRONTEND_URL,
+                    'ws:',
+                    'wss:',
+                    'https://cdn.jsdelivr.net',
+                    'https://unpkg.com',
+                ],
+                'script-src': ["'self'", "'unsafe-eval'"],
                 'img-src': ["'self'", 'data:', 'https:'],
             },
         },
