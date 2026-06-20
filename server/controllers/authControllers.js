@@ -47,7 +47,7 @@ const registerUser = async (req, res) => {
         const user = await newUser.save();
         if (!user) return res.status(400).json({ Error: 'Something went wrong', success: false });
 
-        res.status(200).json({ success: true });
+        res.status(201).json({ success: true });
 
         const verifyLink = `${process.env.BASE_URL}/api/auth/${user._id}/verify/${user.emailToken}`;
 
@@ -68,14 +68,14 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
-    if (!email || !password) return res.status(400).json({ Error: 'Please fill in all fields' });
+    if (!email || !password) return res.status(401).json({ Error: 'Please fill in all fields' });
 
     try {
         const user = await User.findOne({ email });
         if (!user) return res.status(400).json({ Error: 'Invalid credentials!' });
 
         const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) return res.status(400).json({ Error: 'Invalid credentials!' });
+        if (!validPassword) return res.status(401).json({ Error: 'Invalid credentials!' });
 
         if (!user.isVerified) {
             const now = new Date();
@@ -90,11 +90,11 @@ const loginUser = async (req, res) => {
                     verifyLink: `${process.env.BASE_URL}/api/auth/${user._id}/verify/${user.emailToken}`,
                 }).catch((err) => console.error('Verification email re-send failed:', err));
 
-                return res.status(400).json({
+                return res.status(403).json({
                     Error: 'Account not verified. A fresh activation link has been sent to your inbox!',
                 });
             }
-            return res.status(400).json({ Error: 'Please check your inbox to verify your account first!.' });
+            return res.status(403).json({ Error: 'Please check your inbox to verify your account first!.' });
         }
 
         return res.status(200).json({
@@ -119,7 +119,7 @@ const verifyEmail = async (req, res) => {
         const user = await User.findOne({ emailToken: token });
         if (!user)
             return res
-                .status(404)
+                .status(400)
                 .render('emailVerification', { message: 'Your account is already verified or token is invalid.' });
 
         if (user.emailTokenExpire && user.emailTokenExpire < new Date()) {
