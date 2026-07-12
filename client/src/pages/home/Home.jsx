@@ -1,18 +1,54 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import VanillaTilt from 'vanilla-tilt';
 import Wave1 from '../../Assets/svg/Wave1';
 import Wave2 from '../../Assets/svg/Wave2';
 import './home.css';
 
+const features = [
+    {
+        title: 'There before you look up',
+        desc: "Hit send and it's already delivered — no refresh, no spinner, no wondering if it went through.",
+    },
+    {
+        title: 'A different lock for every door',
+        desc: 'Every conversation gets its own private key. If one were ever picked, the rest stay shut.',
+    },
+    {
+        title: 'Just like picking up the phone',
+        desc: 'Voice and video connect straight between devices over WebRTC — quick to connect, clear enough that you forget it\u2019s an app.',
+    },
+    {
+        title: 'Opens like it never closed',
+        desc: 'Pick up right where you left off. Your last few messages are already there, not loading.',
+    },
+    {
+        title: "Know when they've seen it",
+        desc: 'Watch the dots appear the second they start typing, and know exactly when your message actually lands.',
+    },
+    {
+        title: 'Room for the whole group chat',
+        desc: 'Start a group, hand someone the admin badge, rename it for the fifth time — all without breaking stride.',
+    },
+];
+
 function Home() {
     useEffect(() => {
-        VanillaTilt.init(document.querySelectorAll('.container__card'), {
-            max: 15,
-            speed: 600,
-            glare: true,
-            'max-glare': 0.4,
-        });
+        const revealEls = document.querySelectorAll('.reveal');
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !revealEls.length) return;
+
+        const io = new IntersectionObserver(
+            (entries, obs) => {
+                entries.forEach((e) => {
+                    if (!e.isIntersecting) return;
+                    e.target.classList.add('in-view');
+                    obs.unobserve(e.target);
+                });
+            },
+            { threshold: 0.15 },
+        );
+
+        revealEls.forEach((el) => io.observe(el));
+        return () => io.disconnect();
     }, []);
 
     return (
@@ -22,7 +58,7 @@ function Home() {
                     <div className="text-section">
                         <h3>
                             Your Identity, <br />
-                            <span className="gradient-text">Your Rules.</span>
+                            <span>Your Rules.</span>
                         </h3>
                         <p>
                             Forget contact lists and phone numbers. WhisperWave connects you purely through unique
@@ -55,81 +91,81 @@ function Home() {
                                 </div>
                             </div>
                         </div>
-
-                        <div className="gradient-ball"></div>
                     </div>
                 </div>
             </div>
 
             <div className="wave1">
-                <Wave1 fill="#ffffff" />
+                <Wave1 fill="#f7f2ea" />
             </div>
 
-            <div className="steps-container">
-                <h2 className="header-section">
-                    How It <span className="gradient-text">Works</span>
-                </h2>
-                <div className="steps-grid">
-                    <div className="step-item">
-                        <div className="step-number">01</div>
-                        <h3>Claim Alias</h3>
-                        <p>Choose a unique username. No email or phone number required for public visibility.</p>
+            <section className="section feature-section">
+                <div className="section-head wrap reveal">
+                    <span className="eyebrow">core features</span>
+                    <h3>Four things it had to get right.</h3>
+                    <p className="section-sub">Everything else on the list follows from these.</p>
+                </div>
+
+                <div className="card-grid wrap">
+                    {features.map((f, i) => (
+                        <article className="feature-card reveal" key={f.title}>
+                            <span className="card-index">{String(i + 1).padStart(2, '0')}</span>
+                            <h3>{f.title}</h3>
+                            <p>{f.desc}</p>
+                        </article>
+                    ))}
+                </div>
+            </section>
+
+            <section className="section hood-section">
+                <div className="section-head wrap reveal">
+                    <span className="eyebrow">under the hood</span>
+                    <h3>Fast because of Redis. Private because of math.</h3>
+                </div>
+
+                <div className="terminal wrap reveal">
+                    <input type="radio" name="hood-tab" id="tab-enc" className="tab-radio" defaultChecked />
+                    <input type="radio" name="hood-tab" id="tab-cache" className="tab-radio" />
+
+                    <div className="tab-bar">
+                        <label htmlFor="tab-enc" className="tab-label">
+                            encryption.js
+                        </label>
+                        <label htmlFor="tab-cache" className="tab-label">
+                            cache.js
+                        </label>
                     </div>
-                    <div className="step-item">
-                        <div className="step-number">02</div>
-                        <h3>Share Username</h3>
-                        <p>Share your unique username with friends or on social media to start connecting.</p>
-                    </div>
-                    <div className="step-item">
-                        <div className="step-number">03</div>
-                        <h3>Start Chatting</h3>
-                        <p>Receive messages instantly in your secure inbox and reply in real-time.</p>
+
+                    <div className="tab-panels">
+                        <pre className="tab-panel panel-enc">
+                            <span className="tok-com">// derive a key unique to this conversation</span>
+                            <span className="tok-key">const</span> chatKey = HMAC_SHA256(chatId, masterSecret)
+                            <span className="tok-com">// stored nowhere — recomputed whenever it's needed</span>
+                            <span className="tok-key">if</span> (chatKey.matches(incoming)) decrypt(message)
+                            <span className="cursor" aria-hidden="true"></span>
+                        </pre>
+                        <pre className="tab-panel panel-cache">
+                            <span className="tok-com">// newest messages first, capped at 50</span>
+                            LPUSH chat:{'{chatId}'} message LTRIM chat:{'{chatId}'} 0 49
+                            <span className="tok-com">// mongo only gets touched on scroll-up</span>
+                            <span className="tok-key">if</span> (cacheMiss) fetchFromMongo(chatId)
+                            <span className="cursor" aria-hidden="true"></span>
+                        </pre>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div className="qualities">
-                <h2 className="header-section">Why Choose Us?</h2>
-                <div className="cards">
-                    <div className="container__card">
-                        <div className="container__card--content">
-                            <h3>True Anonymity</h3>
-                            <p>
-                                We don't ask for your phone number. We don't track your location.Just pick a username
-                                and start chatting. Your identity is 100% yours to define.
-                            </p>
-                            <Link to="#">Read More</Link>
-                        </div>
+            <section className="section cta">
+                <div className="cta-inner wrap reveal">
+                    <div className="cta-text">
+                        <h3>Pick a name. Start talking.</h3>
+                        <span className="cta-note">free · no phone number · no hassle</span>
                     </div>
-                    <div className="container__card">
-                        <div className="container__card--content">
-                            <h3>Zero Clutter</h3>
-                            <p>
-                                No ads, no algorithmic feeds, and no bloated menus. Just a clean, dark-themed interface
-                                designed for one thing: talking to your friends without distractions.
-                            </p>
-                            <Link to="#">Read More</Link>
-                        </div>
-                    </div>
-                    <div className="container__card">
-                        <div className="container__card--content">
-                            <h3>Rock Solid</h3>
-                            <p>
-                                We prioritize stability over hype. Built on a dependable architecture that ensures your
-                                messages actually reach their destination. Simple, stable, and always online.
-                            </p>
-                            <Link to="#">Read More</Link>
-                        </div>
-                    </div>
+                    <Link to="/register" className="cta-btn">
+                        Get started now
+                    </Link>
                 </div>
-            </div>
-
-            <div className="final-cta">
-                <h2 className="header-section">Ready to join the wave?</h2>
-                <Link to="/register" className="btn-primary">
-                    Get Started Now
-                </Link>
-            </div>
+            </section>
 
             <div className="wave2">
                 <Wave2 fill="#1e1e1e" />
