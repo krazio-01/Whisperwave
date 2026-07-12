@@ -538,6 +538,11 @@
     background-color: #f7f2ea;
 }
 
+.wave1,
+.wave2 {
+    margin-bottom: -1px;
+}
+
 @media screen and (max-width: 900px) {
     .section {
         padding: clamp(4.5rem, 8vw, 6rem) 2rem;
