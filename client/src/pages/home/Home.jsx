@@ -14,8 +14,8 @@ const features = [
         desc: 'Every conversation gets its own private key. If one were ever picked, the rest stay shut.',
     },
     {
-        title: 'Calls without a middleman',
-        desc: 'Voice and video travel straight from you to them — nothing relayed, nothing routed through a server in between.',
+        title: 'Just like picking up the phone',
+        desc: 'Voice and video connect straight between devices over WebRTC — quick to connect, clear enough that you forget it\u2019s an app.',
     },
     {
         title: 'Opens like it never closed',
