@@ -33,19 +33,21 @@ const features = [
 
 function Home() {
     useEffect(() => {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const revealEls = document.querySelectorAll('.reveal');
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !revealEls.length) return;
+
         const io = new IntersectionObserver(
-            (entries) => {
+            (entries, obs) => {
                 entries.forEach((e) => {
-                    if (e.isIntersecting) {
-                        e.target.classList.add('in-view');
-                        io.unobserve(e.target);
-                    }
+                    if (!e.isIntersecting) return;
+                    e.target.classList.add('in-view');
+                    obs.unobserve(e.target);
                 });
             },
             { threshold: 0.15 },
         );
-        document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+        revealEls.forEach((el) => io.observe(el));
         return () => io.disconnect();
     }, []);
 
