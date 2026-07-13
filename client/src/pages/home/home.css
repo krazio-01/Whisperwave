@@ -4,7 +4,7 @@
     height: calc(100svh - 4rem);
     overflow: hidden;
     box-sizing: border-box;
-    background-color: #242424;
+    background-color: var(--bg-dark);
 }
 
 .content-wrapper {
@@ -34,15 +34,19 @@
             .btn-primary {
                 padding: 12px 24px;
                 font-size: 1.3rem;
-                background: #6366f1;
                 color: #fff;
                 border: none;
                 border-radius: 8px;
                 text-decoration: none;
-                box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+                background: var(--accent-bright);
+                box-shadow: 0 5px 15px rgba(232, 161, 115, 0.15);
                 transition: background 0.3s ease;
                 &:hover {
-                    background: #4f46e5;
+                    background: var(--accent-bright-hover);
+                }
+                &:focus-visible {
+                    outline: 2px solid var(--accent-focus);
+                    outline-offset: 3px;
                 }
             }
         }
@@ -121,10 +125,10 @@
 
                 .sent {
                     align-self: flex-end;
-                    background: linear-gradient(135deg, #6366f1, #a855f7);
+                    background: linear-gradient(135deg, var(--accent-bright), var(--accent));
+                    box-shadow: 0 4px 15px rgba(217, 138, 99, 0.35);
                     border-bottom-right-radius: 2px;
                     color: white;
-                    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
                 }
 
                 .typing-indicator {
@@ -207,24 +211,6 @@
 }
 
 .section {
-    --bg: #f7f2ea;
-    --surface: #fffcf7;
-    --line: rgba(40, 30, 20, 0.09);
-    --line-strong: rgba(40, 30, 20, 0.17);
-    --text: #201d19;
-    --muted: #7a7268;
-    --accent: #6366f1;
-    --accent-hover: #4f46e5;
-    --accent-soft: rgba(99, 102, 241, 0.1);
-    --mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', monospace;
-    --content-w: 110rem;
-    --gap-lg: clamp(4rem, 5vw, 5.6rem);
-    --term-bg: #1d1d20;
-    --term-surface: #2c2c30;
-    --term-line: rgba(255, 255, 255, 0.09);
-    --term-text: #f4f4f5;
-    --term-muted: #adadb8;
-
     background-color: var(--bg);
     color: var(--text);
     padding: clamp(6rem, 7vw, 9.6rem) clamp(2.4rem, 6vw, 8rem);
@@ -487,7 +473,7 @@
                 transform: translateY(-2px);
             }
             &:focus-visible {
-                outline: 2px solid #a5b4fc;
+                outline: 2px solid var(--accent-focus);
                 outline-offset: 3px;
             }
         }
@@ -535,7 +521,7 @@
 
 .wave2 {
     display: flex;
-    background-color: #f7f2ea;
+    background-color: var(--bg);
 }
 
 .wave1,
