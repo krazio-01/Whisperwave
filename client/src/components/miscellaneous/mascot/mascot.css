@@ -29,11 +29,11 @@
 
     &.is-hiding {
         .hand-left {
-            transform: rotate(0deg) translate(10px, -24px) rotate(15deg);
+            transform: rotate(0deg) translate(12px, -24px) rotate(15deg);
         }
 
         .hand-right {
-            transform: rotate(360deg) translate(-10px, -24px) rotate(-15deg);
+            transform: rotate(360deg) translate(-12px, -24px) rotate(-15deg);
         }
     }
 
