@@ -186,12 +186,16 @@
     border-radius: 50%;
     outline: none;
     border: none;
-    background: linear-gradient(45deg, #a29bfe, #fd79a8, #ff4d4d);
+    background: linear-gradient(135deg, var(--accent-bright), var(--accent-hover));
     cursor: pointer;
+    transition: background 300ms ease;
 
-    > img {
-        width: 24px;
-        height: 24px;
+    &:hover {
+        background: linear-gradient(135deg, var(--accent-bright-hover), var(--accent));
+    }
+
+    > svg {
+        font-size: 2rem;
     }
 }
 

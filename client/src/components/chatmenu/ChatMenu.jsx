@@ -12,6 +12,7 @@ import profile from '../../Assets/images/profile.png';
 import logout from '../../Assets/images/logout.png';
 import pen from '../../Assets/images/pen.png';
 import { FaSearch } from 'react-icons/fa';
+import { LuPencil } from 'react-icons/lu';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import { FaUserGroup } from 'react-icons/fa6';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
@@ -278,7 +279,7 @@ const ChatMenu = ({ socket, fetchAgain }) => {
                             className="newChatButton"
                             onClick={() => setBubbleMenuContainer((prev) => !prev)}
                         >
-                            <img src={pen} alt="New Chat" />
+                            <LuPencil />
                         </button>
                         <CSSTransition
                             in={bubbleMenuContainer}
