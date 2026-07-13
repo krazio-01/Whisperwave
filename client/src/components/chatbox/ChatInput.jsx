@@ -4,11 +4,8 @@ import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import axios from 'axios';
 import { CircularProgress } from '@mui/material';
+import { LuSmile, LuImagePlus, LuSendHorizontal, LuX } from 'react-icons/lu';
 import FilePreview from '../filePreview/FilePreview';
-import emojiPicker from '../../Assets/images/emojiPicker.png';
-import fileSelection from '../../Assets/images/fileSelection.png';
-import previewClose from '../../Assets/images/previewClose.png';
-import sendIcon from '../../Assets/images/send.png';
 import encryptionManager from '../../services/EncryptionManager';
 import useClickOutside from '../../hooks/useClickOutside';
 
@@ -180,7 +177,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages, updateChatList }) =
                         onClick={() => setIsPickerVisible((prev) => !prev)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                     >
-                        <img className="emoji" src={emojiPicker} alt="Open Emoji Picker" />
+                        <LuSmile className="footer-icon" />
                     </button>
 
                     <CSSTransition
@@ -217,7 +214,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages, updateChatList }) =
                             onChange={handleFileChange}
                         />
                         <label htmlFor="file">
-                            <img className="file" src={fileSelection} alt="File Selection" />
+                            <LuImagePlus className="footer-icon" />
                         </label>
 
                         <CSSTransition
@@ -229,12 +226,10 @@ const ChatInput = ({ currentChat, user, socket, setMessages, updateChatList }) =
                         >
                             <div className="imagePreview" ref={imagePreviewRef}>
                                 <FilePreview
-                                    previewClose={previewClose}
                                     selectedFile={selectedFile}
                                     setSelectedFile={setSelectedFile}
                                     setShowPreview={() => setShowPreview(false)}
                                     socket={socket}
-                                    sendIcon={sendIcon}
                                     setMessages={setMessages}
                                 />
                             </div>
@@ -248,11 +243,7 @@ const ChatInput = ({ currentChat, user, socket, setMessages, updateChatList }) =
                     disabled={isSendDisabled}
                     style={{ opacity: isSendDisabled ? 0.6 : 1, cursor: isSendDisabled ? 'default' : 'pointer' }}
                 >
-                    {msgSendLoading ? (
-                        <CircularProgress size={28} color="primary" />
-                    ) : (
-                        <img src={sendIcon} alt="Send" />
-                    )}
+                    {msgSendLoading ? <CircularProgress size={28} color="primary" /> : <LuSendHorizontal />}
                 </button>
             </div>
         </div>

@@ -315,12 +315,16 @@
     margin: 0 22px;
 }
 
-.emoji,
-.file {
+.footer-icon {
+    font-size: 2.2rem;
     cursor: pointer;
-    width: 22px;
-    height: 22px;
-    margin: 0 14px;
+    color: var(--ink-soft);
+    margin-inline: 14px;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: #fff;
+    }
 }
 
 /* for file image preview */
@@ -429,15 +433,16 @@
     border: none;
     cursor: pointer;
     transition: 250ms;
+    transition: background 0.25s ease;
 }
 
-.chatSendBtn > img {
-    width: 2rem;
-    height: 2rem;
+.chatSendBtn > svg {
+    font-size: 2rem;
+    color: #fff;
 }
 
-.chatSendBtn:hover {
-    background-color: #8c7ae6;
+.chatSendBtn:hover:not(:disabled) {
+    background: rgba(217, 138, 99, 0.5);
 }
 
 .noConversation-wrapper {

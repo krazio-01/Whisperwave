@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { CircularProgress } from '@mui/material';
+import { LuX, LuSendHorizontal } from 'react-icons/lu';
 import { ChatState } from '../../context/ChatProvider';
 import encryptionManager from '../../services/EncryptionManager';
 import './filepreview.css';
@@ -74,7 +75,9 @@ const FilePreview = ({
         <>
             <div className="previewImageContainer">
                 {selectedFile && <img className="previewImage" src={URL.createObjectURL(selectedFile)} alt="" />}
-                <img className="previewClose" src={previewClose} alt="" onClick={() => setShowPreview(false)} />
+                <button type="button" className="previewClose" onClick={() => setShowPreview(false)}>
+                    <LuX />
+                </button>{' '}
             </div>
 
             <div className="previewInput">
@@ -88,7 +91,7 @@ const FilePreview = ({
                     }}
                 />
                 <button className="previewSendBtn" onClick={handleSubmit} disabled={loading}>
-                    {loading ? <CircularProgress size={24} color="primary" /> : <img src={sendIcon} alt="Send" />}
+                    {loading ? <CircularProgress size={24} color="primary" /> : <LuSendHorizontal />}
                 </button>
             </div>
         </>

@@ -13,11 +13,19 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    width: 17px;
-    height: 17px;
+    background: none;
+    border: none;
     cursor: pointer;
-    filter: invert(100%);
-    z-index: 1;
+
+    svg {
+        font-size: 2rem;
+        color: var(--ink-soft);
+        transition: color 0.2s ease;
+    }
+
+    &:hover svg {
+        color: var(--ink);
+    }
 }
 
 .previewInput {
@@ -27,7 +35,7 @@
     align-items: center;
 }
 
-.previewInput>input {
+.previewInput > input {
     width: 100%;
     padding: 1rem;
     margin: 3px 0;
@@ -52,13 +60,13 @@
     transition: 250ms;
 }
 
-.previewSendBtn>img {
-    width: 2rem;
-    height: 2rem;
+.previewSendBtn > svg {
+    font-size: 2rem;
+    color: #fff;
 }
 
-.previewSendBtn:hover {
-    background-color: #8c7ae6;
+.previewSendBtn:hover:not(:disabled) {
+    background: rgba(217, 138, 99, 0.5);
 }
 
 @media screen and (max-width: 1024px) {
