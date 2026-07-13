@@ -72,7 +72,7 @@
             position: absolute;
             width: 0%;
             height: 2.4px;
-            background: #7c3aed;
+            background: var(--accent-bright);
             transition: all 300ms ease-in-out;
         }
 
@@ -140,7 +140,7 @@
 
             &:hover {
                 background: rgba(255, 255, 255, 0.2);
-                box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
+                box-shadow: 0 0 15px rgba(232, 161, 115, 0.2);
                 border-radius: 12px;
                 transform: translate3d(0, 2px, 0);
             }
