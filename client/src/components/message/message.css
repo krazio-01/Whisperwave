@@ -7,8 +7,13 @@
     &.own {
         align-items: flex-end;
 
+        .messageTop {
+            flex-direction: row-reverse;
+        }
+
         .messageText {
-            background-color: #a8593a !important;
+            background-color: hsl(from var(--accent-hover) h s calc(l - 15)) !important;
+            border-radius: 1.5rem 0 1.5rem 1.5rem !important;
         }
 
         .messageBottom {
@@ -211,6 +216,7 @@
 .message-content-container {
     .messageTop {
         display: flex;
+        gap: 1rem;
 
         .typing-more-count {
             width: 32px;
@@ -234,14 +240,13 @@
             height: 32px;
             border-radius: 50%;
             object-fit: cover;
-            margin-right: 10px;
         }
 
         .messageContent {
             .messageSenderName {
-                font-size: 1rem;
-                font-weight: 600;
-                color: white;
+                font-size: 12px;
+                font-weight: bold;
+                color: hsl(from var(--ink) h s l / 85%);
                 text-transform: capitalize;
                 margin-bottom: 5px;
             }
@@ -323,7 +328,7 @@
     .messageBottom {
         font-size: 12px;
         margin-top: 10px;
-        color: #fff;
+        color: var(--ink);
     }
 }
 
