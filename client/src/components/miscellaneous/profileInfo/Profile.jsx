@@ -5,8 +5,7 @@ import { ChatState } from '../../../context/ChatProvider';
 import { getProfilePic } from '../../../utils/chatUtils';
 import UpdateGroupInfo from '../../updateGroupInfo/UpdateGroupInfo';
 import UserListItem from '../userListItem/UserListItem';
-import backBtn from '../../../Assets/images/backBtn.png';
-import EditIcon from '../../../Assets/images/edit.png';
+import { LuSquarePen, LuX } from 'react-icons/lu';
 import './profile.css';
 
 const MyProfile = memo(({ style, onBack }) => {
@@ -130,7 +129,9 @@ const MyProfile = memo(({ style, onBack }) => {
         <div className="profile-wrapper" style={style}>
             <div className="infoTop">
                 <div className="header-left">
-                    <img className="backButtonMessage" src={backBtn} alt="Back" onClick={onBack} />
+                    <button className="backBtn icon-btn" onClick={onBack}>
+                        <LuX />
+                    </button>
                     <span className="header-title">
                         {mode === 'EDIT' ? 'Edit Profile' : mode === 'OTP' ? 'Verify Email' : 'Profile'}
                     </span>
@@ -150,7 +151,7 @@ const MyProfile = memo(({ style, onBack }) => {
                         className={mode === 'EDIT' ? 'img-editing' : ''}
                     />
                     <div className="img-overlay" onClick={() => fileInputRef.current.click()}>
-                        <img src={EditIcon} alt="Change" />
+                        <LuSquarePen />
                         <span>Change</span>
                     </div>
                 </div>
@@ -217,7 +218,9 @@ const MyProfile = memo(({ style, onBack }) => {
                                 <span className="label">{field.charAt(0).toUpperCase() + field.slice(1)}</span>
                                 <div className="value-row">
                                     <span className="value">{user?.[field]}</span>
-                                    <img src={EditIcon} alt="Edit" onClick={() => setMode('EDIT')} />
+                                    <button className="icon-btn" onClick={() => setMode('EDIT')}>
+                                        <LuSquarePen />
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -256,11 +259,15 @@ const ChatInfo = memo(({ currentChat, user, onBack, fetchAgain, setFetchAgain })
         <div className="chatGroupOrUserInfo">
             <div className="infoTop">
                 <div className="header-left">
-                    <img className="backButtonMessage" src={backBtn} alt="Back" onClick={onBack} />
+                    <button className="backBtn icon-btn" onClick={onBack}>
+                        <LuX />
+                    </button>
                     <span className="header-title">{isGroup ? 'Group Info' : 'User Info'}</span>
                 </div>
                 {isGroup && (
-                    <img className="editIcon" src={EditIcon} alt="Edit Group" onClick={() => setShowEditGroup(true)} />
+                    <button className="editIcon icon-btn" onClick={() => setShowEditGroup(true)}>
+                        <LuSquarePen />
+                    </button>
                 )}
             </div>
 

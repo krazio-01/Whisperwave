@@ -29,6 +29,26 @@
     }
 }
 
+.icon-btn {
+    --icon-size: 2.2rem;
+
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+
+    svg {
+        font-size: var(--icon-size);
+        opacity: 1;
+        color: #ffffff;
+    }
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
 .infoTop {
     display: flex;
     justify-content: space-between;
@@ -42,15 +62,16 @@
         gap: 2rem;
     }
 
-    .backButtonMessage {
-        width: 26px;
-        height: 26px;
-        cursor: pointer;
-        opacity: 0.8;
-        transition: opacity 0.2s;
+    .backBtn {
+        border-radius: 50%;
+        padding: 3px;
+
+        svg {
+            color: var(--accent);
+        }
 
         &:hover {
-            opacity: 1;
+            background: rgba(255, 255, 255, 0.05);
         }
     }
 
@@ -82,12 +103,10 @@
     }
 
     .editIcon {
-        width: 24px;
-        cursor: pointer;
-        opacity: 0.8;
+        --icon-size: 2rem;
 
-        &:hover {
-            opacity: 1;
+        svg {
+            margin-bottom: 5px;
         }
     }
 }
@@ -124,16 +143,16 @@
             cursor: pointer;
             transition: opacity 0.3s ease;
 
-            img {
-                width: 24px;
-                height: 24px;
+            svg {
+                font-size: 2rem;
                 margin-bottom: 5px;
                 opacity: 1;
+                color: #ffffff;
             }
 
             span {
-                font-size: 0.9rem;
-                font-weight: 500;
+                font-size: 1rem;
+                font-weight: bold;
                 color: #ffffff;
             }
         }
@@ -229,16 +248,8 @@
                 color: #ffffff;
             }
 
-            img {
-                width: 18px;
-                opacity: 0.5;
-                cursor: pointer;
-                transition: 0.2s;
-
-                &:hover {
-                    opacity: 1;
-                    transform: scale(1.1);
-                }
+            button {
+                --icon-size: 2rem;
             }
         }
     }
