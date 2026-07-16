@@ -8,9 +8,9 @@ import UserListItem from '../miscellaneous/userListItem/UserListItem';
 import UserBadgeItem from '../miscellaneous/userBadgeItem/UserBadgeItem';
 import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton';
 import { ChatState } from '../../context/ChatProvider';
-import backBtnIcon from '../../Assets/images/backBtn.png';
-import doneIcon from '../../Assets/images/next.png';
 import EmptyState from '../miscellaneous/emptyState/EmptyState';
+import { LuX, LuChevronLeft } from 'react-icons/lu';
+import { MdKeyboardArrowRight } from 'react-icons/md';
 import { HiUserGroup } from 'react-icons/hi';
 import './newgroup.css';
 
@@ -146,12 +146,9 @@ const NewGroup = ({ socket }) => {
         <>
             <div className="newGroupChatTop">
                 <div className="Group">
-                    <img
-                        className="backButtonGroup"
-                        src={backBtnIcon}
-                        alt="Back"
-                        onClick={() => window.history.back()}
-                    />
+                    <button className="backButtonGroup" onClick={() => window.history.back()}>
+                        <LuX />
+                    </button>
                     <span>Add Members</span>
                 </div>
 
@@ -214,23 +211,15 @@ const NewGroup = ({ socket }) => {
     const renderGroupFinalization = () => (
         <div className="createGroupChat">
             <div className="final-step-header">
-                <img
-                    className="backButtonGroup"
-                    src={backBtnIcon}
-                    alt="Back"
-                    onClick={() => setStep(1)}
-                />
+                <button className="backButtonGroup" onClick={() => setStep(1)}>
+                    <LuChevronLeft />
+                </button>
                 <span>Group Details</span>
             </div>
 
             <div className="group-setup-content">
                 <div className="image-upload-wrapper">
-                    <input
-                        style={{ display: 'none' }}
-                        type="file"
-                        id="groupPictureId"
-                        onChange={handleFileChange}
-                    />
+                    <input style={{ display: 'none' }} type="file" id="groupPictureId" onChange={handleFileChange} />
                     <label htmlFor="groupPictureId" className="image-label">
                         {selectedImage ? (
                             <img src={selectedImage} alt="Group Preview" />
@@ -254,9 +243,7 @@ const NewGroup = ({ socket }) => {
                         onChange={(e) => setGroupChatName(e.target.value)}
                         autoFocus
                     />
-                    <p className="member-count-hint">
-                        {selectedUsers.length} members selected
-                    </p>
+                    <p className="member-count-hint">{selectedUsers.length} members selected</p>
                 </div>
             </div>
         </div>
@@ -268,11 +255,7 @@ const NewGroup = ({ socket }) => {
 
             <div className="donSelection">
                 <button className="donSelectioBtn" onClick={handleNextStep} disabled={createGroupLoading}>
-                    {createGroupLoading ? (
-                        <CircularProgress size={28} color="secondary" />
-                    ) : (
-                        <img src={doneIcon} alt="Next" />
-                    )}
+                    {createGroupLoading ? <CircularProgress size={28} color="secondary" /> : <MdKeyboardArrowRight />}
                 </button>
             </div>
         </div>

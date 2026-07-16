@@ -3,7 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import UserListItem from '../miscellaneous/userListItem/UserListItem';
 import ListItemSkeleton from '../miscellaneous/listItemSkeleton/ListItemSkeleton';
-import backBtn from '../../Assets/images/backBtn.png';
+import { LuX } from 'react-icons/lu';
 import { ChatState } from '../../context/ChatProvider';
 import 'react-toastify/dist/ReactToastify.css';
 import './updategroupinfo.css';
@@ -60,16 +60,14 @@ const UpdateGroupInfo = ({ showAddOrRemoveConrols, setShowAddOrRemoveConrols, fe
         return [...associatedUsers].sort((a, b) => {
             const isAMember = currentMemberIds.has(a._id);
             const isBMember = currentMemberIds.has(b._id);
-            return (isAMember === isBMember) ? 0 : isAMember ? -1 : 1;
+            return isAMember === isBMember ? 0 : isAMember ? -1 : 1;
         });
     }, [associatedUsers, currentChat?.members]);
 
     const filteredUsers = useMemo(() => {
         if (!searchQuery) return sortedAssociatedUsers;
 
-        return sortedAssociatedUsers.filter((u) =>
-            u.username.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        return sortedAssociatedUsers.filter((u) => u.username.toLowerCase().includes(searchQuery.toLowerCase()));
     }, [searchQuery, sortedAssociatedUsers]);
 
     const handleUpdateName = async () => {
@@ -153,12 +151,9 @@ const UpdateGroupInfo = ({ showAddOrRemoveConrols, setShowAddOrRemoveConrols, fe
     return (
         <div className="updateGroupinfo">
             <div className="updateInfoHeader">
-                <img
-                    src={backBtn}
-                    alt="Back"
-                    onClick={() => setShowAddOrRemoveConrols(false)}
-                    style={{ cursor: 'pointer' }}
-                />
+                <button className="crossBtn" onClick={() => setShowAddOrRemoveConrols(false)}>
+                    <LuX />
+                </button>
                 <label>Update Group Info</label>
             </div>
 
