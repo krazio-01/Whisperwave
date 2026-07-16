@@ -9,11 +9,26 @@
 }
 
 .backButtonMessage {
-    width: 28px;
-    height: 28px;
+    background: transparent;
+    border: none;
     cursor: pointer;
-}
+    opacity: 0.8;
+    margin-inline: 12px;
+    border-radius: 50%;
+    padding: 3px;
+    transition: all 0.2s ease;
 
+    svg {
+        font-size: 2.3rem;
+        opacity: 1;
+        color: var(--accent);
+    }
+
+    &:hover {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.05);
+    }
+}
 .searchUserForMessage {
     display: flex;
     align-items: center;

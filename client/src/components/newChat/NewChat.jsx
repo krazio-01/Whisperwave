@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import backBtn from '../../Assets/images/backBtn.png';
 import { FaSearch, FaCommentDots } from 'react-icons/fa';
+import { LuX } from 'react-icons/lu';
 import axios from 'axios';
 import { ChatState } from '../../context/ChatProvider';
 import { CircularProgress } from '@mui/material';
@@ -123,7 +123,9 @@ const NewChat = ({ handleAddConversation, socket }) => {
     return (
         <div className="newChat">
             <div className="newChatTop">
-                <img className="backButtonMessage" src={backBtn} alt="Back" onClick={() => window.history.back()} />
+                <button className="backButtonMessage" onClick={() => window.history.back()}>
+                    <LuX />
+                </button>
                 <div className="searchUserForMessage">
                     <FaSearch className="searchIcon" />
                     <input
