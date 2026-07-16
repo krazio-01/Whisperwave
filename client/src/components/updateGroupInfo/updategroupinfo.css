@@ -13,10 +13,25 @@
     width: 100%;
     padding: 2rem 0;
 
-    > img {
-        width: 28px;
-        height: 28px;
+    .crossBtn {
+        background: transparent;
+        border: none;
         cursor: pointer;
+        opacity: 0.8;
+        border-radius: 50%;
+        padding: 3px;
+        transition: all 0.2s ease;
+
+        svg {
+            font-size: 2.3rem;
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        &:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.05);
+        }
     }
 
     > label {
