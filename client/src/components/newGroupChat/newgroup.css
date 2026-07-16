@@ -133,8 +133,18 @@
         border-radius: 50%;
         outline: none;
         border: none;
-        background: linear-gradient(45deg, #a29bfe, #ff4d4d);
+        background-color: hsl(from var(--accent-hover) h s calc(l - 15));
         cursor: pointer;
+        transition: background-color 250ms ease;
+
+        &:hover {
+            background-color: var(--accent-hover);
+        }
+
+        svg {
+            font-size: 3rem;
+            color: #fff;
+        }
     }
 
     .doneHeader {
