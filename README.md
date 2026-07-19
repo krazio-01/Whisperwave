@@ -7,8 +7,8 @@ Whisperwave is a real-time chat application built with the MERN stack. It goes b
 Check out the live demo of Whisperwave [here](https://whisperwave.onrender.com/).
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/8c24cba3-c560-4769-9045-19136869e39f" width="49%" alt="Whisperwave Main Chat Interface" />
-  <img src="https://github.com/user-attachments/assets/7eb11bd9-291a-4161-bd59-fad4534630f9" width="49%" alt="Whisperwave Secondary View" />
+  <img src="https://github.com/user-attachments/assets/b98f838d-96ae-4898-8f6e-c5d082ccc513" width="49%" alt="Whisperwave Secondary View" />
+  <img src="https://github.com/user-attachments/assets/1926b07d-c4b4-44ac-9483-b238bfd41c0d" width="49%" alt="Whisperwave Main Chat Interface" />
 </div>
 
 ## Features
@@ -30,13 +30,13 @@ Check out the live demo of Whisperwave [here](https://whisperwave.onrender.com/)
   <table border="0" align="center">
     <tr>
       <td align="center" valign="middle">
-        <img src="https://github.com/user-attachments/assets/12bfee4b-0c97-43e2-afb2-3f2a72f6c961" width="160" alt="Mobile List" />
+        <img src="https://github.com/user-attachments/assets/f310acfb-00e6-4c88-8803-6106321c1142" width="160" alt="Mobile List" />
       </td>
       <td align="center" valign="middle">
-        <img src="https://github.com/user-attachments/assets/854f03e8-55da-407b-bb00-9d08da7b7c71" width="160" alt="Mobile Chat" />
+        <img src="https://github.com/user-attachments/assets/b988b618-7cc5-42d6-ad53-110afda1a0e5" width="160" alt="Mobile Chat" />
       </td>
       <td align="center" valign="middle">
-        <img src="https://github.com/user-attachments/assets/99a51e93-c269-4386-ac48-b56faff76387" width="550" alt="Desktop View" />
+        <img src="https://github.com/user-attachments/assets/802f3b51-ffd6-4893-9cca-e2f99ead1e9a" width="550" alt="Desktop View" />
       </td>
     </tr>
   </table>
@@ -49,15 +49,15 @@ Check out the live demo of Whisperwave [here](https://whisperwave.onrender.com/)
     <table border="0">
       <tr>
         <td align="center">
-          <img src="https://github.com/user-attachments/assets/97229667-ccc1-46e7-bc1e-ba3ebc52a3b7" width="400" alt="Video Call Interface" />
+          <img src="https://github.com/user-attachments/assets/9837d467-fc14-4a75-ad38-56d6577f3d50" width="400" alt="Whisperwave Secondary View" />
         </td>
         <td align="center">
-          <img src="https://github.com/user-attachments/assets/3b116587-cb8d-4f57-b8cd-0b792fd03604" width="400" alt="User Profile View" />
+          <img src="https://github.com/user-attachments/assets/88669dae-e723-4078-8635-5fd52e405768" width="400" alt="User Profile View" />
         </td>
       </tr>
       <tr>
          <td align="center">
-          <img src="https://github.com/user-attachments/assets/6b09f019-b9d0-4e04-bdaf-f5640a933601" width="400" alt="Screenshot 2026-03-06 233301" />
+          <img src="https://github.com/user-attachments/assets/a06afb13-511a-49ce-acd2-9eb5c0601b2d" width="400" alt="Video Call Interface" />
         </td>
         <td align="center">
           <img src="https://github.com/user-attachments/assets/cedc53bc-f6f2-492a-9bc3-2ff78254dd6b" width="400" alt="Full Interface View" />
@@ -66,18 +66,6 @@ Check out the live demo of Whisperwave [here](https://whisperwave.onrender.com/)
     </table>
   </div>
 </details>
-
-<!-- <details>
-  <summary align="center"><b>📸 Click to see more screenshots (Video Calls & Profile)</b></summary>
-  <div align="center">
-    <br>
-    <img src="https://github.com/user-attachments/assets/97229667-ccc1-46e7-bc1e-ba3ebc52a3b7" width="90%" alt="Video Call Interface" />
-    <br><br>
-    <img src="https://github.com/user-attachments/assets/3b116587-cb8d-4f57-b8cd-0b792fd03604" width="90%" alt="User Profile View" />
-     <br/>
-     <img width="1908" height="934" alt="image" src="https://github.com/user-attachments/assets/cedc53bc-f6f2-492a-9bc3-2ff78254dd6b" />
-  </div>
-</details> -->
 
 ## Under the Hood
 
