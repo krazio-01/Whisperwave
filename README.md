@@ -43,7 +43,12 @@ Check out the live demo of Whisperwave [here](https://whisperwave.onrender.com/)
 </div>
 
 <details>
-  <summary align="center"><b>📸 Click to see more screenshots (Video Calls & Profile)</b></summary>
+  <summary align="center">
+    <b>
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWltYWdlcy1pY29uIGx1Y2lkZS1pbWFnZXMiPjxwYXRoIGQ9Im0yMiAxMS0xLjI5Ni0xLjI5NmEyLjQgMi40IDAgMCAwLTMuNDA4IDBMMTEgMTYiLz48cGF0aCBkPSJNNCA4YTIgMiAwIDAgMC0yIDJ2MTBhMiAyIDAgMCAwIDIgMmgxMGEyIDIgMCAwIDAgMi0yIi8+PGNpcmNsZSBjeD0iMTMiIGN5PSI3IiByPSIxIiBmaWxsPSJjdXJyZW50Q29sb3IiLz48cmVjdCB4PSI4IiB5PSIyIiB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHJ4PSIyIi8+PC9zdmc+" width="14" style="vertical-align:middle" />
+      Click to see more screenshots (Video Calls & Profile)
+    </b>
+  </summary>
   <div align="center">
     <br/>
     <table border="0">
